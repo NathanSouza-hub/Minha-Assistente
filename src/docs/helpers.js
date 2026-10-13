@@ -33,4 +33,26 @@ const respostasErro = (mapa) =>
 
 const ERRO_AUTH = { 401: 'Token ausente, inválido ou expirado (NAO_AUTORIZADO)' };
 
-module.exports = { jsonSchema, corpoJson, respostaJson, respostaVazia, respostasErro, ERRO_AUTH };
+// Converte um z.object de filtros em parâmetros de query do OpenAPI.
+function parametrosQuery(esquema) {
+  const { properties = {}, required = [] } = jsonSchema(esquema, 'input');
+  return Object.entries(properties).map(([name, schema]) => ({
+    name,
+    in: 'query',
+    required: required.includes(name),
+    schema,
+  }));
+}
+
+const paramId = { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } };
+
+module.exports = {
+  jsonSchema,
+  corpoJson,
+  respostaJson,
+  respostaVazia,
+  respostasErro,
+  parametrosQuery,
+  paramId,
+  ERRO_AUTH,
+};

@@ -7,7 +7,12 @@ const db = require('./config/db');
 const { montarOpenApi } = require('./docs/openapi');
 const { AppError } = require('./lib/erros');
 const { tratarErro, rotaNaoEncontrada } = require('./middlewares/erro');
+const { autenticar } = require('./middlewares/autenticar');
 const { rotasAuth } = require('./modules/auth/routes');
+const { rotasImoveis } = require('./modules/imoveis/routes');
+const { rotasCategorias } = require('./modules/categorias/routes');
+const { rotasPagamentos } = require('./modules/pagamentos/routes');
+const { rotasRelatorios } = require('./modules/relatorios/routes');
 
 function criarApp() {
   const app = express();
@@ -33,7 +38,12 @@ function criarApp() {
   });
 
   app.use('/auth', rotasAuth());
-  // Módulos protegidos: app.use('/<recurso>', autenticar, rotas<Recurso>()).
+
+  // Módulos protegidos: tudo abaixo exige token e filtra pelo usuário.
+  app.use('/imoveis', autenticar, rotasImoveis());
+  app.use('/categorias-pagamento', autenticar, rotasCategorias());
+  app.use('/pagamentos', autenticar, rotasPagamentos());
+  app.use('/relatorios', autenticar, rotasRelatorios());
 
   app.use(rotaNaoEncontrada);
   app.use(tratarErro);

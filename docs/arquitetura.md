@@ -68,6 +68,17 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
    o token como o login). Imóveis são de cada usuário (CRUD em `/imoveis`); categorias são
    globais (seed). Apagar um imóvel usado por pagamentos responde `409 REFERENCIA_INVALIDA`.
 
+10. **Pagamentos (etapa 4)**:
+    - Resposta inclui `categoriaNome`, `imovelNome` e `vencido` (pendente com vencimento < hoje),
+      além das colunas da tabela (sem `usuarioId`).
+    - No parcelamento, `valorCentavos` é o valor **de cada parcela**; vencimentos mensais a partir
+      da data base (31/jan → 28/fev → 31/mar).
+    - Próxima ocorrência recorrente é gerada quando o pagamento passa a pago (PATCH `/pagar`, PUT
+      ou criação já paga), calculada a partir do início da série; nunca duplica (índice único).
+    - `PATCH /pagar` sem corpo usa a data de hoje; pagar de novo → `409 JA_PAGO`.
+    - Filtros `inicio`/`fim` da listagem usam o vencimento. Imóvel com nome repetido no mesmo
+      usuário → `409 IMOVEL_DUPLICADO`.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
