@@ -11,6 +11,6 @@ const hoje = () => agora().toISODate();
 const deISO = (texto) => DateTime.fromISO(texto, { zone: FUSO });
 
 // Formata um instante como ISO 8601 com offset de São Paulo, sem milissegundos.
-const paraISO = (dt) => dt.setZone(FUSO).toISO({ suppressMilliseconds: true });
+const paraISO = (dt) => dt.setZone(FUSO).startOf('second').toISO({ suppressMilliseconds: true });
 
 module.exports = { FUSO, agora, hoje, deISO, paraISO };

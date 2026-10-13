@@ -1,7 +1,7 @@
-// Documento OpenAPI base. Cada módulo acrescenta seus paths via docs.js (a partir da etapa 3).
+// Documento OpenAPI base. Cada módulo acrescenta seus paths via docs.js.
 const { version } = require('../../package.json');
 
-const modulos = [];
+const modulos = [require('../modules/auth/docs')];
 
 function montarOpenApi() {
   const paths = {};

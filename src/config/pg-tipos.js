@@ -25,10 +25,11 @@ function registrarTiposPg() {
   // time → "08:00"
   types.setTypeParser(OID.TIME, (valor) => valor.slice(0, 5));
 
-  // timestamptz → "2026-10-13T14:00:00-03:00"
+  // timestamptz → "2026-10-13T14:00:00-03:00" (sempre sem milissegundos)
   types.setTypeParser(OID.TIMESTAMPTZ, (valor) =>
     DateTime.fromSQL(valor, { setZone: true })
       .setZone(FUSO)
+      .startOf('second')
       .toISO({ suppressMilliseconds: true }),
   );
 

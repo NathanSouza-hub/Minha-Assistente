@@ -7,6 +7,7 @@ const db = require('./config/db');
 const { montarOpenApi } = require('./docs/openapi');
 const { AppError } = require('./lib/erros');
 const { tratarErro, rotaNaoEncontrada } = require('./middlewares/erro');
+const { rotasAuth } = require('./modules/auth/routes');
 
 function criarApp() {
   const app = express();
@@ -31,7 +32,8 @@ function criarApp() {
     res.json({ status: 'ok', banco: 'ok' });
   });
 
-  // Rotas dos módulos entram aqui nas próximas etapas.
+  app.use('/auth', rotasAuth());
+  // Módulos protegidos: app.use('/<recurso>', autenticar, rotas<Recurso>()).
 
   app.use(rotaNaoEncontrada);
   app.use(tratarErro);

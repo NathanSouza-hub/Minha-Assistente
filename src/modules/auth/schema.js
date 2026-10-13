@@ -1,0 +1,37 @@
+const { z } = require('../../lib/zod');
+
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email('E-mail inválido.').max(254, 'E-mail longo demais.'));
+
+const cadastro = z
+  .object({
+    nome: z.string().trim().min(1, 'Informe o nome.').max(100, 'Nome longo demais.'),
+    email,
+    // bcrypt considera só os primeiros 72 bytes.
+    senha: z
+      .string()
+      .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
+      .max(72, 'A senha pode ter no máximo 72 caracteres.'),
+  })
+  .meta({ example: { nome: 'Maria Silva', email: 'maria@exemplo.com', senha: 'uma-senha-forte' } });
+
+const login = z
+  .object({
+    email,
+    senha: z.string().min(1, 'Informe a senha.'),
+  })
+  .meta({ example: { email: 'maria@exemplo.com', senha: 'uma-senha-forte' } });
+
+const usuario = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  email: z.email(),
+  criadoEm: z.iso.datetime({ offset: true }),
+});
+
+const sessao = z.object({ token: z.string(), usuario });
+
+module.exports = { cadastro, login, usuario, sessao };
