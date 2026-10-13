@@ -79,6 +79,14 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     - Filtros `inicio`/`fim` da listagem usam o vencimento. Imóvel com nome repetido no mesmo
       usuário → `409 IMOVEL_DUPLICADO`.
 
+11. **Agenda (etapa 5)**:
+    - `inicio`/`fim` exigem ISO 8601 **com fuso** (`-03:00` ou `Z`); a resposta vem em `-03:00`.
+    - `GET /eventos` sem período lista de hoje até 30 dias; período máximo 366 dias.
+    - Cada ocorrência traz também `inicioSerie` (início da primeira ocorrência): é o `inicio` a
+      enviar no PUT, para editar a série sem deslocá-la.
+    - Editar ou excluir um evento cancela os lembretes ainda pendentes dele.
+    - `link` aceita só http(s); texto vazio vira `null`.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).

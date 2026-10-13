@@ -13,6 +13,7 @@ const { rotasImoveis } = require('./modules/imoveis/routes');
 const { rotasCategorias } = require('./modules/categorias/routes');
 const { rotasPagamentos } = require('./modules/pagamentos/routes');
 const { rotasRelatorios } = require('./modules/relatorios/routes');
+const { rotasEventos } = require('./modules/eventos/routes');
 
 function criarApp() {
   const app = express();
@@ -44,6 +45,7 @@ function criarApp() {
   app.use('/categorias-pagamento', autenticar, rotasCategorias());
   app.use('/pagamentos', autenticar, rotasPagamentos());
   app.use('/relatorios', autenticar, rotasRelatorios());
+  app.use('/eventos', autenticar, rotasEventos());
 
   app.use(rotaNaoEncontrada);
   app.use(tratarErro);

@@ -7,6 +7,7 @@ const modulos = [
   require('../modules/categorias/docs'),
   require('../modules/pagamentos/docs'),
   require('../modules/relatorios/docs'),
+  require('../modules/eventos/docs'),
 ];
 
 function montarOpenApi() {
