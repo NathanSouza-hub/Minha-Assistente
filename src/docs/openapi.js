@@ -1,0 +1,78 @@
+// Documento OpenAPI base. Cada módulo acrescenta seus paths via docs.js (a partir da etapa 3).
+const { version } = require('../../package.json');
+
+const modulos = [];
+
+function montarOpenApi() {
+  const paths = {};
+  for (const doc of modulos) Object.assign(paths, doc.paths);
+
+  return {
+    openapi: '3.1.0',
+    info: {
+      title: 'App Débora — API',
+      version,
+      description: [
+        'Back-end da secretária pessoal da Débora.',
+        '',
+        '- JSON em camelCase; datas ISO 8601 no fuso America/Sao_Paulo.',
+        '- Dinheiro em centavos inteiros (15990 = R$ 159,90).',
+        '- Erros: `{ "erro": { "codigo": "STRING", "mensagem": "texto" } }`.',
+      ].join('\n'),
+    },
+    security: [{ bearerAuth: [] }],
+    paths: {
+      '/saude': {
+        get: {
+          tags: ['Sistema'],
+          summary: 'Verifica se a API e o banco estão no ar',
+          security: [],
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { status: { const: 'ok' }, banco: { const: 'ok' } },
+                  },
+                },
+              },
+            },
+            503: { $ref: '#/components/responses/Erro' },
+          },
+        },
+      },
+      ...paths,
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      },
+      schemas: {
+        Erro: {
+          type: 'object',
+          required: ['erro'],
+          properties: {
+            erro: {
+              type: 'object',
+              required: ['codigo', 'mensagem'],
+              properties: {
+                codigo: { type: 'string', examples: ['VALIDACAO'] },
+                mensagem: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        Erro: {
+          description: 'Erro',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/Erro' } } },
+        },
+      },
+    },
+  };
+}
+
+module.exports = { montarOpenApi, modulos };
