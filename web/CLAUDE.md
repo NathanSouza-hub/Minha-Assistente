@@ -33,13 +33,25 @@ npm run lint                                  # oxlint
 - **Erros na tela**: `src/app/consultas.ts` mostra toast com a `mensagem` de qualquer erro de
   query/mutation, exceto `NAO_AUTORIZADO` (logout) e `VALIDACAO` (exibir no formulário).
 - Tipos do contrato em `src/lib/tipos.ts`.
+- **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no
+  back-end; campos com `components/Campo.tsx`; erro da API com `aplicarErroApi()`
+  (`src/lib/formulario.ts`), que liga códigos a campos (ex.: `EMAIL_EM_USO → email`) e distribui
+  o `VALIDACAO` ("campo: mensagem; ...") pelos campos. Mutations de formulário usam
+  `meta: { semAviso: true }` para não duplicar o erro num toast.
 
 ## Estrutura
 
 - `src/app/navegacao.ts` define as áreas; a barra inferior (celular) e a lateral (desktop) em
   `components/layout/LayoutApp.tsx` são geradas dela. No celular as áreas secundárias ficam em
   "Mais", que fica marcado quando uma delas está aberta.
-- Rotas em `src/app/rotas.tsx`; cada tela usa `components/layout/Pagina.tsx` (título da aba +
+- **Sessão** (`src/app/sessao.tsx`): `useSessao()` dá `token`, `usuario` (de `/auth/me`),
+  `entrar(sessao)` e `sair()`. Ambos limpam o cache do TanStack Query (aparelho compartilhado).
+  Token vencido é descartado ao abrir o app; `NAO_AUTORIZADO` da API chama `sair()`.
+- Guardas em `src/app/guardas.tsx`: `RotaProtegida` manda para `/entrar` guardando a tela
+  pedida em `state.de`; `RotaVisitante` (login/cadastro) é quem redireciona depois de entrar —
+  não navegue manualmente no `onSuccess` do login, isso cria corrida com a guarda.
+- Rotas em `src/app/rotas.tsx` (`definicaoRotas`, reaproveitado nos testes por
+  `src/test/renderizarApp.tsx`, que monta o app inteiro com `createMemoryRouter`); cada tela usa `components/layout/Pagina.tsx` (título da aba +
   cabeçalho). Áreas ainda não feitas usam `paginas/EmBreve.tsx`.
 - **MSW** (`src/mocks/handlers.ts`): cada rota nova do back-end ganha um handler que segue o
   contrato à risca, para trocar pelo servidor real sem mexer nas telas. Os testes do cliente

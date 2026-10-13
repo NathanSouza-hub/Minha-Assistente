@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
+import { Conta } from '@/components/Conta'
 import { navegacaoConfiguracoes, navegacaoSecundaria, type ItemNavegacao } from '@/app/navegacao'
 
 function Lista({ itens }: { itens: ItemNavegacao[] }) {
@@ -27,6 +28,10 @@ export function Mais() {
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-bold">Configurações</h2>
           <Lista itens={navegacaoConfiguracoes} />
+        </section>
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-bold">Sua conta</h2>
+          <Conta className="rounded-xl border bg-card p-4" />
         </section>
       </div>
     </Pagina>

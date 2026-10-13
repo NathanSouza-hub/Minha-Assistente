@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router'
 import { Toaster } from '@/components/ui/sonner'
 import { clienteConsultas } from '@/app/consultas'
+import { ProvedorSessao } from '@/app/sessao'
 import { rotas } from '@/app/rotas'
 import './index.css'
 
@@ -17,7 +18,9 @@ iniciarMocks().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={clienteConsultas}>
-        <RouterProvider router={rotas} />
+        <ProvedorSessao>
+          <RouterProvider router={rotas} />
+        </ProvedorSessao>
         <Toaster position="top-center" />
       </QueryClientProvider>
     </StrictMode>,

@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { cn } from '@/lib/utils'
+import { Conta } from '@/components/Conta'
 import {
   itemMais,
   navegacaoConfiguracoes,
@@ -29,14 +30,14 @@ export function LayoutApp() {
 
 function BarraLateral() {
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col gap-8 overflow-y-auto border-r bg-card px-4 py-6 md:flex">
+    <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r bg-card px-4 py-5 md:flex">
       <p className="px-3 text-xl font-bold text-primary">Minha Assistente</p>
-      <nav aria-label="Principal" className="flex flex-col gap-1">
+      <nav aria-label="Principal" className="flex flex-col gap-0.5">
         {[...navegacaoPrincipal, ...navegacaoSecundaria].map((item) => (
           <LinkLateral key={item.rota} item={item} />
         ))}
       </nav>
-      <nav aria-labelledby="titulo-config" className="flex flex-col gap-1">
+      <nav aria-labelledby="titulo-config" className="flex flex-col gap-0.5">
         <h2 id="titulo-config" className="px-3 pb-1 text-base font-semibold text-muted-foreground">
           Configurações
         </h2>
@@ -44,6 +45,7 @@ function BarraLateral() {
           <LinkLateral key={item.rota} item={item} />
         ))}
       </nav>
+      <Conta className="mt-auto border-t px-3 pt-4" />
     </aside>
   )
 }
@@ -56,7 +58,7 @@ function LinkLateral({ item }: { item: ItemNavegacao }) {
       end={item.rota === '/'}
       className={({ isActive }) =>
         cn(
-          'relative flex min-h-12 items-center gap-3 rounded-lg px-3 text-base font-semibold text-foreground hover:bg-muted',
+          'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-foreground hover:bg-muted',
           isActive && 'bg-secondary text-primary',
         )
       }
