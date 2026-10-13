@@ -1,7 +1,7 @@
 # Prompt — Front-end (PWA) do Minha Assistente
 
-> Cole o bloco abaixo no Claude Code (ou Lovable) num repositório novo, ex.: `minha-assistente-pwa`.
-> O contrato completo da API está em `docs/arquitetura.md` deste repositório (back-end).
+> O front fica em `web/` deste repositório (escolha feita na Entrega 1, no lugar de um repositório
+> separado). O contrato completo da API está em `docs/arquitetura.md`.
 
 ---
 

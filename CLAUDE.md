@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Back-end do **Minha Assistente**, secretária pessoal multiusuário (Node 20+, Express 5, PostgreSQL
 via Knex, Zod 4, JWT). Código, comentários, nomes e mensagens são em **português do Brasil**.
-O front (PWA) é outro repositório; `docs/prompt-front.md` é o prompt para gerá-lo.
+O front (PWA) fica em `web/`, com `package.json` e `CLAUDE.md` próprios; o escopo e a ordem das
+entregas dele estão em `docs/prompt-front.md`. Os comandos abaixo são do back-end (raiz).
 
 `docs/arquitetura.md` é o contrato da API (rotas, decisões acordadas, schema, lembretes). Leia
 antes de criar um módulo e mantenha-o atualizado quando o contrato mudar.

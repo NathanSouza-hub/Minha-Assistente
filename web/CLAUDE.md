@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PWA do **Minha Assistente** (React 19 + Vite 8 + TypeScript, Tailwind 4 + shadcn/ui, React
 Router 8, TanStack Query 5, React Hook Form + Zod 4, Luxon, MSW 3). Código, nomes e textos da
-interface em **português do Brasil**. O back-end é o repositório irmão `../Minha-Assistente`;
-o contrato da API está em `../Minha-Assistente/docs/arquitetura.md` e o escopo/ordem das
-entregas em `../Minha-Assistente/docs/prompt-front.md` (pare ao fim de cada entrega para revisão).
+interface em **português do Brasil**. Fica em `web/` do mesmo repositório do back-end (raiz);
+o contrato da API está em `../docs/arquitetura.md` e o escopo/ordem das entregas em
+`../docs/prompt-front.md` (pare ao fim de cada entrega para revisão). Rode os comandos abaixo
+dentro de `web/`.
 
 ## Comandos
 
