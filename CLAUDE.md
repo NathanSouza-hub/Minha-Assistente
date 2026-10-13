@@ -71,6 +71,9 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 
 ## Próximas etapas
 
-As rotas além de `/auth` e `/saude` ainda não existem; as tabelas já estão nas migrations. Os
+Prontos: `/auth`, `/imoveis`, `/categorias-pagamento`, `/pagamentos`, `/relatorios/gastos`.
+Faltam (tabelas já nas migrations): agenda (`/eventos`), medicamentos, rotinas, painel `/hoje`,
+viagens, compras e notificações. Campos compartilhados (id, data, centavos, texto opcional) ficam
+em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes. Os
 lembretes (agendador a cada minuto, `lembrete_envio`, canais em `src/lembretes/canais/`, Web Push
 com VAPID) seguem o desenho da seção "Lembretes" de `docs/arquitetura.md`.
