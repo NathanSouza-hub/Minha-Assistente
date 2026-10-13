@@ -23,21 +23,52 @@ test('migrations são reversíveis (down de tudo e up de novo)', async () => {
   assert.equal(aindaPendentes.length, 0);
 });
 
-test('seed é idempotente e cria catálogos e usuária', async () => {
-  await db.seed.run();
-  const imoveis = await db('imovel').orderBy('ordem');
-  const categorias = await db('categoria_pagamento').orderBy('ordem');
-  const usuarias = await db('usuario');
+const criarUsuario = async (email) => {
+  const [usuario] = await db('usuario').insert({ nome: 'Teste', email, senhaHash: 'x' }).returning('*');
+  return usuario;
+};
 
-  assert.deepEqual(
-    imoveis.map((i) => i.nome),
-    ['Apartamento cobertura', 'Apartamento 15º andar', 'Casa da Serra'],
-  );
+test('seed é idempotente e cria só as categorias', async () => {
+  await db.seed.run();
+  const categorias = await db('categoria_pagamento').orderBy('ordem');
   assert.equal(categorias.length, 6);
   assert.equal(categorias[0].nome, 'Salários');
-  assert.equal(usuarias.length, 1);
-  assert.equal(usuarias[0].email, process.env.SEED_USUARIA_EMAIL);
-  assert.match(usuarias[0].senhaHash, /^\$2[aby]\$12\$/);
+  assert.equal((await db('imovel').count('* as n'))[0].n, 0);
+  assert.equal((await db('usuario').count('* as n'))[0].n, 0);
+});
+
+test('e-mail de usuário é único sem diferenciar maiúsculas', async () => {
+  await criarUsuario('Ana@Exemplo.com');
+  await assert.rejects(criarUsuario('ana@exemplo.com'), { code: '23505' });
+});
+
+test('pagamento não pode apontar para imóvel de outro usuário', async () => {
+  const debora = await criarUsuario('debora@exemplo.com');
+  const outra = await criarUsuario('outra@exemplo.com');
+  const [imovelDaOutra] = await db('imovel').insert({ usuarioId: outra.id, nome: 'Casa' }).returning('*');
+  const [categoria] = await db('categoria_pagamento').select('id').limit(1);
+
+  await assert.rejects(
+    db('pagamento').insert({
+      usuarioId: debora.id,
+      descricao: 'Conta de luz',
+      categoriaId: categoria.id,
+      imovelId: imovelDaOutra.id,
+      valorCentavos: 1000,
+      vencimento: '2026-10-20',
+    }),
+    { code: '23503' },
+  );
+
+  // Mesmo nome de imóvel em usuários diferentes é permitido.
+  await db('imovel').insert({ usuarioId: debora.id, nome: 'Casa' });
+});
+
+test('apagar o usuário apaga os dados dele', async () => {
+  const usuario = await criarUsuario('apagar@exemplo.com');
+  await db('compra_item').insert({ usuarioId: usuario.id, nome: 'Pão' });
+  await db('usuario').where({ id: usuario.id }).del();
+  assert.equal((await db('compra_item').where({ usuarioId: usuario.id }).count('* as n'))[0].n, 0);
 });
 
 test('tipos do banco saem no formato do contrato', async () => {
@@ -57,8 +88,15 @@ test('tipos do banco saem no formato do contrato', async () => {
 });
 
 test('pagamento: CHECKs rejeitam dados inconsistentes', async () => {
+  const usuario = await criarUsuario('checks-pagamento@exemplo.com');
   const [categoria] = await db('categoria_pagamento').select('id').limit(1);
-  const base = { descricao: 'Teste', categoriaId: categoria.id, valorCentavos: 1000, vencimento: '2026-10-20' };
+  const base = {
+    usuarioId: usuario.id,
+    descricao: 'Teste',
+    categoriaId: categoria.id,
+    valorCentavos: 1000,
+    vencimento: '2026-10-20',
+  };
 
   // pago sem data de pagamento
   await assert.rejects(db('pagamento').insert({ ...base, status: 'pago' }), { code: '23514' });
@@ -79,7 +117,13 @@ test('pagamento: CHECKs rejeitam dados inconsistentes', async () => {
 });
 
 test('evento: lembretes aceitam lista e rejeitam valores inválidos', async () => {
-  const base = { titulo: 'Consulta', tipo: 'consulta', inicio: '2026-10-20T10:00:00-03:00' };
+  const usuario = await criarUsuario('checks-evento@exemplo.com');
+  const base = {
+    usuarioId: usuario.id,
+    titulo: 'Consulta',
+    tipo: 'consulta',
+    inicio: '2026-10-20T10:00:00-03:00',
+  };
 
   const [ok] = await db('evento').insert({ ...base, lembretesMinutosAntes: [1080, 120] }).returning('*');
   assert.deepEqual(ok.lembretesMinutosAntes, [1080, 120]);
@@ -94,7 +138,8 @@ test('evento: lembretes aceitam lista e rejeitam valores inválidos', async () =
 });
 
 test('atualizado_em muda no UPDATE via trigger', async () => {
-  const [item] = await db('compra_item').insert({ nome: 'Leite' }).returning('*');
+  const usuario = await criarUsuario('trigger@exemplo.com');
+  const [item] = await db('compra_item').insert({ usuarioId: usuario.id, nome: 'Leite' }).returning('*');
   await db.raw('select pg_sleep(0.01)');
   const [depois] = await db('compra_item')
     .where({ id: item.id })

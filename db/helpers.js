@@ -23,6 +23,11 @@ function idUuid(knex, t) {
   t.uuid('id').primary().defaultTo(knex.fn.uuid());
 }
 
+// Dono do registro. Apagar o usuário apaga os dados dele.
+function donoUsuario(t) {
+  t.uuid('usuario_id').notNullable().references('id').inTable('usuario').onDelete('CASCADE');
+}
+
 function carimbos(knex, t) {
   t.timestamp('criado_em', { useTz: true }).notNullable().defaultTo(knex.fn.now());
   t.timestamp('atualizado_em', { useTz: true }).notNullable().defaultTo(knex.fn.now());
@@ -45,4 +50,4 @@ async function criarTabela(knex, tabela, colunas) {
   await triggerAtualizadoEm(knex, tabela);
 }
 
-module.exports = { checkIn, check, idUuid, carimbos, triggerAtualizadoEm, criarTabela };
+module.exports = { checkIn, check, idUuid, donoUsuario, carimbos, triggerAtualizadoEm, criarTabela };

@@ -1,14 +1,15 @@
-const { criarTabela, check } = require('../helpers');
+const { criarTabela, check, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'viagem', (t) => {
+    donoUsuario(t);
     t.text('destino').notNullable();
     t.date('ida').notNullable();
     t.date('volta').nullable();
     t.text('hospedagem').nullable();
     t.text('transporte').nullable();
     t.text('observacoes').nullable();
-    t.index(['ida']);
+    t.index(['usuario_id', 'ida']);
   });
 
   await check(knex, 'viagem', 'volta_depois_ida', 'volta IS NULL OR volta >= ida');

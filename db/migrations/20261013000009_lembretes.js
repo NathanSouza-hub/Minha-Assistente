@@ -1,7 +1,9 @@
-const { criarTabela, checkIn } = require('../helpers');
+const { criarTabela, checkIn, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'lembrete_envio', (t) => {
+    // Destinatário: o canal usa para achar as inscrições push (ou o telefone, no futuro).
+    donoUsuario(t);
     t.text('origem_tipo').notNullable();
     // Polimórfico (evento, medicamento_horario, pagamento, rotina): sem FK de propósito.
     t.uuid('origem_id').notNullable();
@@ -29,7 +31,10 @@ exports.up = async (knex) => {
   await checkIn(knex, 'lembrete_envio', 'canal', ['app']);
   await checkIn(knex, 'lembrete_envio', 'status', ['pendente', 'enviado', 'falhou', 'cancelado']);
 
+  // endpoint é único por navegador; se outro usuário logar no mesmo aparelho, a inscrição passa a ele.
   await criarTabela(knex, 'push_inscricao', (t) => {
+    donoUsuario(t);
+    t.index(['usuario_id']);
     t.text('endpoint').notNullable().unique();
     t.text('p256dh').notNullable();
     t.text('auth').notNullable();

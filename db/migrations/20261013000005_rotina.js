@@ -1,7 +1,9 @@
-const { criarTabela, check } = require('../helpers');
+const { criarTabela, check, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'rotina', (t) => {
+    donoUsuario(t);
+    t.index(['usuario_id']);
     t.text('titulo').notNullable();
     t.time('hora').nullable();
     // 0 = domingo ... 6 = sábado

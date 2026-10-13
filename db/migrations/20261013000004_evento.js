@@ -1,7 +1,8 @@
-const { criarTabela, checkIn, check } = require('../helpers');
+const { criarTabela, checkIn, check, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'evento', (t) => {
+    donoUsuario(t);
     t.text('titulo').notNullable();
     t.text('tipo').notNullable();
     t.text('modalidade').nullable();
@@ -14,12 +15,12 @@ exports.up = async (knex) => {
     t.date('recorrencia_fim').nullable();
     t.specificType('lembretes_minutos_antes', 'integer[]').notNullable().defaultTo('{}');
 
-    t.index(['inicio']);
-    t.index(['tipo', 'inicio']);
+    t.index(['usuario_id', 'inicio']);
+    t.index(['usuario_id', 'tipo', 'inicio']);
   });
 
   await knex.raw(
-    "CREATE INDEX evento_recorrentes_idx ON evento (inicio) WHERE recorrencia <> 'nenhuma'",
+    "CREATE INDEX evento_recorrentes_idx ON evento (usuario_id, inicio) WHERE recorrencia <> 'nenhuma'",
   );
 
   await checkIn(knex, 'evento', 'tipo', [

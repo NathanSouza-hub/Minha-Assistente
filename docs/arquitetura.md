@@ -1,7 +1,8 @@
 # App Débora — Arquitetura do back-end
 
-Back-end de uma secretária pessoal para uma única usuária (Débora). O front é um PWA
-desenvolvido separadamente e depende do contrato de API descrito aqui.
+Back-end de uma secretária pessoal **multiusuário**: qualquer pessoa se cadastra e cada uma vê
+apenas os próprios dados (a Débora é a primeira usuária). O front é um PWA desenvolvido
+separadamente e depende do contrato de API descrito aqui.
 
 ## Stack
 
@@ -19,16 +20,18 @@ desenvolvido separadamente e depende do contrato de API descrito aqui.
 - Dinheiro: inteiro em centavos (`15990` = R$ 159,90).
 - Erros: `{ "erro": { "codigo": "STRING", "mensagem": "texto" } }`.
 - Listagens devolvem array direto, sem paginação (volume de uma pessoa).
-- Todas as rotas exceto `POST /auth/login` exigem `Authorization: Bearer <jwt>`.
+- Todas as rotas exceto `POST /auth/cadastro` e `POST /auth/login` exigem
+  `Authorization: Bearer <jwt>`. Toda consulta é filtrada pelo usuário do token; recurso de
+  outro usuário responde `404` (não revela que existe).
 
 ## Rotas
 
 ```
-POST /auth/login | GET /auth/me
+POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me
 GET  /hoje
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
-GET /imoveis | GET /categorias-pagamento
+GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada) | GET /categorias-pagamento
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
@@ -61,6 +64,9 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
    próxima (mês/ano seguinte) ligada por `recorrencia_origem_id`.
 8. **Lembretes de evento em lista**: `lembretesMinutosAntes: [1080, 120]` (ex.: véspera e 2h
    antes); `[]` = sem lembrete. Até 5 valores positivos, sem repetição.
+9. **Multiusuário**: cadastro aberto (`POST /auth/cadastro` com `{ nome, email, senha }`, devolve
+   o token como o login). Imóveis são de cada usuário (CRUD em `/imoveis`); categorias são
+   globais (seed). Apagar um imóvel usado por pagamentos responde `409 REFERENCIA_INVALIDA`.
 
 ## Convenções de banco
 
@@ -68,7 +74,11 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
 - "Enums" como `text` + `CHECK` (adicionar valor = migration trocando o CHECK).
 - `date` para datas sem hora (driver configurado para devolver string), `timestamptz` para
   instantes, `time` para hora do dia. Sessão do Postgres em `America/Sao_Paulo`.
-- Tabela `usuario` só para autenticação; tabelas de domínio não têm `usuario_id`.
+- Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, pagamento, evento, rotina,
+  medicamento, viagem, compra_item, lembrete_envio, push_inscricao. Tabelas filhas (conclusões,
+  horários, registros, anexos) herdam o dono pela tabela pai. Índices começam por `usuario_id`.
+- `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)`: FK composta impede apontar
+  para imóvel de outro usuário.
 - `criado_em` / `atualizado_em` (trigger) nas tabelas de domínio.
 
 ## Schema
@@ -76,7 +86,7 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
 | usuario | id, nome, email (citext unique), senha_hash | |
-| imovel | id, nome (unique), ordem | seed |
+| imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, nome (unique), ordem | seed |
 | pagamento | descricao, categoria_id, imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
 | evento | titulo, tipo, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |

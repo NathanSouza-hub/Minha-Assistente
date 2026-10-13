@@ -1,7 +1,9 @@
-const { criarTabela, checkIn, check } = require('../helpers');
+const { criarTabela, checkIn, check, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'medicamento', (t) => {
+    donoUsuario(t);
+    t.index(['usuario_id']);
     t.text('nome').notNullable();
     t.text('dose').nullable();
     t.text('observacoes').nullable();

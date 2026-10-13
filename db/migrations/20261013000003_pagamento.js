@@ -1,10 +1,13 @@
-const { criarTabela, checkIn, check } = require('../helpers');
+const { criarTabela, checkIn, check, donoUsuario } = require('../helpers');
 
 exports.up = async (knex) => {
   await criarTabela(knex, 'pagamento', (t) => {
+    donoUsuario(t);
     t.text('descricao').notNullable();
     t.uuid('categoria_id').notNullable().references('id').inTable('categoria_pagamento');
-    t.uuid('imovel_id').nullable().references('id').inTable('imovel');
+    t.uuid('imovel_id').nullable();
+    // FK composta: o imóvel precisa ser do mesmo usuário. Com imovel_id nulo não é checada.
+    t.foreign(['imovel_id', 'usuario_id']).references(['id', 'usuario_id']).inTable('imovel');
     t.integer('valor_centavos').notNullable();
     t.date('vencimento').notNullable();
     t.text('status').notNullable().defaultTo('pendente');
@@ -16,9 +19,9 @@ exports.up = async (knex) => {
     t.smallint('parcela_total').nullable();
     t.text('observacoes').nullable();
 
-    t.index(['vencimento']);
-    t.index(['status', 'vencimento']);
-    t.index(['data_pagamento']);
+    t.index(['usuario_id', 'vencimento']);
+    t.index(['usuario_id', 'status', 'vencimento']);
+    t.index(['usuario_id', 'data_pagamento']);
     t.index(['categoria_id']);
     t.index(['imovel_id']);
     t.index(['parcelamento_grupo_id']);
