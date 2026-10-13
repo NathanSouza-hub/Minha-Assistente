@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router'
 import { cn } from '@/lib/utils'
 import { Conta } from '@/components/Conta'
 import {
@@ -24,6 +24,9 @@ export function LayoutApp() {
         <Outlet />
       </main>
       <BarraInferior />
+      {/* Tela nova abre no topo; voltar devolve a posição. Chave pelo caminho: trocar mês ou
+          filtro (só muda a query) não faz a lista pular para o topo. */}
+      <ScrollRestoration getKey={(local) => local.pathname} />
     </div>
   )
 }

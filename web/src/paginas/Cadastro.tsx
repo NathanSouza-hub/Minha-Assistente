@@ -29,7 +29,7 @@ export function Cadastro() {
     meta: { semAviso: true },
     // O redirecionamento para o app fica com RotaVisitante.
     onSuccess: entrar,
-    onError: (erro) => aplicarErroApi(erro, setError, { EMAIL_EM_USO: 'email' }),
+    onError: (erro) => aplicarErroApi(erro, setError, { porCodigo: { EMAIL_EM_USO: 'email' } }),
   })
 
   return (

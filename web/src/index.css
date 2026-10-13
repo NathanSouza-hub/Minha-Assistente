@@ -31,6 +31,9 @@
   --color-hoje: var(--hoje);
   /* Atrasado/vencido. */
   --color-atraso: var(--atraso);
+  /* Séries do relatório de gastos (paleta validada: contraste e daltonismo). */
+  --color-serie-pago: var(--serie-pago);
+  --color-serie-previsto: var(--serie-previsto);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -66,6 +69,8 @@
   --ring: var(--tinta);
   --hoje: #e3a21a;
   --atraso: #b83227;
+  --serie-pago: #007f9a;
+  --serie-previsto: #c98200;
   --radius: 0.75rem;
 }
 

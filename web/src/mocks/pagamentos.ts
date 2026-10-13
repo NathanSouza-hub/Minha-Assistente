@@ -1,0 +1,319 @@
+// Imóveis, categorias, pagamentos e relatório — regras espelhando src/modules/* do back-end (etapa 4).
+import { http, HttpResponse } from 'msw'
+import { API_URL } from '@/lib/api'
+import { deDataISO, hojeISO } from '@/lib/datas'
+import type { Pagamento, PagamentoCriacao, PagamentoEdicao } from '@/lib/tipos'
+import { agoraISO, banco, CATEGORIAS, novoPagamento, type PagamentoMock } from './banco'
+import { autenticado, erro, naoEncontrado } from './util'
+
+const idDe = (params: Record<string, unknown>) => String(params.id)
+
+// ---------- Imóveis ----------
+
+const imoveisDo = (usuarioId: string) =>
+  banco.imoveis
+    .filter((i) => i.usuarioId === usuarioId)
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
+
+const publicoImovel = ({ id, nome, ordem }: { id: string; nome: string; ordem: number }) => ({ id, nome, ordem })
+
+const nomeRepetido = (usuarioId: string, nome: string, exceto?: string) =>
+  banco.imoveis.some((i) => i.usuarioId === usuarioId && i.nome === nome && i.id !== exceto)
+
+const imovelDuplicado = () => erro(409, 'IMOVEL_DUPLICADO', 'Você já tem um imóvel com esse nome.')
+
+// ---------- Pagamentos ----------
+
+function paraResposta(p: PagamentoMock): Pagamento {
+  const { usuarioId: _u, ...resto } = p
+  return {
+    ...resto,
+    categoriaNome: CATEGORIAS.find((c) => c.id === p.categoriaId)!.nome,
+    imovelNome: banco.imoveis.find((i) => i.id === p.imovelId)?.nome ?? null,
+    vencido: p.status === 'pendente' && p.vencimento < hojeISO(),
+  }
+}
+
+const ordenar = (a: PagamentoMock, b: PagamentoMock) =>
+  a.vencimento.localeCompare(b.vencimento) ||
+  (a.parcelaAtual ?? 0) - (b.parcelaAtual ?? 0) ||
+  a.criadoEm.localeCompare(b.criadoEm)
+
+const somar = (data: string, quantidade: number, unidade: 'months' | 'years') =>
+  deDataISO(data).plus({ [unidade]: quantidade }).toISODate()!
+
+/** Mesmo cálculo de garantirProxima() no back-end: a partir do início da série. */
+function garantirProxima(p: PagamentoMock) {
+  if (p.recorrencia === 'nenhuma' || p.status !== 'pago') return
+  if (banco.pagamentos.some((x) => x.recorrenciaOrigemId === p.id)) return
+  let inicio = p
+  let passo = 0
+  while (inicio.recorrenciaOrigemId) {
+    const anterior = banco.pagamentos.find((x) => x.id === inicio.recorrenciaOrigemId)
+    if (!anterior) break
+    inicio = anterior
+    passo += 1
+  }
+  banco.pagamentos.push(
+    novoPagamento({
+      usuarioId: p.usuarioId,
+      descricao: p.descricao,
+      categoriaId: p.categoriaId,
+      imovelId: p.imovelId,
+      valorCentavos: p.valorCentavos,
+      vencimento: somar(inicio.vencimento, passo + 1, p.recorrencia === 'mensal' ? 'months' : 'years'),
+      recorrencia: p.recorrencia,
+      recorrenciaOrigemId: p.id,
+      observacoes: p.observacoes,
+    }),
+  )
+}
+
+/** Validações principais do schema.js; devolve a resposta de erro ou null. */
+function validar(d: PagamentoEdicao, usuarioId: string) {
+  const problemas: string[] = []
+  if (!d.descricao?.trim()) problemas.push('descricao: Informe a descrição.')
+  if (!Number.isInteger(d.valorCentavos) || d.valorCentavos <= 0)
+    problemas.push('valorCentavos: O valor precisa ser maior que zero.')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.vencimento ?? '')) problemas.push('vencimento: Data inválida.')
+  if (d.status === 'pago' && !d.dataPagamento) problemas.push('dataPagamento: Informe a data do pagamento.')
+  if (d.status === 'pendente' && d.dataPagamento)
+    problemas.push('dataPagamento: Pagamento pendente não tem data de pagamento.')
+  if (problemas.length) return erro(400, 'VALIDACAO', problemas.join('; '))
+  if (!CATEGORIAS.some((c) => c.id === d.categoriaId))
+    return erro(400, 'VALIDACAO', 'categoriaId: categoria não encontrada.')
+  if (d.imovelId && !banco.imoveis.some((i) => i.id === d.imovelId && i.usuarioId === usuarioId))
+    return erro(400, 'VALIDACAO', 'imovelId: imóvel não encontrado.')
+  return null
+}
+
+const comPadroes = (d: Partial<PagamentoEdicao>): PagamentoEdicao =>
+  ({
+    status: 'pendente',
+    recorrencia: 'nenhuma',
+    imovelId: null,
+    dataPagamento: null,
+    ...d,
+    observacoes: d.observacoes?.trim() || null,
+  }) as PagamentoEdicao
+
+const gravaveis = (d: PagamentoEdicao) => ({
+  descricao: d.descricao.trim(),
+  categoriaId: d.categoriaId,
+  imovelId: d.imovelId,
+  valorCentavos: d.valorCentavos,
+  vencimento: d.vencimento,
+  status: d.status,
+  dataPagamento: d.dataPagamento,
+  recorrencia: d.recorrencia,
+  observacoes: d.observacoes,
+})
+
+const doUsuario = (usuarioId: string, id: string) =>
+  banco.pagamentos.find((p) => p.id === id && p.usuarioId === usuarioId)
+
+export const handlersPagamentos = [
+  http.get(
+    `${API_URL}/categorias-pagamento`,
+    autenticado(() => HttpResponse.json(CATEGORIAS)),
+  ),
+
+  http.get(
+    `${API_URL}/imoveis`,
+    autenticado((_ctx, u) => HttpResponse.json(imoveisDo(u.id).map(publicoImovel))),
+  ),
+
+  http.post(
+    `${API_URL}/imoveis`,
+    autenticado(async ({ request }, u) => {
+      const { nome, ordem = 0 } = (await request.json()) as { nome?: string; ordem?: number }
+      const limpo = nome?.trim()
+      if (!limpo) return erro(400, 'VALIDACAO', 'nome: Informe o nome do imóvel.')
+      if (nomeRepetido(u.id, limpo)) return imovelDuplicado()
+      const imovel = { id: crypto.randomUUID(), usuarioId: u.id, nome: limpo, ordem }
+      banco.imoveis.push(imovel)
+      return HttpResponse.json(publicoImovel(imovel), { status: 201 })
+    }),
+  ),
+
+  http.put(
+    `${API_URL}/imoveis/:id`,
+    autenticado(async ({ request, params }, u) => {
+      const { nome, ordem } = (await request.json()) as { nome?: string; ordem?: number }
+      const imovel = banco.imoveis.find((i) => i.id === idDe(params) && i.usuarioId === u.id)
+      if (!imovel) return naoEncontrado('Imóvel')
+      const limpo = nome?.trim()
+      if (!limpo) return erro(400, 'VALIDACAO', 'nome: Informe o nome do imóvel.')
+      if (nomeRepetido(u.id, limpo, imovel.id)) return imovelDuplicado()
+      imovel.nome = limpo
+      if (ordem !== undefined) imovel.ordem = ordem
+      return HttpResponse.json(publicoImovel(imovel))
+    }),
+  ),
+
+  http.delete(
+    `${API_URL}/imoveis/:id`,
+    autenticado(({ params }, u) => {
+      const indice = banco.imoveis.findIndex((i) => i.id === idDe(params) && i.usuarioId === u.id)
+      if (indice < 0) return naoEncontrado('Imóvel')
+      if (banco.pagamentos.some((p) => p.imovelId === idDe(params))) {
+        return erro(
+          409,
+          'REFERENCIA_INVALIDA',
+          'Este imóvel tem pagamentos ligados. Remova os pagamentos ou troque o imóvel deles antes.',
+        )
+      }
+      banco.imoveis.splice(indice, 1)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  ),
+
+  http.get(
+    `${API_URL}/pagamentos`,
+    autenticado(({ request }, u) => {
+      const q = new URL(request.url).searchParams
+      const lista = banco.pagamentos
+        .filter((p) => p.usuarioId === u.id)
+        .filter((p) => !q.get('inicio') || p.vencimento >= q.get('inicio')!)
+        .filter((p) => !q.get('fim') || p.vencimento <= q.get('fim')!)
+        .filter((p) => !q.get('status') || p.status === q.get('status'))
+        .filter((p) => !q.get('categoriaId') || p.categoriaId === q.get('categoriaId'))
+        .filter((p) => !q.get('imovelId') || p.imovelId === q.get('imovelId'))
+        .sort(ordenar)
+      return HttpResponse.json(lista.map(paraResposta))
+    }),
+  ),
+
+  http.get(
+    `${API_URL}/pagamentos/:id`,
+    autenticado(({ params }, u) => {
+      const p = doUsuario(u.id, idDe(params))
+      return p ? HttpResponse.json(paraResposta(p)) : naoEncontrado('Pagamento')
+    }),
+  ),
+
+  http.post(
+    `${API_URL}/pagamentos`,
+    autenticado(async ({ request }, u) => {
+      const corpo = (await request.json()) as PagamentoCriacao
+      const dados = comPadroes(corpo)
+      const invalido = validar(dados, u.id)
+      if (invalido) return invalido
+
+      if (corpo.parcelamento) {
+        const total = corpo.parcelamento.totalParcelas
+        if (!Number.isInteger(total) || total < 2 || total > 120)
+          return erro(400, 'VALIDACAO', 'parcelamento.totalParcelas: Use de 2 a 120 parcelas.')
+        if (dados.recorrencia !== 'nenhuma')
+          return erro(400, 'VALIDACAO', 'recorrencia: Pagamento parcelado não pode ser recorrente.')
+        if (dados.status !== 'pendente')
+          return erro(400, 'VALIDACAO', 'status: As parcelas são criadas como pendentes.')
+        const grupo = crypto.randomUUID()
+        const parcelas = Array.from({ length: total }, (_, i) =>
+          novoPagamento({
+            ...gravaveis(dados),
+            usuarioId: u.id,
+            vencimento: somar(dados.vencimento, i, 'months'),
+            parcelamentoGrupoId: grupo,
+            parcelaAtual: i + 1,
+            parcelaTotal: total,
+          }),
+        )
+        banco.pagamentos.push(...parcelas)
+        return HttpResponse.json(parcelas.map(paraResposta), { status: 201 })
+      }
+
+      const pagamento = novoPagamento({ ...gravaveis(dados), usuarioId: u.id })
+      banco.pagamentos.push(pagamento)
+      garantirProxima(pagamento)
+      return HttpResponse.json(paraResposta(pagamento), { status: 201 })
+    }),
+  ),
+
+  http.put(
+    `${API_URL}/pagamentos/:id`,
+    autenticado(async ({ request, params }, u) => {
+      const p = doUsuario(u.id, idDe(params))
+      if (!p) return naoEncontrado('Pagamento')
+      const dados = comPadroes((await request.json()) as PagamentoEdicao)
+      const invalido = validar(dados, u.id)
+      if (invalido) return invalido
+      if (p.parcelamentoGrupoId && dados.recorrencia !== 'nenhuma')
+        return erro(400, 'VALIDACAO', 'recorrencia: parcela não pode ser recorrente.')
+      Object.assign(p, gravaveis(dados), { atualizadoEm: agoraISO() })
+      garantirProxima(p)
+      return HttpResponse.json(paraResposta(p))
+    }),
+  ),
+
+  http.patch(
+    `${API_URL}/pagamentos/:id/pagar`,
+    autenticado(async ({ request, params }, u) => {
+      const p = doUsuario(u.id, idDe(params))
+      if (!p) return naoEncontrado('Pagamento')
+      if (p.status === 'pago') return erro(409, 'JA_PAGO', 'Este pagamento já está pago.')
+      const corpo = (await request.json().catch(() => ({}))) as { dataPagamento?: string }
+      Object.assign(p, { status: 'pago', dataPagamento: corpo.dataPagamento ?? hojeISO(), atualizadoEm: agoraISO() })
+      garantirProxima(p)
+      return HttpResponse.json(paraResposta(p))
+    }),
+  ),
+
+  http.delete(
+    `${API_URL}/pagamentos/:id`,
+    autenticado(({ params }, u) => {
+      const indice = banco.pagamentos.findIndex((p) => p.id === idDe(params) && p.usuarioId === u.id)
+      if (indice < 0) return naoEncontrado('Pagamento')
+      const [apagado] = banco.pagamentos.splice(indice, 1)
+      // ON DELETE SET NULL de recorrencia_origem_id
+      banco.pagamentos.forEach((p) => {
+        if (p.recorrenciaOrigemId === apagado.id) p.recorrenciaOrigemId = null
+      })
+      return new HttpResponse(null, { status: 204 })
+    }),
+  ),
+
+  http.get(
+    `${API_URL}/relatorios/gastos`,
+    autenticado(({ request }, u) => {
+      const q = new URL(request.url).searchParams
+      const inicio = q.get('inicio') ?? ''
+      const fim = q.get('fim') ?? ''
+      const agruparPor = q.get('agruparPor') === 'categoria' ? 'categoria' : 'imovel'
+      if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
+      if (inicio > fim) return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
+
+      const noPeriodo = (d: string | null) => d !== null && d >= inicio && d <= fim
+      const grupos = new Map<string | null, { pagoCentavos: number; previstoCentavos: number }>()
+      for (const p of banco.pagamentos.filter((x) => x.usuarioId === u.id)) {
+        const pago = p.status === 'pago' && noPeriodo(p.dataPagamento)
+        const previsto = p.status === 'pendente' && noPeriodo(p.vencimento)
+        if (!pago && !previsto) continue
+        const chave = agruparPor === 'categoria' ? p.categoriaId : p.imovelId
+        const g = grupos.get(chave) ?? { pagoCentavos: 0, previstoCentavos: 0 }
+        if (pago) g.pagoCentavos += p.valorCentavos
+        if (previsto) g.previstoCentavos += p.valorCentavos
+        grupos.set(chave, g)
+      }
+
+      const referencia =
+        agruparPor === 'categoria' ? CATEGORIAS : imoveisDo(u.id).map(publicoImovel)
+      const itens = [...grupos.entries()]
+        .map(([id, valores]) => {
+          const ref = referencia.find((r) => r.id === id)
+          return { id, nome: ref?.nome ?? 'Sem imóvel', ordem: ref?.ordem ?? Infinity, ...valores }
+        })
+        .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
+        .map(({ ordem: _o, ...item }) => item)
+
+      return HttpResponse.json({
+        inicio,
+        fim,
+        agruparPor,
+        totalPagoCentavos: itens.reduce((s, i) => s + i.pagoCentavos, 0),
+        totalPrevistoCentavos: itens.reduce((s, i) => s + i.previstoCentavos, 0),
+        itens,
+      })
+    }),
+  ),
+]

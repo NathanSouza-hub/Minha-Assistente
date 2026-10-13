@@ -1,25 +1,36 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { CalendarDays, ChartColumn, House, ListChecks, Pill, Plane, ShoppingCart, Wallet } from 'lucide-react'
+import { CalendarDays, ListChecks, Pill, Plane, ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
-import { RotaProtegida, RotaVisitante } from '@/app/guardas'
-import { Cadastro } from '@/paginas/Cadastro'
-import { Entrar } from '@/paginas/Entrar'
+import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
 import { Hoje } from '@/paginas/Hoje'
 import { Mais } from '@/paginas/Mais'
 import { NaoEncontrada } from '@/paginas/NaoEncontrada'
 
+// Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
+// para o app abrir rápido no celular.
+const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
+const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
+const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
+const paginaPagamento = () =>
+  import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
+const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
+const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
+
 // Exportado separado para os testes montarem com createMemoryRouter.
 export const definicaoRotas: RouteObject[] = [
   {
     element: <RotaVisitante />,
+    hydrateFallbackElement: <Carregando />,
     children: [
-      { path: 'entrar', element: <Entrar /> },
-      { path: 'cadastro', element: <Cadastro /> },
+      { path: 'entrar', lazy: entrar },
+      { path: 'cadastro', lazy: cadastro },
     ],
   },
   {
     element: <RotaProtegida />,
+    // Mostrado se a primeira tela aberta for uma das carregadas sob demanda.
+    hydrateFallbackElement: <Carregando />,
     children: [
       {
         element: <LayoutApp />,
@@ -28,52 +39,29 @@ export const definicaoRotas: RouteObject[] = [
           {
             path: 'agenda',
             element: (
-              <EmBreve
-                titulo="Agenda"
-                icone={CalendarDays}
-                descricao="Consultas, exames, reuniões e lembretes."
-              />
+              <EmBreve titulo="Agenda" icone={CalendarDays} descricao="Consultas, exames, reuniões e lembretes." />
             ),
           },
-          {
-            path: 'pagamentos',
-            element: (
-              <EmBreve
-                titulo="Pagamentos"
-                icone={Wallet}
-                descricao="Contas, parcelas e o que vence no mês."
-              />
-            ),
-          },
+          { path: 'pagamentos', lazy: pagamentos },
+          { path: 'pagamentos/novo', lazy: paginaPagamento },
+          { path: 'pagamentos/:id', lazy: paginaPagamento },
           {
             path: 'remedios',
             element: (
-              <EmBreve
-                titulo="Remédios"
-                icone={Pill}
-                descricao="Horários de cada remédio e o que já foi tomado."
-              />
+              <EmBreve titulo="Remédios" icone={Pill} descricao="Horários de cada remédio e o que já foi tomado." />
             ),
           },
           { path: 'mais', element: <Mais /> },
           {
             path: 'rotina',
             element: (
-              <EmBreve
-                titulo="Rotina"
-                icone={ListChecks}
-                descricao="Tarefas que se repetem e o check de cada dia."
-              />
+              <EmBreve titulo="Rotina" icone={ListChecks} descricao="Tarefas que se repetem e o check de cada dia." />
             ),
           },
           {
             path: 'viagens',
             element: (
-              <EmBreve
-                titulo="Viagens"
-                icone={Plane}
-                descricao="Datas, hospedagem, transporte e passagens."
-              />
+              <EmBreve titulo="Viagens" icone={Plane} descricao="Datas, hospedagem, transporte e passagens." />
             ),
           },
           {
@@ -86,26 +74,8 @@ export const definicaoRotas: RouteObject[] = [
               />
             ),
           },
-          {
-            path: 'imoveis',
-            element: (
-              <EmBreve
-                titulo="Imóveis"
-                icone={House}
-                descricao="Os imóveis usados para separar os pagamentos."
-              />
-            ),
-          },
-          {
-            path: 'relatorio',
-            element: (
-              <EmBreve
-                titulo="Relatório de gastos"
-                icone={ChartColumn}
-                descricao="Quanto foi pago e quanto está previsto em cada período."
-              />
-            ),
-          },
+          { path: 'imoveis', lazy: imoveis },
+          { path: 'relatorio', lazy: relatorio },
           { path: '*', element: <NaoEncontrada /> },
         ],
       },

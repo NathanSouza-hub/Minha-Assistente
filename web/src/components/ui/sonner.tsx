@@ -22,8 +22,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       toastOptions={{
+        // Texto e botão "Desfazer" maiores que o padrão do sonner (13px).
         classNames: {
-          toast: "cn-toast text-base",
+          toast: "cn-toast !gap-3 !p-4",
+          title: "!text-base !font-semibold",
+          description: "!text-base",
+          actionButton: "!h-11 !rounded-lg !px-4 !text-base !font-semibold",
         },
       }}
       {...props}

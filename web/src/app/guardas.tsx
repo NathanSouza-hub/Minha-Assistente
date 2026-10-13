@@ -3,6 +3,15 @@ import { useSessao } from './sessao'
 
 export type EstadoRedirecionamento = { de?: string }
 
+/** Tela de espera enquanto a sessão ou uma tela carregada sob demanda chega. */
+export function Carregando() {
+  return (
+    <div role="status" className="grid min-h-dvh place-items-center text-lg text-muted-foreground">
+      Carregando…
+    </div>
+  )
+}
+
 /** Telas internas: sem sessão, manda para o login e volta para cá depois de entrar. */
 export function RotaProtegida() {
   const { token, carregando } = useSessao()
@@ -12,13 +21,7 @@ export function RotaProtegida() {
     const de = local.pathname + local.search
     return <Navigate to="/entrar" replace state={{ de } satisfies EstadoRedirecionamento} />
   }
-  if (carregando) {
-    return (
-      <div role="status" className="grid min-h-dvh place-items-center text-lg text-muted-foreground">
-        Carregando…
-      </div>
-    )
-  }
+  if (carregando) return <Carregando />
   return <Outlet />
 }
 

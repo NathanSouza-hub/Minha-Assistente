@@ -53,9 +53,26 @@ npm run lint                                  # oxlint
 - Rotas em `src/app/rotas.tsx` (`definicaoRotas`, reaproveitado nos testes por
   `src/test/renderizarApp.tsx`, que monta o app inteiro com `createMemoryRouter`); cada tela usa `components/layout/Pagina.tsx` (título da aba +
   cabeçalho). Áreas ainda não feitas usam `paginas/EmBreve.tsx`.
-- **MSW** (`src/mocks/handlers.ts`): cada rota nova do back-end ganha um handler que segue o
-  contrato à risca, para trocar pelo servidor real sem mexer nas telas. Os testes do cliente
-  (`src/lib/api.test.ts`) usam os mesmos handlers com `msw/node`.
+- Telas com formulário e as maiores entram com `lazy` em `rotas.tsx` (mantém o pacote principal
+  abaixo de 500 kB); `hydrateFallbackElement` mostra `Carregando` enquanto baixam.
+- **Dados** em `src/consultas/<area>.ts`: hooks do TanStack Query com as chaves em `chaves`.
+  Mutations invalidam tudo que depende delas (pagamento → listas + relatório; imóvel → também
+  pagamentos, que mostram o nome). Editar/excluir também atualizam as listas em cache na hora,
+  para a lista não mostrar o dado antigo ao voltar do formulário.
+- Filtros de lista (mês, status…) moram na URL (`useSearchParams`), não em estado.
+- **MSW** (`src/mocks/`): `banco.ts` é o "banco" em memória com dados de exemplo da Maria
+  (`maria@exemplo.com` / `uma-senha-forte`), relativos a hoje; um arquivo de handlers por área,
+  reunidos em `handlers.ts`; `util.ts` tem `autenticado()` e `erro()`. Cada rota nova do back-end
+  ganha um handler que segue o contrato e as regras do `service.js` dela à risca, para trocar
+  pelo servidor real sem mexer nas telas.
+- **Testes de tela**: `renderizarApp(rota)` monta o app inteiro com o MSW em `msw/node`;
+  `entrarComoMaria()` salva a sessão antes. Telas com data fixam o relógio com
+  `vi.useFakeTimers({ toFake: ['Date'] })` + `resetarBancoMock()` no `beforeEach` (só `Date`: o
+  userEvent precisa de timers reais). `src/test/setup.ts` tem os substitutos de APIs do navegador
+  que o Radix usa no jsdom.
+- Componentes de formulário: `Campo` (com `prefixo`, ex. "R$"), `Selecao` (`<select>` nativo, de
+  propósito), `Opcoes` (escolha única em cartões ou segmentos), `Confirmar` (antes de excluir;
+  botão `variant="perigo"`).
 - `src/components/ui/` é gerado pelo shadcn (`npx shadcn@latest add <comp>`); os tamanhos de
   botão/input foram aumentados (mín. 44px de toque) — ao adicionar componentes, mantenha isso.
 

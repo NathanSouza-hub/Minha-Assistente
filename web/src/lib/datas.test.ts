@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'vitest'
-import { dataCurta, dataPorExtenso, deDataISO, horaDe, paraDataHoraISO } from './datas'
+import {
+  dataCurta,
+  dataPorExtenso,
+  deDataISO,
+  descreverVencimento,
+  horaDe,
+  intervaloDoMes,
+  nomeDoMes,
+  paraDataHoraISO,
+  somarMeses,
+} from './datas'
 
 describe('datas sem hora', () => {
   test('não desloca o dia no fuso do Brasil', () => {
@@ -23,5 +33,32 @@ describe('data e hora', () => {
     expect(paraDataHoraISO(deDataISO('2026-10-13').set({ hour: 8, millisecond: 450 }))).toBe(
       '2026-10-13T08:00:00-03:00',
     )
+  })
+})
+
+describe('meses', () => {
+  test('intervalo do mês considera o último dia certo', () => {
+    expect(intervaloDoMes('2026-02')).toEqual({ inicio: '2026-02-01', fim: '2026-02-28' })
+    expect(intervaloDoMes('2028-02')).toEqual({ inicio: '2028-02-01', fim: '2028-02-29' })
+    expect(intervaloDoMes('2026-10')).toEqual({ inicio: '2026-10-01', fim: '2026-10-31' })
+  })
+
+  test('soma meses atravessando o ano e dá nome ao mês', () => {
+    expect(somarMeses('2026-12', 1)).toBe('2027-01')
+    expect(somarMeses('2026-01', -1)).toBe('2025-12')
+    expect(nomeDoMes('2026-10')).toBe('Outubro de 2026')
+  })
+})
+
+describe('descreverVencimento', () => {
+  test.each([
+    ['2026-10-10', 'Venceu há 3 dias'],
+    ['2026-10-12', 'Venceu ontem'],
+    ['2026-10-13', 'Vence hoje'],
+    ['2026-10-14', 'Vence amanhã'],
+    ['2026-10-20', 'Vence em 7 dias'],
+    ['2026-10-25', 'Vence 25/10'],
+  ])('%s → %s', (vencimento, esperado) => {
+    expect(descreverVencimento(vencimento, '2026-10-13')).toBe(esperado)
   })
 })
