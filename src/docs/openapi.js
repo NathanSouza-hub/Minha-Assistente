@@ -10,10 +10,10 @@ function montarOpenApi() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'App Débora — API',
+      title: 'Minha Assistente — API',
       version,
       description: [
-        'Back-end da secretária pessoal da Débora.',
+        'Back-end de uma secretária pessoal multiusuário.',
         '',
         '- JSON em camelCase; datas ISO 8601 no fuso America/Sao_Paulo.',
         '- Dinheiro em centavos inteiros (15990 = R$ 159,90).',

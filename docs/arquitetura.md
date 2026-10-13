@@ -1,7 +1,7 @@
-# App Débora — Arquitetura do back-end
+# Minha Assistente — Arquitetura do back-end
 
 Back-end de uma secretária pessoal **multiusuário**: qualquer pessoa se cadastra e cada uma vê
-apenas os próprios dados (a Débora é a primeira usuária). O front é um PWA desenvolvido
+apenas os próprios dados. O front é um PWA desenvolvido
 separadamente e depende do contrato de API descrito aqui.
 
 ## Stack

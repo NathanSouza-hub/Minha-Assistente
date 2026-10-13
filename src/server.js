@@ -3,7 +3,7 @@ const db = require('./config/db');
 const { criarApp } = require('./app');
 
 const servidor = criarApp().listen(env.PORT, () => {
-  console.log(`App Débora API ouvindo em http://localhost:${env.PORT} (docs em /docs)`);
+  console.log(`Minha Assistente API ouvindo em http://localhost:${env.PORT} (docs em /docs)`);
 });
 
 function encerrar(sinal) {

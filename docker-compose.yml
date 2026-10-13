@@ -4,19 +4,19 @@
 services:
   postgres:
     image: postgres:18-alpine
-    container_name: app-debora-postgres
+    container_name: minha-assistente-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: app_debora
-      POSTGRES_PASSWORD: app_debora_dev
-      POSTGRES_DB: app_debora
+      POSTGRES_USER: minha_assistente
+      POSTGRES_PASSWORD: minha_assistente_dev
+      POSTGRES_DB: minha_assistente
       TZ: America/Sao_Paulo
     ports:
       - "5433:5432"
     volumes:
       - postgres-dados:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app_debora -d app_debora"]
+      test: ["CMD-SHELL", "pg_isready -U minha_assistente -d minha_assistente"]
       interval: 5s
       timeout: 3s
       retries: 10

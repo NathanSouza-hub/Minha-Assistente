@@ -1,7 +1,7 @@
 {
-  "name": "app-debora-api",
+  "name": "minha-assistente-api",
   "version": "0.1.0",
-  "description": "Back-end do App Débora — secretária pessoal",
+  "description": "Back-end do Minha Assistente — secretária pessoal multiusuário",
   "private": true,
   "main": "src/server.js",
   "type": "commonjs",

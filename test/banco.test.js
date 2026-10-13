@@ -43,14 +43,14 @@ test('e-mail de usuário é único sem diferenciar maiúsculas', async () => {
 });
 
 test('pagamento não pode apontar para imóvel de outro usuário', async () => {
-  const debora = await criarUsuario('debora@exemplo.com');
+  const maria = await criarUsuario('maria@exemplo.com');
   const outra = await criarUsuario('outra@exemplo.com');
   const [imovelDaOutra] = await db('imovel').insert({ usuarioId: outra.id, nome: 'Casa' }).returning('*');
   const [categoria] = await db('categoria_pagamento').select('id').limit(1);
 
   await assert.rejects(
     db('pagamento').insert({
-      usuarioId: debora.id,
+      usuarioId: maria.id,
       descricao: 'Conta de luz',
       categoriaId: categoria.id,
       imovelId: imovelDaOutra.id,
@@ -61,7 +61,7 @@ test('pagamento não pode apontar para imóvel de outro usuário', async () => {
   );
 
   // Mesmo nome de imóvel em usuários diferentes é permitido.
-  await db('imovel').insert({ usuarioId: debora.id, nome: 'Casa' });
+  await db('imovel').insert({ usuarioId: maria.id, nome: 'Casa' });
 });
 
 test('apagar o usuário apaga os dados dele', async () => {
