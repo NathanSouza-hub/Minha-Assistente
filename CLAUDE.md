@@ -23,6 +23,10 @@ node --test --test-name-pattern="409" test/auth.test.js   # um teste pelo nome
 npm run migrate:reset         # desfaz tudo e reaplica as migrations
 ```
 
+**Deploy**: VPS com Docker Compose (`docker-compose.prod.yml`: Postgres + API + Caddy com HTTPS
+servindo o front e repassando `/api`). Passo a passo, atualização e backups em `docs/deploy.md`;
+modelo do `.env` de produção em `.env.producao.example`.
+
 Não há build nem lint configurados. Os testes usam o banco de `DATABASE_URL_TEST`, que é
 **apagado e recriado** a cada arquivo (`prepararBanco`); o nome dele precisa conter `test` e ser
 diferente de `DATABASE_URL`. Todo arquivo de teste começa com `require('./setup')`.

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vite
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { handlers } from '@/mocks/handlers'
-import { API_URL, ApiError, api, definirAoPerderSessao } from './api'
+import { API_URL, ApiError, api, definirAoPerderSessao, montarUrl } from './api'
 import { apagarToken, salvarToken } from './sessao'
 import type { Sessao } from './tipos'
 
@@ -65,5 +65,17 @@ describe('api', () => {
   test('falha de rede vira SEM_CONEXAO', async () => {
     servidor.use(http.get(`${API_URL}/saude`, () => HttpResponse.error()))
     await expect(api('/saude')).rejects.toMatchObject({ codigo: 'SEM_CONEXAO' })
+  })
+})
+
+describe('montarUrl', () => {
+  test('base absoluta (desenvolvimento) e filtros vazios ignorados', () => {
+    expect(montarUrl('/pagamentos', { status: 'pago', imovelId: '' }, 'http://localhost:3000')).toBe(
+      'http://localhost:3000/pagamentos?status=pago',
+    )
+  })
+
+  test('base relativa (produção, API no mesmo domínio em /api)', () => {
+    expect(montarUrl('/eventos/1', undefined, '/api')).toBe(`${window.location.origin}/api/eventos/1`)
   })
 })

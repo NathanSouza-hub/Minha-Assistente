@@ -1,0 +1,70 @@
+# Produção num servidor só (VPS): Postgres + API (com o agendador de lembretes) + Caddy (HTTPS e
+# front). Os valores vêm do .env do servidor (modelo: .env.producao.example). Guia: docs/deploy.md.
+#   docker compose -f docker-compose.prod.yml up -d --build
+name: minha-assistente
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: minha_assistente
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: minha_assistente
+      TZ: America/Sao_Paulo
+    volumes:
+      - postgres-dados:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minha_assistente -d minha_assistente"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Sem "ports": o banco só é visível para a API, dentro da rede do compose.
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgres://minha_assistente:${POSTGRES_PASSWORD}@postgres:5432/minha_assistente
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-30d}
+      # Front e API no mesmo domínio: o navegador não precisa de CORS.
+      CORS_ORIGINS: ""
+      UPLOADS_DIR: /app/uploads
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+    volumes:
+      - anexos:/app/uploads
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO no .env}
+      EMAIL_CERTIFICADO: ${EMAIL_CERTIFICADO:?defina EMAIL_CERTIFICADO no .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data
+      - caddy-config:/config
+
+volumes:
+  postgres-dados:
+  anexos:
+  caddy-dados:
+  caddy-config:

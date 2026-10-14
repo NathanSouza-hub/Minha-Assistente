@@ -1,0 +1,36 @@
+# Caddy: HTTPS automático (Let's Encrypt) para {$DOMINIO}, o front (PWA) e a API em /api.
+{
+	email {$EMAIL_CERTIFICADO}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# API: o prefixo /api sai antes de repassar (a API responde em /, /eventos, /docs...).
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+
+	# Front: arquivos do build; rotas do app (/agenda, /remedios...) caem no index.html.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Arquivos com hash no nome nunca mudam; o resto (index.html, sw.js, manifest) é sempre
+	# revalidado, senão a atualização do app demora a chegar nos aparelhos.
+	@comHash path /assets/*
+	header @comHash Cache-Control "public, max-age=31536000, immutable"
+	@resto {
+		not path /assets/* /api/*
+	}
+	header @resto Cache-Control "no-cache"
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

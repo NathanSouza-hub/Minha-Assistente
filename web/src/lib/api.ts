@@ -1,6 +1,7 @@
 // Cliente da API. Erros seguem o contrato { erro: { codigo, mensagem } } e viram ApiError.
 import { lerToken } from './sessao'
 
+// Em produção a API fica no mesmo domínio, em /api (deploy/Caddyfile): o endereço pode ser relativo.
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
 export class ApiError extends Error {
@@ -28,8 +29,9 @@ type Opcoes = Omit<RequestInit, 'body'> & {
   query?: Record<string, string | number | boolean | null | undefined>
 }
 
-function montarUrl(caminho: string, query?: Opcoes['query']) {
-  const url = new URL(API_URL + caminho)
+export function montarUrl(caminho: string, query?: Opcoes['query'], base = API_URL) {
+  // Base relativa ("/api") é resolvida contra o endereço do próprio app.
+  const url = new URL(base + caminho, window.location.origin)
   for (const [chave, valor] of Object.entries(query ?? {})) {
     if (valor !== undefined && valor !== null && valor !== '') url.searchParams.set(chave, String(valor))
   }
