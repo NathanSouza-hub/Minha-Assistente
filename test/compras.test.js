@@ -66,6 +66,23 @@ test('ordem: pendentes por categoria e nome, depois comprados; filtro por status
   await request(app).get('/compras').query({ comprado: 'talvez' }).set(sessao.auth).expect(400);
 });
 
+test('ordem do português: sem separar maiúsculas e com acentos no lugar', async () => {
+  const sessao = await criarSessao(app);
+  for (const [nome, categoria] of [
+    ['leite', 'Mercado'],
+    ['Arroz', 'Mercado'],
+    ['Açúcar', 'Mercado'],
+    ['Pomada', 'farmácia'],
+    ['Bananas', 'Feira'],
+  ]) {
+    await criar(sessao, { nome, categoria });
+  }
+  assert.deepEqual(
+    (await listar(sessao)).map((i) => `${i.categoria}/${i.nome}`),
+    ['farmácia/Pomada', 'Feira/Bananas', 'Mercado/Açúcar', 'Mercado/Arroz', 'Mercado/leite'],
+  );
+});
+
 test('PUT edita sem mexer no status; isolamento e exclusão', async () => {
   const item = await criar(ana, { nome: 'Café' });
   await marcar(ana, item.id).expect(200);

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { BellOff, BellRing, CalendarDays, ListChecks, Pill, Share, SquarePlus, Wallet } from 'lucide-react'
 import { Pagina } from '@/components/layout/Pagina'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,6 @@ import {
   useEstadoNotificacoes,
   useTestarNotificacao,
 } from '@/consultas/notificacoes'
-import { sincronizar } from '@/lib/notificacoes'
 
 const O_QUE_AVISA = [
   { icone: CalendarDays, texto: 'Compromissos, com a antecedência que você escolher' },
@@ -22,11 +21,6 @@ const O_QUE_AVISA = [
 export function Notificacoes() {
   const consulta = useEstadoNotificacoes()
   const estado = consulta.data
-
-  // O servidor pode ter apagado a inscrição (ex.: outra pessoa entrou neste aparelho): reenvia.
-  useEffect(() => {
-    if (estado === 'ligado') sincronizar().catch(() => {})
-  }, [estado])
 
   return (
     <Pagina titulo="Notificações">

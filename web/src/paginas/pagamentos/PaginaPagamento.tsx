@@ -1,5 +1,5 @@
 import { useEffect, useId } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -90,7 +90,6 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     register,
     control,
     handleSubmit,
-    watch,
     setError,
     setFocus,
     formState: { errors, isSubmitting },
@@ -99,11 +98,13 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     defaultValues: valoresIniciais(pagamento, vencimentoPadrao),
   })
 
-  const repeticao = watch('repeticao')
-  const jaPago = watch('jaPago')
+  const [repeticao, jaPago, valor, parcelas] = useWatch({
+    control,
+    name: ['repeticao', 'jaPago', 'valor', 'totalParcelas'],
+  })
   const parcelado = repeticao === 'parcelado'
-  const valorDigitado = paraCentavos(watch('valor'))
-  const totalParcelas = Number(watch('totalParcelas'))
+  const valorDigitado = paraCentavos(valor)
+  const totalParcelas = Number(parcelas)
 
   useEffect(() => {
     if (!editando) setFocus('descricao')

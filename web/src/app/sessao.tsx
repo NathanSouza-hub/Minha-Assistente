@@ -1,22 +1,13 @@
-// Sessão da pessoa logada: token no aparelho + dados de /auth/me.
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+// Sessão da pessoa logada: token no aparelho + dados de /auth/me. O hook fica em ./useSessao.
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api, definirAoPerderSessao } from '@/lib/api'
-import { desativar as desativarNotificacoes } from '@/lib/notificacoes'
+import { acompanharInscricao, desativar as desativarNotificacoes } from '@/lib/notificacoes'
 import { apagarToken, lerToken, salvarToken, tokenExpirado } from '@/lib/sessao'
 import type { Sessao, Usuario } from '@/lib/tipos'
+import { ContextoSessao } from './useSessao'
 
-type ValorSessao = {
-  token: string | null
-  usuario: Usuario | undefined
-  /** true enquanto há token mas /auth/me ainda não respondeu. */
-  carregando: boolean
-  entrar: (sessao: Sessao) => void
-  sair: () => void
-}
-
-const ContextoSessao = createContext<ValorSessao | null>(null)
 
 const tokenInicial = () => {
   const token = lerToken()
@@ -61,6 +52,9 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     clienteConsultas.clear()
   }, [clienteConsultas])
 
+  // Com sessão, o servidor fica sabendo da inscrição de push atual deste aparelho.
+  useEffect(() => (token ? acompanharInscricao() : undefined), [token])
+
   useEffect(() => {
     definirAoPerderSessao(() => {
       if (!lerToken()) return
@@ -76,10 +70,4 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
   )
 
   return <ContextoSessao.Provider value={valor}>{children}</ContextoSessao.Provider>
-}
-
-export function useSessao() {
-  const valor = useContext(ContextoSessao)
-  if (!valor) throw new Error('useSessao precisa estar dentro de <ProvedorSessao>.')
-  return valor
 }

@@ -68,7 +68,11 @@ export function instalarPushFalso({ permissao = 'default', resposta = 'granted',
     }
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
-      value: { getRegistrations: async () => [registro], ready: Promise.resolve(registro) },
+      // EventTarget: o app escuta as mensagens do worker (renovação da inscrição).
+      value: Object.assign(new EventTarget(), {
+        getRegistrations: async () => [registro],
+        ready: Promise.resolve(registro),
+      }),
     })
   }
 

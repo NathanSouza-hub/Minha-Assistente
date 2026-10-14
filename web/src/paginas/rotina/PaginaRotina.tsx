@@ -1,5 +1,5 @@
 import { useEffect, useId } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Check, Trash2 } from 'lucide-react'
@@ -83,12 +83,11 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     register,
     control,
     handleSubmit,
-    watch,
     setError,
     setFocus,
     formState: { errors, isSubmitting },
   } = useForm<Dados>({ resolver: zodResolver(esquema), defaultValues: iniciais(rotina) })
-  const hora = watch('hora')
+  const hora = useWatch({ control, name: 'hora' })
 
   useEffect(() => {
     if (!editando) setFocus('titulo')

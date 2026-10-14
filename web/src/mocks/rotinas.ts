@@ -81,7 +81,7 @@ export const handlersRotinas = [
     `${API_URL}/rotinas/:id/concluir`,
     autenticado(async ({ request, params }, u) => {
       const r = doUsuario(u.id, String(params.id))
-      if (!r) return naoEncontrado('Tarefa')
+      if (!r) return naoEncontrado('Tarefa', { feminino: true })
       const { data = hojeISO(), concluida = true } = (await request.json().catch(() => ({}))) as {
         data?: string
         concluida?: boolean
@@ -132,7 +132,7 @@ export const handlersRotinas = [
     `${API_URL}/rotinas/:id`,
     autenticado(async ({ request, params }, u) => {
       const r = doUsuario(u.id, String(params.id))
-      if (!r) return naoEncontrado('Tarefa')
+      if (!r) return naoEncontrado('Tarefa', { feminino: true })
       const corpo = (await request.json()) as RotinaCorpo
       const invalido = validar(corpo)
       if (invalido) return invalido
@@ -145,7 +145,7 @@ export const handlersRotinas = [
     `${API_URL}/rotinas/:id`,
     autenticado(({ params }, u) => {
       const indice = banco.rotinas.findIndex((r) => r.id === String(params.id) && r.usuarioId === u.id)
-      if (indice < 0) return naoEncontrado('Tarefa')
+      if (indice < 0) return naoEncontrado('Tarefa', { feminino: true })
       const [apagada] = banco.rotinas.splice(indice, 1)
       banco.conclusoesRotina = banco.conclusoesRotina.filter((c) => c.rotinaId !== apagada.id)
       return new HttpResponse(null, { status: 204 })

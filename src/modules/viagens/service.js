@@ -49,7 +49,7 @@ async function listar(usuarioId) {
 
 async function buscar(usuarioId, id, conexao = db) {
   const viagem = await conexao('viagem').select(COLUNAS).where({ id, usuarioId }).first();
-  if (!viagem) throw naoEncontrado('Viagem');
+  if (!viagem) throw naoEncontrado('Viagem', { feminino: true });
   const [completa] = await comAnexos(conexao, [viagem]);
   return completa;
 }
@@ -63,7 +63,7 @@ async function criar(usuarioId, dados) {
 
 async function atualizar(usuarioId, id, dados) {
   const alterados = await db('viagem').where({ id, usuarioId }).update(camposGravaveis(dados));
-  if (!alterados) throw naoEncontrado('Viagem');
+  if (!alterados) throw naoEncontrado('Viagem', { feminino: true });
   return buscar(usuarioId, id);
 }
 
@@ -73,7 +73,7 @@ async function remover(usuarioId, id) {
     .where({ 'v.id': id, 'v.usuarioId': usuarioId })
     .pluck('a.caminho');
   const apagados = await db('viagem').where({ id, usuarioId }).del();
-  if (!apagados) throw naoEncontrado('Viagem');
+  if (!apagados) throw naoEncontrado('Viagem', { feminino: true });
   // Os registros dos anexos saem em cascata; os arquivos são apagados depois do banco.
   await Promise.all(arquivos.map((caminho) => armazenamento.remover(caminho)));
 }

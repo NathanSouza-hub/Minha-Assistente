@@ -38,7 +38,7 @@ async function atualizar(usuarioId, id, dados) {
       .where({ id, usuarioId })
       .update(camposGravaveis(dados))
       .returning(COLUNAS);
-    if (!rotina) throw naoEncontrado('Rotina');
+    if (!rotina) throw naoEncontrado('Tarefa', { feminino: true });
     await cancelarLembretesPendentes(trx, id);
     return rotina;
   });
@@ -47,7 +47,7 @@ async function atualizar(usuarioId, id, dados) {
 async function remover(usuarioId, id) {
   await db.transaction(async (trx) => {
     const apagados = await trx('rotina').where({ id, usuarioId }).del();
-    if (!apagados) throw naoEncontrado('Rotina');
+    if (!apagados) throw naoEncontrado('Tarefa', { feminino: true });
     await cancelarLembretesPendentes(trx, id);
   });
 }
@@ -81,7 +81,7 @@ async function doDia(usuarioId, { data = hoje() } = {}) {
 
 async function concluir(usuarioId, id, { data = hoje(), concluida }) {
   const linha = await itens(usuarioId, data).where('t.id', id).first();
-  if (!linha) throw naoEncontrado('Rotina');
+  if (!linha) throw naoEncontrado('Tarefa', { feminino: true });
   if (!linha.diasSemana.includes(diaDaSemana(data))) {
     throw requisicaoInvalida('data: esta tarefa não está prevista para esse dia da semana.');
   }

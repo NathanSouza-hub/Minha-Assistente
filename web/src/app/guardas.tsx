@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
-import { useSessao } from './sessao'
+import { useSessao } from './useSessao'
 
 export type EstadoRedirecionamento = { de?: string }
 

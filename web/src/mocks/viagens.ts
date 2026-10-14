@@ -152,7 +152,7 @@ export const handlersViagens = [
     `${API_URL}/viagens/:id`,
     autenticado(({ params }, u) => {
       const v = doUsuario(u.id, String(params.id))
-      return v ? HttpResponse.json(publico(v)) : naoEncontrado('Viagem')
+      return v ? HttpResponse.json(publico(v)) : naoEncontrado('Viagem', { feminino: true })
     }),
   ),
 
@@ -160,7 +160,7 @@ export const handlersViagens = [
     `${API_URL}/viagens/:id`,
     autenticado(async ({ request, params }, u) => {
       const v = doUsuario(u.id, String(params.id))
-      if (!v) return naoEncontrado('Viagem')
+      if (!v) return naoEncontrado('Viagem', { feminino: true })
       const corpo = (await request.json()) as ViagemCorpo
       const invalido = validar(corpo)
       if (invalido) return invalido
@@ -173,7 +173,7 @@ export const handlersViagens = [
     `${API_URL}/viagens/:id`,
     autenticado(({ params }, u) => {
       const v = doUsuario(u.id, String(params.id))
-      if (!v) return naoEncontrado('Viagem')
+      if (!v) return naoEncontrado('Viagem', { feminino: true })
       banco.viagens.splice(banco.viagens.indexOf(v), 1)
       banco.anexosViagem = banco.anexosViagem.filter((a) => a.viagemId !== v.id)
       return new HttpResponse(null, { status: 204 })
@@ -192,7 +192,7 @@ export const handlersViagens = [
         return erro(400, 'UPLOAD_INVALIDO', 'Envie um único arquivo no campo "arquivo".')
 
       const v = doUsuario(u.id, String(params.id))
-      if (!v) return naoEncontrado('Viagem')
+      if (!v) return naoEncontrado('Viagem', { feminino: true })
       const [arquivo] = arquivos
       if (!arquivo) return erro(400, 'VALIDACAO', 'arquivo: envie o arquivo no campo "arquivo".')
 

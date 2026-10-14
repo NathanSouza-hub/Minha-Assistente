@@ -55,8 +55,8 @@ npm run lint                                  # oxlint
   do jsdom pelo do Node (o `fetch` do Node não envia o do jsdom), os arquivos são `File` de
   `'node:buffer'` e o mock lê o multipart à mão (`request.formData()` falha nesse ambiente).
 - **Compras**: tudo numa tela (`/compras`); a edição (`/compras/:id`) pega o item da lista (não
-  existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), que
-  compara como o português; o Postgres compara byte a byte, então a ordem crua da API difere.
+  existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), na mesma
+  ordem do português que a API usa (collation ICU `pt-BR-x-icu` no back-end).
   Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
   que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
   sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda.
@@ -82,7 +82,7 @@ npm run lint                                  # oxlint
 - `src/app/navegacao.ts` define as áreas; a barra inferior (celular) e a lateral (desktop) em
   `components/layout/LayoutApp.tsx` são geradas dela. No celular as áreas secundárias ficam em
   "Mais", que fica marcado quando uma delas está aberta.
-- **Sessão** (`src/app/sessao.tsx`): `useSessao()` dá `token`, `usuario` (de `/auth/me`),
+- **Sessão** (`src/app/sessao.tsx`): `useSessao()` (em `src/app/useSessao.ts`) dá `token`, `usuario` (de `/auth/me`),
   `entrar(sessao)` e `sair()`. Ambos limpam o cache do TanStack Query (aparelho compartilhado).
   Token vencido é descartado ao abrir o app; `NAO_AUTORIZADO` da API chama `sair()`.
 - Guardas em `src/app/guardas.tsx`: `RotaProtegida` manda para `/entrar` guardando a tela

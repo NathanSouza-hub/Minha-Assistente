@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useSessao } from '@/app/sessao'
+import { useSessao } from '@/app/useSessao'
 import { cn } from '@/lib/utils'
 
 /** Nome e e-mail da pessoa logada, com o botão de sair. */

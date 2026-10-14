@@ -1,8 +1,6 @@
 // Ordem da lista de compras, a do back-end (modules/compras/service.js): pendentes primeiro, por
-// categoria (sem categoria no fim) e nome; depois os comprados, do mais recente ao mais antigo.
-// Diferença: o Postgres compara texto byte a byte ("Mercado" antes de "farmácia", "Arroz" antes
-// de "Açúcar"); aqui a comparação é a do português, sem diferenciar maiúsculas nem acentos. A tela
-// sempre reordena com esta função, então não pula ao recarregar.
+// categoria (sem categoria no fim) e nome, na ordem do português; depois os comprados, do mais
+// recente ao mais antigo. A tela reordena com esta função ao marcar, sem esperar o servidor.
 import type { ItemCompra } from './tipos'
 
 const comparar = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })

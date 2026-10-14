@@ -4,7 +4,9 @@ import { banco, type UsuarioMock } from './banco'
 export const erro = (status: number, codigo: string, mensagem: string) =>
   HttpResponse.json({ erro: { codigo, mensagem } }, { status })
 
-export const naoEncontrado = (recurso: string) => erro(404, 'NAO_ENCONTRADO', `${recurso} não encontrado.`)
+// Como src/lib/erros.js do back-end: naoEncontrado('Viagem', { feminino: true }) → "Viagem não encontrada."
+export const naoEncontrado = (recurso: string, { feminino = false } = {}) =>
+  erro(404, 'NAO_ENCONTRADO', `${recurso} não ${feminino ? 'encontrada' : 'encontrado'}.`)
 
 const lerPayload = (token: string) =>
   JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { sub: string; exp: number }

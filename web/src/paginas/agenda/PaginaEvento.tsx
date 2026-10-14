@@ -1,5 +1,5 @@
 import { useEffect, useId } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Bell, Check, Repeat, Trash2 } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -75,7 +75,6 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
     register,
     control,
     handleSubmit,
-    watch,
     setError,
     setFocus,
     formState: { errors, isSubmitting },
@@ -84,13 +83,10 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
     defaultValues: valoresIniciais(evento, dataPadrao),
   })
 
-  const [modalidade, recorrencia, horaInicio, horaFim, data] = watch([
-    'modalidade',
-    'recorrencia',
-    'horaInicio',
-    'horaFim',
-    'data',
-  ])
+  const [modalidade, recorrencia, horaInicio, horaFim, data] = useWatch({
+    control,
+    name: ['modalidade', 'recorrencia', 'horaInicio', 'horaFim', 'data'],
+  })
   const online = ONLINE.includes(modalidade as never)
   const recorrente = recorrencia !== 'nenhuma'
 

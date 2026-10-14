@@ -8,8 +8,9 @@ class AppError extends Error {
   }
 }
 
-const naoEncontrado = (recurso = 'Recurso') =>
-  new AppError(404, 'NAO_ENCONTRADO', `${recurso} não encontrado.`);
+// naoEncontrado('Viagem', { feminino: true }) → "Viagem não encontrada."
+const naoEncontrado = (recurso = 'Recurso', { feminino = false } = {}) =>
+  new AppError(404, 'NAO_ENCONTRADO', `${recurso} não ${feminino ? 'encontrada' : 'encontrado'}.`);
 
 const requisicaoInvalida = (mensagem) => new AppError(400, 'VALIDACAO', mensagem);
 

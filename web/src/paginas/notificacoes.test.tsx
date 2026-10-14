@@ -48,7 +48,6 @@ describe('tela Notificações', () => {
     const usuario = userEvent.setup()
     renderizarApp('/notificacoes')
     expect(await screen.findByRole('heading', { name: 'Ligadas neste aparelho' })).toBeInTheDocument()
-    // Ao abrir, reenvia a inscrição (o servidor pode tê-la apagado).
     await expect.poll(inscricoesDaMaria).toEqual([ENDPOINT_FALSO])
 
     await usuario.click(screen.getByRole('button', { name: 'Enviar notificação de teste' }))
@@ -144,4 +143,31 @@ test('sair da conta desliga as notificações do aparelho', async () => {
   expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
   await expect.poll(() => inscricao.unsubscribe.mock.calls.length).toBe(1)
   expect(inscricoesDaMaria()).toEqual([])
+})
+
+describe('inscrição sempre em dia no servidor', () => {
+  test('ao abrir o app com sessão, reenvia a inscrição do aparelho', async () => {
+    instalarPushFalso({ inscrito: true })
+    renderizarApp('/')
+    // O servidor tinha apagado (ex.: outra pessoa entrou neste aparelho): volta para a Maria.
+    await expect.poll(inscricoesDaMaria).toEqual([ENDPOINT_FALSO])
+  })
+
+  test('quando o navegador renova a inscrição, o aviso do service worker faz reenviar', async () => {
+    instalarPushFalso({ inscrito: true })
+    renderizarApp('/')
+    await expect.poll(inscricoesDaMaria).toEqual([ENDPOINT_FALSO])
+    banco.inscricoesPush.length = 0
+
+    navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: { tipo: 'inscricao-push-mudou' } }))
+    await expect.poll(inscricoesDaMaria).toEqual([ENDPOINT_FALSO])
+  })
+
+  test('sem sessão não envia nada', async () => {
+    localStorage.clear()
+    instalarPushFalso({ inscrito: true })
+    renderizarApp('/entrar')
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
+    expect(banco.inscricoesPush).toEqual([])
+  })
 })

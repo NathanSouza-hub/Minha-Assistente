@@ -108,6 +108,22 @@ export async function sincronizar() {
   if (inscricao) await api('/notificacoes/inscricoes', { method: 'POST', corpo: inscricao.toJSON() })
 }
 
+/**
+ * Mantém o servidor com a inscrição atual deste aparelho enquanto há sessão: reenvia ao abrir o
+ * app e quando o service worker avisa que o navegador renovou a inscrição. Devolve a limpeza.
+ */
+export function acompanharInscricao() {
+  if (!temSuporte()) return () => {}
+  const reenviar = () => void sincronizar().catch(() => {})
+  const aoReceber = (evento: MessageEvent) => {
+    if (evento.data?.tipo === 'inscricao-push-mudou') reenviar()
+  }
+  const sw = navigator.serviceWorker
+  sw.addEventListener('message', aoReceber)
+  reenviar()
+  return () => sw.removeEventListener('message', aoReceber)
+}
+
 // ---- Convite (pedir no momento certo, uma vez por aparelho) ----
 
 const CHAVE_CONVITE = 'minha-assistente:convite-notificacoes'

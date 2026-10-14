@@ -35,3 +35,19 @@ self.addEventListener('notificationclick', (evento) => {
     }),
   )
 })
+
+// O navegador renovou (ou cancelou) a inscrição. O worker não tem o token da sessão para avisar o
+// servidor: ele se reinscreve com a mesma chave e pede às janelas abertas que reenviem
+// (src/lib/notificacoes.ts → acompanharInscricao). Sem janela aberta, o app reenvia ao abrir.
+self.addEventListener('pushsubscriptionchange', (evento) => {
+  evento.waitUntil(
+    (async () => {
+      const chave = evento.oldSubscription?.options?.applicationServerKey
+      if (chave && !evento.newSubscription) {
+        await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chave })
+      }
+      const janelas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      for (const janela of janelas) janela.postMessage({ tipo: 'inscricao-push-mudou' })
+    })(),
+  )
+})

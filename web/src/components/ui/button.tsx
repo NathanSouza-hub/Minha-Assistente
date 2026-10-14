@@ -65,4 +65,6 @@ function Button({
   )
 }
 
+// Padrão do shadcn: as variantes são usadas também em <label> e <Link> com cara de botão.
+// oxlint-disable-next-line react/only-export-components
 export { Button, buttonVariants }
