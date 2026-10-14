@@ -3,12 +3,12 @@ import { Plane, ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
-import { Hoje } from '@/paginas/Hoje'
 import { Mais } from '@/paginas/Mais'
 import { NaoEncontrada } from '@/paginas/NaoEncontrada'
 
 // Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
 // para o app abrir rápido no celular.
+const hoje = () => import('@/paginas/Hoje').then((m) => ({ Component: m.Hoje }))
 const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
 const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
 const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
@@ -44,7 +44,7 @@ export const definicaoRotas: RouteObject[] = [
       {
         element: <LayoutApp />,
         children: [
-          { index: true, element: <Hoje /> },
+          { index: true, lazy: hoje },
           { path: 'agenda', lazy: agenda },
           { path: 'agenda/novo', lazy: paginaEvento },
           { path: 'agenda/:id', lazy: paginaEvento },

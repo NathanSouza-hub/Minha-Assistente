@@ -43,6 +43,11 @@ npm run lint                                  # oxlint
   `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
   na hora e volta atrás se o servidor recusar.
 - **Rotina**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista (`useRotinas`).
+- **Painel Hoje** (`GET /hoje`, `consultas/hoje.ts`) reaproveita os itens das áreas (`ItemEvento`,
+  `ItemDose`, `ItemTarefa`, `ItemPagamento`). As marcações otimistas de dose e tarefa mudam as duas
+  caches (a da área e a do painel, via `ajustarPainel`) e toda mutação de compromisso, remédio,
+  rotina ou pagamento chama `invalidarPainel`. Ao criar uma área nova que apareça no painel, faça o
+  mesmo.
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

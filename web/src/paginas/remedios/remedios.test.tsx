@@ -45,7 +45,9 @@ describe('doses do dia', () => {
     expect(within(manha).getByText('Omeprazol')).toBeInTheDocument()
     expect(within(manha).getByText('Tomado às 07:05')).toBeInTheDocument()
     expect(within(screen.getByRole('region', { name: 'Noite' })).getByText('Losartana')).toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Remédio da semana' })).getByText('Vitamina D')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('region', { name: 'Remédio da semana' })).getByText('Vitamina D'),
+    ).toBeInTheDocument()
     // Dipirona está pausada
     expect(screen.queryByText('Dipirona')).not.toBeInTheDocument()
   })
@@ -63,7 +65,10 @@ describe('doses do dia', () => {
   test('se o servidor recusar, a marcação volta atrás e a pessoa é avisada', async () => {
     servidor.use(
       http.post(`${API_URL}/medicamentos/registros`, () =>
-        HttpResponse.json({ erro: { codigo: 'ERRO_INTERNO', mensagem: 'Erro inesperado no servidor.' } }, { status: 500 }),
+        HttpResponse.json(
+          { erro: { codigo: 'ERRO_INTERNO', mensagem: 'Erro inesperado no servidor.' } },
+          { status: 500 },
+        ),
       ),
     )
     const usuario = userEvent.setup()
@@ -138,7 +143,9 @@ describe('cadastro de remédio', () => {
     await usuario.click(await screen.findByLabelText('Em uso'))
     expect(screen.getByText(/Pausado: some das doses do dia/)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
-    expect(within(await screen.findByRole('link', { name: /Vitamina D/ })).getByText('Pausado')).toBeInTheDocument()
+    expect(
+      within(await screen.findByRole('link', { name: /Vitamina D/ })).getByText('Pausado'),
+    ).toBeInTheDocument()
     await usuario.click(screen.getByRole('radio', { name: 'Doses do dia' }))
     expect(await screen.findByText('1 de 3 doses tomadas')).toBeInTheDocument()
   })
@@ -148,7 +155,9 @@ describe('cadastro de remédio', () => {
     renderizarApp('/remedios?visao=lista')
     await usuario.click(await screen.findByRole('link', { name: /Dipirona/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Excluir remédio' }))
-    await usuario.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir remédio' }))
+    await usuario.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir remédio' }),
+    )
     expect(await screen.findByText('Dipirona excluído.')).toBeInTheDocument()
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()

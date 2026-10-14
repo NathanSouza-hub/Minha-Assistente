@@ -1,6 +1,7 @@
 // Consultas e mutações de pagamentos, imóveis, categorias e relatório de gastos.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { invalidarPainel } from './hoje'
 import type {
   AgruparGastosPor,
   CategoriaPagamento,
@@ -61,6 +62,7 @@ function useInvalidarPagamentos() {
     Promise.all([
       cliente.invalidateQueries({ queryKey: chaves.pagamentos }),
       cliente.invalidateQueries({ queryKey: chaves.relatorio }),
+      invalidarPainel(cliente),
     ])
 }
 
@@ -71,7 +73,10 @@ function useInvalidarPagamentos() {
 function useAtualizarListas() {
   const cliente = useQueryClient()
   return (mudar: (lista: Pagamento[]) => Pagamento[]) =>
-    cliente.setQueriesData<Pagamento[]>({ queryKey: ['pagamentos', 'lista'] }, (lista) => lista && mudar(lista))
+    cliente.setQueriesData<Pagamento[]>(
+      { queryKey: ['pagamentos', 'lista'] },
+      (lista) => lista && mudar(lista),
+    )
 }
 
 export function useCriarPagamento() {
@@ -143,6 +148,7 @@ function useInvalidarImoveis() {
       cliente.invalidateQueries({ queryKey: chaves.imoveis }),
       cliente.invalidateQueries({ queryKey: chaves.pagamentos }),
       cliente.invalidateQueries({ queryKey: chaves.relatorio }),
+      invalidarPainel(cliente),
     ])
 }
 

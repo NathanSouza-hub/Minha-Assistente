@@ -109,6 +109,29 @@ const normalizarInstantes = (c: EventoCorpo): EventoCorpo => ({
 const doUsuario = (usuarioId: string, id: string) =>
   banco.eventos.find((e) => e.id === id && e.usuarioId === usuarioId)
 
+/** Ocorrências entre os dias (inclusive), séries expandidas — o mesmo que listar() no back-end. */
+export function ocorrenciasDoPeriodo(
+  usuarioId: string,
+  primeiroDia: string,
+  ultimoDia: string,
+  tipo?: string | null,
+) {
+  const de = DateTime.fromISO(primeiroDia, { zone: FUSO }).startOf('day')
+  const ate = DateTime.fromISO(ultimoDia, { zone: FUSO }).plus({ days: 1 }).startOf('day')
+  return banco.eventos
+    .filter((e) => e.usuarioId === usuarioId && (!tipo || e.tipo === tipo))
+    .flatMap((e) => {
+      const inicio = instante(e.inicio)
+      const duracaoMs = e.fim ? instante(e.fim).diff(inicio).as('milliseconds') : 0
+      return expandir(inicio, duracaoMs, e.recorrencia, e.recorrenciaFim, de, ate).map((o) => ({
+        ...serie(e),
+        inicio: paraDataHoraISO(o.inicio),
+        fim: e.fim ? paraDataHoraISO(o.fim) : null,
+      }))
+    })
+    .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.titulo.localeCompare(b.titulo))
+}
+
 export const handlersEventos = [
   http.get(
     `${API_URL}/eventos`,
@@ -120,21 +143,7 @@ export const handlersEventos = [
         return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
       if (DateTime.fromISO(ultimoDia).diff(DateTime.fromISO(primeiroDia), 'days').days >= 366)
         return erro(400, 'VALIDACAO', 'fim: O período pode ter no máximo 366 dias.')
-      const de = DateTime.fromISO(primeiroDia, { zone: FUSO }).startOf('day')
-      const ate = DateTime.fromISO(ultimoDia, { zone: FUSO }).plus({ days: 1 }).startOf('day')
-
-      const ocorrencias = banco.eventos
-        .filter((e) => e.usuarioId === u.id && (!q.get('tipo') || e.tipo === q.get('tipo')))
-        .flatMap((e) => {
-          const inicio = instante(e.inicio)
-          const duracaoMs = e.fim ? instante(e.fim).diff(inicio).as('milliseconds') : 0
-          return expandir(inicio, duracaoMs, e.recorrencia, e.recorrenciaFim, de, ate).map((o) => ({
-            ...serie(e),
-            inicio: paraDataHoraISO(o.inicio),
-            fim: e.fim ? paraDataHoraISO(o.fim) : null,
-          }))
-        })
-        .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.titulo.localeCompare(b.titulo))
+      const ocorrencias = ocorrenciasDoPeriodo(u.id, primeiroDia, ultimoDia, q.get('tipo'))
       return HttpResponse.json(ocorrencias)
     }),
   ),

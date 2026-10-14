@@ -32,7 +32,10 @@ describe('tarefas do dia', () => {
     renderizarApp('/rotina')
     expect(await screen.findByText('1 de 4 tarefas feitas')).toBeInTheDocument()
     const lista = screen.getByRole('list', { name: 'Tarefas do dia' })
-    expect(within(lista).getByRole('checkbox', { name: /Ler e-mails/ })).toHaveAttribute('aria-checked', 'true')
+    expect(within(lista).getByRole('checkbox', { name: /Ler e-mails/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
     expect(within(lista).getByText('Feita às 08:40')).toBeInTheDocument()
     expect(within(lista).getByText('Qualquer hora')).toBeInTheDocument()
     // Pausada e de domingo não aparecem
@@ -54,7 +57,10 @@ describe('tarefas do dia', () => {
   test('erro do servidor desfaz a marcação', async () => {
     servidor.use(
       http.post(`${API_URL}/rotinas/:id/concluir`, () =>
-        HttpResponse.json({ erro: { codigo: 'ERRO_INTERNO', mensagem: 'Erro inesperado no servidor.' } }, { status: 500 }),
+        HttpResponse.json(
+          { erro: { codigo: 'ERRO_INTERNO', mensagem: 'Erro inesperado no servidor.' } },
+          { status: 500 },
+        ),
       ),
     )
     const usuario = userEvent.setup()
@@ -129,11 +135,15 @@ describe('cadastro de tarefa', () => {
     await usuario.click(await screen.findByRole('link', { name: /Regar as plantas/ }))
     await usuario.click(await screen.findByLabelText('Na rotina'))
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
-    expect(within(await screen.findByRole('link', { name: /Regar as plantas/ })).getByText('Pausada')).toBeInTheDocument()
+    expect(
+      within(await screen.findByRole('link', { name: /Regar as plantas/ })).getByText('Pausada'),
+    ).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('link', { name: /Regar as plantas/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Excluir tarefa' }))
-    await usuario.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir tarefa' }))
+    await usuario.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir tarefa' }),
+    )
     expect(await screen.findByText('Tarefa excluída.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Regar as plantas/ })).not.toBeInTheDocument()
   })

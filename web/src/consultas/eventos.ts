@@ -1,6 +1,7 @@
 // Consultas e mutações da agenda.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { invalidarPainel } from './hoje'
 import type { Evento, EventoCorpo, FiltrosEvento } from '@/lib/tipos'
 
 export const chavesEventos = {
@@ -27,7 +28,8 @@ export const useEvento = (id: string | undefined) =>
 
 function useInvalidarEventos() {
   const cliente = useQueryClient()
-  return () => cliente.invalidateQueries({ queryKey: chavesEventos.todos })
+  return () =>
+    Promise.all([cliente.invalidateQueries({ queryKey: chavesEventos.todos }), invalidarPainel(cliente)])
 }
 
 export function useSalvarEvento() {

@@ -71,18 +71,21 @@ function dose(m: MedicamentoMock, h: HorarioRemedio, data: string): DoseDoDia {
 const doUsuario = (usuarioId: string, id: string) =>
   banco.medicamentos.find((m) => m.id === id && m.usuarioId === usuarioId)
 
+/** Doses do dia: diários + semanais do dia da semana, só ativos — o mesmo que doDia() no back-end. */
+export function dosesDoDia(usuarioId: string, data: string) {
+  const dia = diaDaSemana(data)
+  return itensDoDia(usuarioId, data)
+    .filter(({ m, h }) => m.ativo && (h.periodo !== 'semanal' || h.diaSemana === dia))
+    .map(({ item }) => item)
+}
+
 export const handlersMedicamentos = [
   // Rotas fixas antes de /:id, como no back-end.
   http.get(
     `${API_URL}/medicamentos/hoje`,
     autenticado(({ request }, u) => {
       const data = new URL(request.url).searchParams.get('data') ?? hojeISO()
-      const dia = diaDaSemana(data)
-      return HttpResponse.json(
-        itensDoDia(u.id, data)
-          .filter(({ m, h }) => m.ativo && (h.periodo !== 'semanal' || h.diaSemana === dia))
-          .map(({ item }) => item),
-      )
+      return HttpResponse.json(dosesDoDia(u.id, data))
     }),
   ),
 

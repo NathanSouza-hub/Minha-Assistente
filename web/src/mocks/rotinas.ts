@@ -59,18 +59,21 @@ const gravaveis = (c: RotinaCorpo) => ({
 const doUsuario = (usuarioId: string, id: string) =>
   banco.rotinas.find((r) => r.id === id && r.usuarioId === usuarioId)
 
+/** Tarefas ativas do dia da semana — o mesmo que doDia() no back-end. */
+export function tarefasDoDia(usuarioId: string, data: string) {
+  const dia = diaDaSemana(data)
+  return banco.rotinas
+    .filter((r) => r.usuarioId === usuarioId && r.ativo && r.diasSemana.includes(dia))
+    .sort(ordenar)
+    .map((r) => tarefa(r, data))
+}
+
 export const handlersRotinas = [
   http.get(
     `${API_URL}/rotinas/hoje`,
     autenticado(({ request }, u) => {
       const data = new URL(request.url).searchParams.get('data') ?? hojeISO()
-      const dia = diaDaSemana(data)
-      return HttpResponse.json(
-        banco.rotinas
-          .filter((r) => r.usuarioId === u.id && r.ativo && r.diasSemana.includes(dia))
-          .sort(ordenar)
-          .map((r) => tarefa(r, data)),
-      )
+      return HttpResponse.json(tarefasDoDia(u.id, data))
     }),
   ),
 

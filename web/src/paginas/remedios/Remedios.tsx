@@ -1,4 +1,4 @@
-import { CircleCheck, Pill, Plus, Undo2 } from 'lucide-react'
+import { Pill, Plus } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -7,10 +7,11 @@ import { Progresso } from '@/components/Progresso'
 import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useDosesDoDia, useMedicamentos, useRegistrarDose } from '@/consultas/medicamentos'
-import { hojeISO, horaDe } from '@/lib/datas'
-import type { DoseDoDia, PeriodoRemedio } from '@/lib/tipos'
+import { useDosesDoDia, useMedicamentos } from '@/consultas/medicamentos'
+import { hojeISO } from '@/lib/datas'
+import type { PeriodoRemedio } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { ItemDose } from './ItemDose'
 import { descreverHorario } from './textos'
 
 type Visao = 'hoje' | 'lista'
@@ -141,56 +142,6 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
         </>
       )}
     </>
-  )
-}
-
-function ItemDose({ dose: d, futuro }: { dose: DoseDoDia; futuro: boolean }) {
-  const registrar = useRegistrarDose(d.data)
-  return (
-    <li
-      className={cn(
-        'flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center',
-        d.tomado && 'bg-secondary/60',
-      )}
-    >
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="text-lg font-bold">
-          {d.nome}
-          {d.hora && <span className="ml-2 font-semibold text-muted-foreground tabular-nums">{d.hora}</span>}
-        </p>
-        {d.dose && <p className="text-base">{d.dose}</p>}
-        {d.observacoes && <p className="text-base text-muted-foreground">{d.observacoes}</p>}
-      </div>
-      {d.tomado ? (
-        <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <p className="flex items-center gap-1.5 font-semibold text-primary">
-            <CircleCheck className="size-6" aria-hidden />
-            {d.tomadoEm ? `Tomado às ${horaDe(d.tomadoEm)}` : 'Tomado'}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => registrar.mutate({ horarioId: d.horarioId, tomado: false })}
-            aria-label={`Desfazer: ${d.nome} não foi tomado`}
-          >
-            <Undo2 aria-hidden />
-            Desfazer
-          </Button>
-        </div>
-      ) : futuro ? (
-        <p className="text-base text-muted-foreground">Ainda não chegou o dia.</p>
-      ) : (
-        <Button
-          size="lg"
-          onClick={() => registrar.mutate({ horarioId: d.horarioId, tomado: true })}
-          aria-label={`Tomei ${d.nome}`}
-          className="w-full sm:w-auto"
-        >
-          <CircleCheck aria-hidden />
-          Tomei
-        </Button>
-      )}
-    </li>
   )
 }
 

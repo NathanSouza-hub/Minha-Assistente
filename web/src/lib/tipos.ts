@@ -190,3 +190,26 @@ export type TarefaDoDia = {
   concluida: boolean
   concluidaEm: string | null
 }
+
+/** GET /hoje: cada lista no mesmo formato do seu módulo. */
+export type PainelHoje = {
+  data: string
+  resumo: {
+    eventos: number
+    remediosPendentes: number
+    tarefasPendentes: number
+    pagamentosVencidos: number
+    pagamentosAVencer: number
+  }
+  eventos: Evento[]
+  medicamentos: DoseDoDia[]
+  rotina: TarefaDoDia[]
+  pagamentos: {
+    /** Pendentes com vencimento antes do dia. */
+    vencidos: Pagamento[]
+    /** Pendentes que vencem do dia até 7 dias depois. */
+    aVencer: Pagamento[]
+    totalVencidoCentavos: number
+    totalAVencerCentavos: number
+  }
+}

@@ -1,6 +1,7 @@
 // Consultas e mutações da rotina.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { ajustarPainel, chavesHoje, invalidarPainel } from './hoje'
 import { agora, paraDataHoraISO } from '@/lib/datas'
 import type { Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
 
@@ -23,22 +24,31 @@ export const useTarefasDoDia = (data: string) =>
 export function useConcluirTarefa(data: string) {
   const cliente = useQueryClient()
   const chave = chavesRotina.doDia(data)
-  const trocar = (rotinaId: string, mudar: (t: TarefaDoDia) => TarefaDoDia) =>
-    cliente.setQueryData<TarefaDoDia[]>(chave, (lista) =>
-      lista?.map((t) => (t.rotinaId === rotinaId ? mudar(t) : t)),
-    )
+  // A mesma tarefa aparece em Rotina e no painel Hoje: as duas telas mudam juntas.
+  const trocar = (rotinaId: string, mudar: (t: TarefaDoDia) => TarefaDoDia) => {
+    const aplicar = (lista: TarefaDoDia[]) => lista.map((t) => (t.rotinaId === rotinaId ? mudar(t) : t))
+    cliente.setQueryData<TarefaDoDia[]>(chave, (lista) => lista && aplicar(lista))
+    ajustarPainel(cliente, data, (p) => ({ ...p, rotina: aplicar(p.rotina) }))
+  }
 
   return useMutation({
     mutationFn: ({ rotinaId, concluida }: { rotinaId: string; concluida: boolean }) =>
       api<TarefaDoDia>(`/rotinas/${rotinaId}/concluir`, { method: 'POST', corpo: { data, concluida } }),
     onMutate: async ({ rotinaId, concluida }) => {
-      await cliente.cancelQueries({ queryKey: chave })
+      await Promise.all([
+        cliente.cancelQueries({ queryKey: chave }),
+        cliente.cancelQueries({ queryKey: chavesHoje.dia(data) }),
+      ])
       const anterior = cliente.getQueryData<TarefaDoDia[]>(chave)
       trocar(rotinaId, (t) => ({ ...t, concluida, concluidaEm: concluida ? paraDataHoraISO(agora()) : null }))
-      return { anterior }
+      return { anterior, rotinaId, concluidaAntes: !concluida }
     },
-    onError: (_erro, _vars, contexto) => cliente.setQueryData(chave, contexto?.anterior),
+    onError: (_erro, _vars, contexto) => {
+      cliente.setQueryData(chave, contexto?.anterior)
+      if (contexto) trocar(contexto.rotinaId, (t) => ({ ...t, concluida: contexto.concluidaAntes }))
+    },
     onSuccess: (atualizada) => trocar(atualizada.rotinaId, () => atualizada),
+    onSettled: () => invalidarPainel(cliente),
   })
 }
 
@@ -59,7 +69,10 @@ export function useSalvarRotina() {
             ? lista.map((r) => (r.id === salva.id ? salva : r))
             : [...lista, salva]),
       )
-      return cliente.invalidateQueries({ queryKey: chavesRotina.todos })
+      return Promise.all([
+        cliente.invalidateQueries({ queryKey: chavesRotina.todos }),
+        invalidarPainel(cliente),
+      ])
     },
   })
 }
@@ -70,7 +83,10 @@ export function useExcluirRotina() {
     mutationFn: (id: string) => api<void>(`/rotinas/${id}`, { method: 'DELETE' }),
     onSuccess: (_r, id) => {
       cliente.setQueryData<Rotina[]>(chavesRotina.lista, (lista) => lista?.filter((r) => r.id !== id))
-      return cliente.invalidateQueries({ queryKey: chavesRotina.todos })
+      return Promise.all([
+        cliente.invalidateQueries({ queryKey: chavesRotina.todos }),
+        invalidarPainel(cliente),
+      ])
     },
   })
 }

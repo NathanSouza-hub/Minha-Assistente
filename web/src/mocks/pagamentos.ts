@@ -15,7 +15,11 @@ const imoveisDo = (usuarioId: string) =>
     .filter((i) => i.usuarioId === usuarioId)
     .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
 
-const publicoImovel = ({ id, nome, ordem }: { id: string; nome: string; ordem: number }) => ({ id, nome, ordem })
+const publicoImovel = ({ id, nome, ordem }: { id: string; nome: string; ordem: number }) => ({
+  id,
+  nome,
+  ordem,
+})
 
 const nomeRepetido = (usuarioId: string, nome: string, exceto?: string) =>
   banco.imoveis.some((i) => i.usuarioId === usuarioId && i.nome === nome && i.id !== exceto)
@@ -40,7 +44,9 @@ const ordenar = (a: PagamentoMock, b: PagamentoMock) =>
   a.criadoEm.localeCompare(b.criadoEm)
 
 const somar = (data: string, quantidade: number, unidade: 'months' | 'years') =>
-  deDataISO(data).plus({ [unidade]: quantidade }).toISODate()!
+  deDataISO(data)
+    .plus({ [unidade]: quantidade })
+    .toISODate()!
 
 /** Mesmo cálculo de garantirProxima() no back-end: a partir do início da série. */
 function garantirProxima(p: PagamentoMock) {
@@ -112,6 +118,21 @@ const gravaveis = (d: PagamentoEdicao) => ({
 const doUsuario = (usuarioId: string, id: string) =>
   banco.pagamentos.find((p) => p.id === id && p.usuarioId === usuarioId)
 
+type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imovelId', string | null>>
+
+/** Mesmo que listar() no back-end: filtros pelo vencimento, em ordem de vencimento. */
+export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
+  return banco.pagamentos
+    .filter((p) => p.usuarioId === usuarioId)
+    .filter((p) => !f.inicio || p.vencimento >= f.inicio)
+    .filter((p) => !f.fim || p.vencimento <= f.fim)
+    .filter((p) => !f.status || p.status === f.status)
+    .filter((p) => !f.categoriaId || p.categoriaId === f.categoriaId)
+    .filter((p) => !f.imovelId || p.imovelId === f.imovelId)
+    .sort(ordenar)
+    .map(paraResposta)
+}
+
 export const handlersPagamentos = [
   http.get(
     `${API_URL}/categorias-pagamento`,
@@ -172,15 +193,15 @@ export const handlersPagamentos = [
     `${API_URL}/pagamentos`,
     autenticado(({ request }, u) => {
       const q = new URL(request.url).searchParams
-      const lista = banco.pagamentos
-        .filter((p) => p.usuarioId === u.id)
-        .filter((p) => !q.get('inicio') || p.vencimento >= q.get('inicio')!)
-        .filter((p) => !q.get('fim') || p.vencimento <= q.get('fim')!)
-        .filter((p) => !q.get('status') || p.status === q.get('status'))
-        .filter((p) => !q.get('categoriaId') || p.categoriaId === q.get('categoriaId'))
-        .filter((p) => !q.get('imovelId') || p.imovelId === q.get('imovelId'))
-        .sort(ordenar)
-      return HttpResponse.json(lista.map(paraResposta))
+      return HttpResponse.json(
+        listarPagamentos(u.id, {
+          inicio: q.get('inicio'),
+          fim: q.get('fim'),
+          status: q.get('status'),
+          categoriaId: q.get('categoriaId'),
+          imovelId: q.get('imovelId'),
+        }),
+      )
     }),
   ),
 
@@ -253,7 +274,11 @@ export const handlersPagamentos = [
       if (!p) return naoEncontrado('Pagamento')
       if (p.status === 'pago') return erro(409, 'JA_PAGO', 'Este pagamento já está pago.')
       const corpo = (await request.json().catch(() => ({}))) as { dataPagamento?: string }
-      Object.assign(p, { status: 'pago', dataPagamento: corpo.dataPagamento ?? hojeISO(), atualizadoEm: agoraISO() })
+      Object.assign(p, {
+        status: 'pago',
+        dataPagamento: corpo.dataPagamento ?? hojeISO(),
+        atualizadoEm: agoraISO(),
+      })
       garantirProxima(p)
       return HttpResponse.json(paraResposta(p))
     }),
@@ -296,8 +321,7 @@ export const handlersPagamentos = [
         grupos.set(chave, g)
       }
 
-      const referencia =
-        agruparPor === 'categoria' ? CATEGORIAS : imoveisDo(u.id).map(publicoImovel)
+      const referencia = agruparPor === 'categoria' ? CATEGORIAS : imoveisDo(u.id).map(publicoImovel)
       const itens = [...grupos.entries()]
         .map(([id, valores]) => {
           const ref = referencia.find((r) => r.id === id)
