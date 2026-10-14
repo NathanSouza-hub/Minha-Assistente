@@ -10,6 +10,7 @@ const modulos = [
   require('../modules/eventos/docs'),
   require('../modules/medicamentos/docs'),
   require('../modules/rotinas/docs'),
+  require('../modules/hoje/docs'),
 ];
 
 function montarOpenApi() {

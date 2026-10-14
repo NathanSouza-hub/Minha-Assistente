@@ -104,6 +104,12 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     - `POST /rotinas/:id/concluir` `{ data?, concluida? }` responde o item; idempotente;
       `concluida: false` desfaz; dia fora de `diasSemana` → `400`.
 
+14. **Painel Hoje (etapa 8)**: `GET /hoje?data=` (padrão hoje) responde
+    `{ data, resumo, eventos, medicamentos, rotina, pagamentos: { vencidos, aVencer,
+    totalVencidoCentavos, totalAVencerCentavos } }`. Cada lista tem o mesmo formato do seu módulo;
+    `aVencer` = pendentes com vencimento do dia até 7 dias depois; `resumo` traz as contagens
+    (`eventos`, `remediosPendentes`, `tarefasPendentes`, `pagamentosVencidos`, `pagamentosAVencer`).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
