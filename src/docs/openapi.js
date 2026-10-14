@@ -11,6 +11,7 @@ const modulos = [
   require('../modules/medicamentos/docs'),
   require('../modules/rotinas/docs'),
   require('../modules/hoje/docs'),
+  require('../modules/viagens/docs'),
 ];
 
 function montarOpenApi() {

@@ -72,8 +72,9 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 ## Próximas etapas
 
 Prontos: `/auth`, `/imoveis`, `/categorias-pagamento`, `/pagamentos`, `/relatorios/gastos`,
-`/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos).
-Faltam (tabelas já nas migrations): viagens, compras e notificações. Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
+`/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
+`/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
+temporária definida em `test/setup.js`). Faltam (tabelas já nas migrations): compras e notificações. Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
 em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes. Os
 lembretes (agendador a cada minuto, `lembrete_envio`, canais em `src/lembretes/canais/`, Web Push
 com VAPID) seguem o desenho da seção "Lembretes" de `docs/arquitetura.md`.

@@ -110,6 +110,15 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     `aVencer` = pendentes com vencimento do dia até 7 dias depois; `resumo` traz as contagens
     (`eventos`, `remediosPendentes`, `tarefasPendentes`, `pagamentosVencidos`, `pagamentosAVencer`).
 
+15. **Viagens (etapa 9)**:
+    - Viagem traz `anexos: [{ id, nomeOriginal, mimeType, tamanhoBytes, criadoEm }]`; listagem
+      com a ida mais recente primeiro.
+    - Upload: o tipo é detectado pelo **conteúdo** (PDF, JPG, PNG, WEBP, HEIC), não pelo
+      Content-Type; até 10 MB e 20 anexos por viagem. Erros: `413 ARQUIVO_GRANDE_DEMAIS`,
+      `415 TIPO_NAO_SUPORTADO`, `409 LIMITE_ANEXOS`, `400 UPLOAD_INVALIDO` (campo errado).
+    - Arquivo salvo com nome aleatório em `UPLOADS_DIR` (`src/lib/armazenamento.js`, trocável por
+      S3); download sempre como `attachment` com o nome original.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
