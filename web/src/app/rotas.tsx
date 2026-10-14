@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { Plane, ShoppingCart } from 'lucide-react'
+import { ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
@@ -23,6 +23,11 @@ const paginaRemedio = () =>
 const rotina = () => import('@/paginas/rotina/Rotina').then((m) => ({ Component: m.Rotina }))
 const paginaRotina = () =>
   import('@/paginas/rotina/PaginaRotina').then((m) => ({ Component: m.PaginaRotina }))
+const viagens = () => import('@/paginas/viagens/Viagens').then((m) => ({ Component: m.Viagens }))
+const detalheViagem = () =>
+  import('@/paginas/viagens/DetalheViagem').then((m) => ({ Component: m.DetalheViagem }))
+const paginaViagem = () =>
+  import('@/paginas/viagens/PaginaViagem').then((m) => ({ Component: m.PaginaViagem }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -58,16 +63,10 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'rotina', lazy: rotina },
           { path: 'rotina/nova', lazy: paginaRotina },
           { path: 'rotina/:id', lazy: paginaRotina },
-          {
-            path: 'viagens',
-            element: (
-              <EmBreve
-                titulo="Viagens"
-                icone={Plane}
-                descricao="Datas, hospedagem, transporte e passagens."
-              />
-            ),
-          },
+          { path: 'viagens', lazy: viagens },
+          { path: 'viagens/nova', lazy: paginaViagem },
+          { path: 'viagens/:id', lazy: detalheViagem },
+          { path: 'viagens/:id/editar', lazy: paginaViagem },
           {
             path: 'compras',
             element: (

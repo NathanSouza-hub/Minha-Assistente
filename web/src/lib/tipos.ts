@@ -213,3 +213,29 @@ export type PainelHoje = {
     totalAVencerCentavos: number
   }
 }
+
+// ---- Viagens (etapa 9 do back-end) ----
+
+export type AnexoViagem = {
+  id: string
+  nomeOriginal: string
+  /** Detectado pelo conteúdo no servidor: PDF, JPG, PNG, WEBP ou HEIC. */
+  mimeType: string
+  tamanhoBytes: number
+  criadoEm: string
+}
+
+export type Viagem = {
+  id: string
+  destino: string
+  ida: string
+  volta: string | null
+  hospedagem: string | null
+  transporte: string | null
+  observacoes: string | null
+  anexos: AnexoViagem[]
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type ViagemCorpo = Pick<Viagem, 'destino' | 'ida' | 'volta' | 'hospedagem' | 'transporte' | 'observacoes'>

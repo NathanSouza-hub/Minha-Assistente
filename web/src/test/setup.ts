@@ -24,3 +24,7 @@ globalThis.ResizeObserver ??= class {
 }
 Element.prototype.scrollIntoView ??= () => {}
 window.scrollTo = () => {}
+
+// O fetch do Node não sabe enviar o FormData do jsdom ("fetch failed"); nos testes o upload usa o
+// FormData do próprio Node. Os arquivos dos testes são `File` de 'node:buffer' pelo mesmo motivo.
+globalThis.FormData = (await new Response(new URLSearchParams()).formData()).constructor as typeof FormData

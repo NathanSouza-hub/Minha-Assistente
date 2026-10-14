@@ -48,6 +48,12 @@ npm run lint                                  # oxlint
   caches (a da área e a do painel, via `ajustarPainel`) e toda mutação de compromisso, remédio,
   rotina ou pagamento chama `invalidarPainel`. Ao criar uma área nova que apareça no painel, faça o
   mesmo.
+- **Viagens**: anexos só existem numa viagem já salva — o cadastro leva para `/viagens/:id`, onde
+  se anexa. Upload por `FormData` (`useEnviarAnexo`, um arquivo por vez; o limite de 10 MB é checado
+  antes de enviar). Download por `baixarArquivo()` de `src/lib/api.ts` (um `<a href>` comum não
+  manda o token) e entregue com `nomeOriginal`. Nos testes, `src/test/setup.ts` troca o `FormData`
+  do jsdom pelo do Node (o `fetch` do Node não envia o do jsdom), os arquivos são `File` de
+  `'node:buffer'` e o mock lê o multipart à mão (`request.formData()` falha nesse ambiente).
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

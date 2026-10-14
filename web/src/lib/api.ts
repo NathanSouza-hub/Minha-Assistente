@@ -36,7 +36,8 @@ function montarUrl(caminho: string, query?: Opcoes['query']) {
   return url.toString()
 }
 
-export async function api<T>(caminho: string, { corpo, query, headers, ...resto }: Opcoes = {}): Promise<T> {
+/** Faz a requisição com o token; resposta de erro vira ApiError. */
+async function requisitar(caminho: string, { corpo, query, headers, ...resto }: Opcoes = {}) {
   const cabecalhos = new Headers(headers)
   const token = lerToken()
   if (token) cabecalhos.set('Authorization', `Bearer ${token}`)
@@ -55,13 +56,9 @@ export async function api<T>(caminho: string, { corpo, query, headers, ...resto 
   } catch {
     throw new ApiError(0, 'SEM_CONEXAO', 'Sem conexão com o servidor. Verifique sua internet e tente de novo.')
   }
+  if (resposta.ok) return resposta
 
-  if (resposta.status === 204) return undefined as T
-
-  const dados = await resposta.json().catch(() => null)
-  if (resposta.ok) return dados as T
-
-  const erro = dados?.erro
+  const erro = (await resposta.json().catch(() => null))?.erro
   const apiErro = new ApiError(
     resposta.status,
     erro?.codigo ?? 'ERRO_INTERNO',
@@ -69,4 +66,15 @@ export async function api<T>(caminho: string, { corpo, query, headers, ...resto 
   )
   if (apiErro.codigo === 'NAO_AUTORIZADO') aoPerderSessao()
   throw apiErro
+}
+
+export async function api<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
+  const resposta = await requisitar(caminho, opcoes)
+  if (resposta.status === 204) return undefined as T
+  return (await resposta.json().catch(() => null)) as T
+}
+
+/** Baixa um arquivo protegido (ex.: anexo). Um link comum não serve: o download exige o token. */
+export async function baixarArquivo(caminho: string): Promise<Blob> {
+  return (await requisitar(caminho)).blob()
 }

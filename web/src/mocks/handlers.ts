@@ -6,6 +6,7 @@ import { handlersHoje } from './hoje'
 import { handlersMedicamentos } from './medicamentos'
 import { handlersPagamentos } from './pagamentos'
 import { handlersRotinas } from './rotinas'
+import { handlersViagens } from './viagens'
 
 export { resetarBancoMock } from './banco'
 
@@ -16,4 +17,5 @@ export const handlers = [
   ...handlersMedicamentos,
   ...handlersRotinas,
   ...handlersHoje,
+  ...handlersViagens,
 ]

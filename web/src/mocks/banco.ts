@@ -10,6 +10,7 @@ import type {
   Rotina,
   StatusPagamento,
   Usuario,
+  Viagem,
 } from '@/lib/tipos'
 
 export type UsuarioMock = Usuario & { senha: string }
@@ -59,6 +60,18 @@ export type RotinaMock = Omit<Rotina, 'criadoEm' | 'atualizadoEm'> & {
   atualizadoEm: string
 }
 
+export type ViagemMock = Omit<Viagem, 'anexos'> & { usuarioId: string }
+export type AnexoViagemMock = {
+  id: string
+  viagemId: string
+  nomeOriginal: string
+  mimeType: string
+  tamanhoBytes: number
+  /** Conteúdo guardado para o download. */
+  bytes: Uint8Array<ArrayBuffer>
+  criadoEm: string
+}
+
 // Mesmas categorias e ordem do seed do back-end (db/seeds/01_catalogos.js); ids fixos no mock.
 export const CATEGORIAS: CategoriaPagamento[] = [
   'Salários',
@@ -84,6 +97,8 @@ export const banco = {
   registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
   rotinas: [] as RotinaMock[],
   conclusoesRotina: [] as { rotinaId: string; data: string; concluidaEm: string }[],
+  viagens: [] as ViagemMock[],
+  anexosViagem: [] as AnexoViagemMock[],
 }
 
 export function novoPagamento(
@@ -357,6 +372,49 @@ function semearRotina() {
   }
 }
 
+function semearViagens() {
+  const agora = agoraISO()
+  const hoje = hojeISO()
+  const dia = (n: number) => deDataISO(hoje).plus({ days: n }).toISODate()!
+  const viagem = (destino: string, ida: string, volta: string | null, extra: Partial<ViagemMock> = {}) => ({
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    destino,
+    ida,
+    volta,
+    hospedagem: null,
+    transporte: null,
+    observacoes: null,
+    criadoEm: agora,
+    atualizadoEm: agora,
+    ...extra,
+  })
+  const lisboa = viagem('Lisboa', dia(40), dia(54), {
+    hospedagem: 'Hotel Avenida Palace, reserva 48213. Check-in a partir das 15h.',
+    transporte: 'Voo TP 088, saída de Guarulhos às 23h40.',
+    observacoes: 'Levar adaptador de tomada e o cartão de vacina.',
+  })
+  banco.viagens.push(
+    lisboa,
+    viagem('Ribeirão Preto', dia(3), dia(5), {
+      hospedagem: 'Casa da tia Lúcia',
+      transporte: 'Ônibus Cometa, 7h30 na rodoviária do Tietê',
+    }),
+    viagem('Campos do Jordão', dia(-60), dia(-57), { hospedagem: 'Pousada Recanto da Serra' }),
+  )
+  // Um PDF mínimo, só para o download funcionar.
+  const pdf = new TextEncoder().encode('%PDF-1.4\n% passagem de exemplo\n%%EOF\n')
+  banco.anexosViagem.push({
+    id: crypto.randomUUID(),
+    viagemId: lisboa.id,
+    nomeOriginal: 'passagem-tap.pdf',
+    mimeType: 'application/pdf',
+    tamanhoBytes: pdf.byteLength,
+    bytes: pdf,
+    criadoEm: agora,
+  })
+}
+
 export function resetarBancoMock() {
   banco.usuarios.clear()
   banco.imoveis.length = 0
@@ -366,10 +424,13 @@ export function resetarBancoMock() {
   banco.registrosRemedio = []
   banco.rotinas.length = 0
   banco.conclusoesRotina = []
+  banco.viagens.length = 0
+  banco.anexosViagem.length = 0
   semear()
   semearAgenda()
   semearRemedios()
   semearRotina()
+  semearViagens()
 }
 
 resetarBancoMock()
