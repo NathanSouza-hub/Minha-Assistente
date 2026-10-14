@@ -25,6 +25,7 @@ import {
 import { hojeISO, intervaloDoMes, mesDe } from '@/lib/datas'
 import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
 import { aplicarErroApi } from '@/lib/formulario'
+import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import type { Pagamento } from '@/lib/tipos'
 import {
   camposDaApi,
@@ -82,6 +83,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
   const { data: imoveis = [] } = useImoveis()
   const criar = useCriarPagamento()
   const editar = useEditarPagamento()
+  const convidar = useConvidarNotificacoes()
   const excluir = useExcluirPagamento()
 
   const {
@@ -122,6 +124,8 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
         toast.success(criados.length > 1 ? `${criados.length} parcelas criadas.` : 'Pagamento criado.')
       }
       voltarParaLista(corpo.vencimento)
+      // Conta pendente é lembrada na véspera e no dia do vencimento.
+      if (corpo.status === 'pendente') void convidar()
     } catch (erro) {
       aplicarErroApi(erro, setError, opcoesErro)
     }

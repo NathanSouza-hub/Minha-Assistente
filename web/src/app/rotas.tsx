@@ -29,6 +29,7 @@ const paginaViagem = () =>
 const compras = () => import('@/paginas/compras/Compras').then((m) => ({ Component: m.Compras }))
 const paginaItemCompra = () =>
   import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
+const notificacoes = () => import('@/paginas/Notificacoes').then((m) => ({ Component: m.Notificacoes }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -70,6 +71,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'viagens/:id/editar', lazy: paginaViagem },
           { path: 'compras', lazy: compras },
           { path: 'compras/:id', lazy: paginaItemCompra },
+          { path: 'notificacoes', lazy: notificacoes },
           { path: 'imoveis', lazy: imoveis },
           { path: 'relatorio', lazy: relatorio },
           { path: '*', element: <NaoEncontrada /> },

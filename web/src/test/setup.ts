@@ -23,6 +23,10 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 }
 Element.prototype.scrollIntoView ??= () => {}
+// O sonner usa para arrastar o aviso.
+Element.prototype.setPointerCapture ??= () => {}
+Element.prototype.releasePointerCapture ??= () => {}
+Element.prototype.hasPointerCapture ??= () => false
 window.scrollTo = () => {}
 
 // O fetch do Node não sabe enviar o FormData do jsdom ("fetch failed"); nos testes o upload usa o

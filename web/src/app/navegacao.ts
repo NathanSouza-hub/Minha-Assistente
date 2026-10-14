@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarDays,
   ChartColumn,
   House,
@@ -32,6 +33,7 @@ export const navegacaoSecundaria: ItemNavegacao[] = [
 ]
 
 export const navegacaoConfiguracoes: ItemNavegacao[] = [
+  { rota: '/notificacoes', rotulo: 'Notificações', icone: Bell },
   { rota: '/imoveis', rotulo: 'Imóveis', icone: House },
   { rota: '/relatorio', rotulo: 'Relatório de gastos', icone: ChartColumn },
 ]

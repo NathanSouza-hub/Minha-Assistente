@@ -103,6 +103,7 @@ export const banco = {
   viagens: [] as ViagemMock[],
   anexosViagem: [] as AnexoViagemMock[],
   compras: [] as ItemCompraMock[],
+  inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
 }
 
 export function novoPagamento(
@@ -455,6 +456,7 @@ export function resetarBancoMock() {
   banco.viagens.length = 0
   banco.anexosViagem.length = 0
   banco.compras.length = 0
+  banco.inscricoesPush.length = 0
   semear()
   semearAgenda()
   semearRemedios()

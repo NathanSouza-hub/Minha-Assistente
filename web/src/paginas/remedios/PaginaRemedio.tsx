@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useExcluirMedicamento, useMedicamento, useSalvarMedicamento } from '@/consultas/medicamentos'
+import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Medicamento, PeriodoRemedio } from '@/lib/tipos'
 import {
@@ -60,6 +61,7 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
   const navegar = useNavigate()
   const editando = Boolean(remedio)
   const salvar = useSalvarMedicamento()
+  const convidar = useConvidarNotificacoes()
   const excluir = useExcluirMedicamento()
   const formulario = useForm<DadosRemedio>({
     resolver: zodResolver(esquemaRemedio),
@@ -81,9 +83,12 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
 
   async function enviar(dados: DadosRemedio) {
     try {
-      await salvar.mutateAsync({ id: remedio?.id, dados: paraCorpo(dados) })
+      const corpo = paraCorpo(dados)
+      await salvar.mutateAsync({ id: remedio?.id, dados: corpo })
       toast.success(editando ? 'Remédio salvo.' : `${dados.nome.trim()} cadastrado.`)
       navegar(editando ? '/remedios?visao=lista' : '/remedios')
+      // Cada horário com hora vira um lembrete.
+      if (corpo.ativo && corpo.horarios.some((h) => h.hora)) void convidar()
     } catch (erro) {
       aplicarErroApi(erro, setError)
     }

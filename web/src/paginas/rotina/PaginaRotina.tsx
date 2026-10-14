@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { useExcluirRotina, useRotinas, useSalvarRotina } from '@/consultas/rotinas'
+import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Rotina, RotinaCorpo } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -76,6 +77,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
   const navegar = useNavigate()
   const editando = Boolean(rotina)
   const salvar = useSalvarRotina()
+  const convidar = useConvidarNotificacoes()
   const excluir = useExcluirRotina()
   const {
     register,
@@ -94,9 +96,11 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
 
   async function enviar(dados: Dados) {
     try {
-      await salvar.mutateAsync({ id: rotina?.id, dados: paraCorpo(dados) })
+      const corpo = paraCorpo(dados)
+      await salvar.mutateAsync({ id: rotina?.id, dados: corpo })
       toast.success(editando ? 'Tarefa salva.' : 'Tarefa criada.')
       navegar(editando ? '/rotina?visao=todas' : '/rotina')
+      if (corpo.lembrete) void convidar()
     } catch (erro) {
       aplicarErroApi(erro, setError)
     }

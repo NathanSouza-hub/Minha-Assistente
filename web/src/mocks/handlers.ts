@@ -5,6 +5,7 @@ import { handlersCompras } from './compras'
 import { handlersEventos } from './eventos'
 import { handlersHoje } from './hoje'
 import { handlersMedicamentos } from './medicamentos'
+import { handlersNotificacoes } from './notificacoes'
 import { handlersPagamentos } from './pagamentos'
 import { handlersRotinas } from './rotinas'
 import { handlersViagens } from './viagens'
@@ -20,4 +21,5 @@ export const handlers = [
   ...handlersHoje,
   ...handlersViagens,
   ...handlersCompras,
+  ...handlersNotificacoes,
 ]

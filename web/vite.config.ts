@@ -26,6 +26,8 @@ export default defineConfig({
       workbox: {
         // O worker do MSW só existe para desenvolvimento.
         globIgnores: ['**/mockServiceWorker.js'],
+        // Recebe os lembretes (Web Push) e abre a tela certa ao tocar na notificação.
+        importScripts: ['sw-push.js'],
         navigateFallback: '/index.html',
       },
     }),

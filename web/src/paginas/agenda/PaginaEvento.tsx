@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useEvento, useExcluirEvento, useSalvarEvento } from '@/consultas/eventos'
+import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import { diaDe, hojeISO } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Evento } from '@/lib/tipos'
@@ -67,6 +68,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   const editando = Boolean(evento)
   const dataPadrao = /^\d{4}-\d{2}-\d{2}$/.test(params.get('data') ?? '') ? params.get('data')! : hojeISO()
   const salvar = useSalvarEvento()
+  const convidar = useConvidarNotificacoes()
   const excluir = useExcluirEvento()
 
   const {
@@ -98,9 +100,11 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
 
   async function enviar(dados: DadosEvento) {
     try {
-      await salvar.mutateAsync({ id: evento?.id, dados: paraCorpo(dados) })
+      const corpo = paraCorpo(dados)
+      await salvar.mutateAsync({ id: evento?.id, dados: corpo })
       toast.success(editando ? 'Compromisso salvo.' : 'Compromisso marcado.')
       navegar(voltarPara(dados.data))
+      if (corpo.lembretesMinutosAntes.length > 0) void convidar()
     } catch (erro) {
       aplicarErroApi(erro, setError, { campos: camposDaApi })
     }

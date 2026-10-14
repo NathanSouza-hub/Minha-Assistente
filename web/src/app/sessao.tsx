@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api, definirAoPerderSessao } from '@/lib/api'
+import { desativar as desativarNotificacoes } from '@/lib/notificacoes'
 import { apagarToken, lerToken, salvarToken, tokenExpirado } from '@/lib/sessao'
 import type { Sessao, Usuario } from '@/lib/tipos'
 
@@ -51,6 +52,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
   )
 
   const sair = useCallback(() => {
+    // Aparelho compartilhado: quem saiu não pode continuar recebendo os lembretes aqui. Vai com o
+    // token na mão porque ele é apagado logo abaixo; se falhar, o servidor apaga a inscrição
+    // quando o push voltar como expirado.
+    void desativarNotificacoes({ token: lerToken() }).catch(() => {})
     apagarToken()
     setToken(null)
     clienteConsultas.clear()

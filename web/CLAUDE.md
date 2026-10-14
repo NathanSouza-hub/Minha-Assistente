@@ -60,6 +60,15 @@ npm run lint                                  # oxlint
   Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
   que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
   sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda.
+- **Notificações (Web Push)**: tudo que fala com o navegador está em `src/lib/notificacoes.ts`
+  (`lerEstado`, `ativar`, `desativar`); as telas usam `consultas/notificacoes.ts`. O push só existe
+  na build (`npm run build && npx vite preview --port 5173`): em `npm run dev` não há o `sw.js` do
+  app (o escopo é do worker do MSW) e o estado fica `indisponivel`. O `sw.js` do Workbox importa
+  `public/sw-push.js` (eventos `push` e `notificationclick`). `ativar()` pede a permissão como
+  primeira coisa, porque o Safari só pede dentro de um toque. Formulário que cria algo com
+  lembrete chama `convidar()` de `useConvidarNotificacoes` depois de salvar (uma vez por aparelho,
+  nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. Nos testes,
+  `src/test/pushFalso.ts` simula `Notification`, `PushManager` e o service worker.
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no
