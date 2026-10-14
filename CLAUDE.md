@@ -74,8 +74,13 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 Prontos: `/auth`, `/imoveis`, `/categorias-pagamento`, `/pagamentos`, `/relatorios/gastos`,
 `/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
 `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
-temporária definida em `test/setup.js`), `/compras`. Falta: notificações/lembretes (tabelas
-`lembrete_envio` e `push_inscricao` já nas migrations). Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
-em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes. Os
-lembretes (agendador a cada minuto, `lembrete_envio`, canais em `src/lembretes/canais/`, Web Push
-com VAPID) seguem o desenho da seção "Lembretes" de `docs/arquitetura.md`.
+temporária definida em `test/setup.js`), `/compras`, `/notificacoes` e os lembretes
+(`src/lembretes/`). Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
+em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes.
+
+**Lembretes** (seção "Lembretes" e decisão 17 de `docs/arquitetura.md`): sem `VAPID_*` no `.env`
+ficam desligados (gere com `npx web-push generate-vapid-keys`). Origem nova com lembrete = um
+gerador em `src/lembretes/geradores/` + valor no CHECK de `origem_tipo`, e o service dela cancela
+os pendentes ao editar/excluir. Os testes recebem chaves VAPID de `test/setup.js`, chamam
+`gerar`/`enviarPendentes` com um `agora` fixo e um canal falso, e simulam o push com
+`t.mock.method(webpush, 'sendNotification')` — nenhum push sai de verdade.

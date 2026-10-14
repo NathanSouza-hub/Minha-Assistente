@@ -140,6 +140,13 @@ async function criar(usuarioId, dados) {
   });
 }
 
+// Lembretes ainda não enviados deixam de valer quando o pagamento muda, é pago ou apagado;
+// o agendador gera os novos (se ainda couberem).
+const cancelarLembretesPendentes = (conexao, id) =>
+  conexao('lembreteEnvio')
+    .where({ origemTipo: 'pagamento', origemId: id, status: 'pendente' })
+    .update({ status: 'cancelado' });
+
 async function atualizar(usuarioId, id, dados) {
   return db.transaction(async (trx) => {
     const atual = await buscar(usuarioId, id, trx);
@@ -148,6 +155,7 @@ async function atualizar(usuarioId, id, dados) {
       throw requisicaoInvalida('recorrencia: parcela não pode ser recorrente.');
     }
     await trx('pagamento').where({ id, usuarioId }).update(camposGravaveis(dados));
+    await cancelarLembretesPendentes(trx, id);
     await garantirProxima(trx, usuarioId, id);
     return buscar(usuarioId, id, trx);
   });
@@ -163,14 +171,18 @@ async function pagar(usuarioId, id, { dataPagamento }) {
       await buscar(usuarioId, id, trx); // 404 se não existir
       throw new AppError(409, 'JA_PAGO', 'Este pagamento já está pago.');
     }
+    await cancelarLembretesPendentes(trx, id);
     await garantirProxima(trx, usuarioId, id);
     return buscar(usuarioId, id, trx);
   });
 }
 
 async function remover(usuarioId, id) {
-  const apagados = await db('pagamento').where({ id, usuarioId }).del();
-  if (!apagados) throw naoEncontrado('Pagamento');
+  await db.transaction(async (trx) => {
+    const apagados = await trx('pagamento').where({ id, usuarioId }).del();
+    if (!apagados) throw naoEncontrado('Pagamento');
+    await cancelarLembretesPendentes(trx, id);
+  });
 }
 
 module.exports = { listar, buscar, criar, atualizar, pagar, remover };

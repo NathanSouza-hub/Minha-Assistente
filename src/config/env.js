@@ -12,6 +12,16 @@ const esquema = z.object({
     .default('')
     .transform((valor) => valor.split(',').map((o) => o.trim()).filter(Boolean)),
   UPLOADS_DIR: z.string().default('uploads'),
+  // Web Push (lembretes no canal "app"). Sem as chaves, os lembretes ficam desligados.
+  VAPID_PUBLIC_KEY: z.string().default(''),
+  VAPID_PRIVATE_KEY: z.string().default(''),
+  VAPID_SUBJECT: z
+    .string()
+    .default('')
+    .refine((v) => v === '' || /^(mailto:|https:\/\/)/.test(v), 'use mailto:seu@email ou uma URL https://'),
+}).refine((v) => Boolean(v.VAPID_PUBLIC_KEY) === Boolean(v.VAPID_PRIVATE_KEY) && (!v.VAPID_PUBLIC_KEY || v.VAPID_SUBJECT), {
+  message: 'defina VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT juntas (ou nenhuma)',
+  path: ['VAPID_PUBLIC_KEY'],
 });
 
 const resultado = esquema.safeParse(process.env);

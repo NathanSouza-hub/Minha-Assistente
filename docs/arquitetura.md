@@ -41,6 +41,7 @@ GET/POST /viagens | GET/PUT/DELETE /viagens/:id | POST /viagens/:id/anexos
 GET/DELETE /viagens/:id/anexos/:anexoId                      (acrescentada)
 GET/POST /compras | PUT/DELETE /compras/:id | PATCH /compras/:id/comprado
 POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, Web Push)
+GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 ```
 
 ## Decisões acordadas
@@ -124,6 +125,29 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     comprados (mais recentes primeiro). `PATCH /compras/:id/comprado` sem corpo marca;
     `{ "comprado": false }` desmarca. PUT edita nome/categoria/quantidade sem mudar o status.
 
+17. **Lembretes e notificações (etapa 11)**:
+    - Quando: evento → cada valor de `lembretesMinutosAntes` antes de cada ocorrência; remédio →
+      na hora de cada horário **com hora** de remédio em uso; rotina → na hora, se `lembrete`;
+      pagamento pendente → véspera e dia do vencimento, às 9h.
+    - Na hora de enviar, o lembrete é conferido de novo: remédio já tomado, tarefa feita, conta
+      paga (ou com vencimento mudado), origem apagada ou pausada → `cancelado`, sem enviar.
+      Mais de 15 min atrasado (ex.: servidor parado) → `cancelado`. Erro do serviço de push →
+      tenta de novo no minuto seguinte; na 3ª falha, `falhou`.
+    - Só gera lembretes para quem tem um aparelho inscrito. Inscrição que o serviço de push
+      responde 404/410 é apagada.
+    - O único de `lembrete_envio` inclui `agendado_para` (migration 11): um evento pode ter vários
+      lembretes da mesma ocorrência.
+    - `POST /notificacoes/inscricoes` recebe `PushSubscription.toJSON()` (`{ endpoint, keys: {
+      p256dh, auth } }`, endpoint https) e responde `201 { id, endpoint }`; o mesmo endpoint
+      atualiza a inscrição e, se for de outro usuário, passa para quem enviou.
+      `DELETE /notificacoes/inscricoes` `{ endpoint }` é idempotente (`204`).
+    - `GET /notificacoes/chave-publica` → `{ chavePublica }` (o `applicationServerKey`).
+      `POST /notificacoes/teste` manda uma notificação para os aparelhos do usuário (`204`;
+      `409 SEM_INSCRICAO` sem aparelho). Sem chaves VAPID no servidor → `503
+      NOTIFICACOES_DESLIGADAS`.
+    - Carga do push (JSON): `{ titulo, corpo, url, tag }`; `tag` repete para o mesmo lembrete da
+      mesma ocorrência (o aparelho substitui em vez de empilhar).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -154,7 +178,7 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
 | viagem | destino, ida, volta?, hospedagem, transporte, observacoes | volta≥ida; idx ida |
 | viagem_anexo | viagem_id, nome_original, caminho, mime_type, tamanho_bytes | |
 | compra_item | nome, categoria?, quantidade?, comprado, comprado_em? | idx comprado |
-| lembrete_envio | origem_tipo, origem_id, ocorrencia, canal, agendado_para, enviado_em?, status, tentativas, erro? | unique (origem_tipo, origem_id, ocorrencia, canal); idx (status, agendado_para) |
+| lembrete_envio | origem_tipo, origem_id, ocorrencia, canal, agendado_para, enviado_em?, status, tentativas, erro? | unique (origem_tipo, origem_id, ocorrencia, agendado_para, canal); idx (status, agendado_para) |
 | push_inscricao | endpoint (unique), p256dh, auth, user_agent | |
 
 ## Lembretes
@@ -163,4 +187,8 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
    próximas 24h e faz upsert em `lembrete_envio`, uma linha por canal ativo.
 2. Envia as linhas `pendente` com `agendado_para <= agora` via `canais[canal].enviar(lembrete)`.
 3. Novo canal (ex.: WhatsApp) = `src/lembretes/canais/whatsapp.js` + registro + migration do CHECK.
-4. Editar/excluir a origem cancela os pendentes e regenera.
+4. Editar/excluir a origem cancela os pendentes e regenera (o upsert devolve a `pendente` os
+   cancelados que continuam valendo).
+5. Código em `src/lembretes/`: `agendador.js` (ciclo), `geradores/` (um por `origem_tipo`, com
+   `gerar` e `mensagem`) e `canais/` (`app` = Web Push). O agendador roda dentro do processo da API
+   (`src/server.js`) só quando há canal ativo (chaves VAPID no `.env`).
