@@ -207,14 +207,14 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
               titulo={`Excluir "${rotina.titulo}"?`}
               descricao="O histórico dos dias em que ela foi feita também será apagado. Para parar por um tempo, desligue “Na rotina”."
               confirmar="Excluir tarefa"
-              aoConfirmar={() =>
-                excluir.mutate(rotina.id, {
-                  onSuccess: () => {
-                    toast.success('Tarefa excluída.')
-                    navegar('/rotina?visao=todas')
-                  },
-                })
-              }
+              aoConfirmar={() => {
+                // Esta tela lê a tarefa da lista: quando ela sai do cache, a tela vira "não
+                // encontrada" e desmonta. Por isso volta para a lista antes, e o aviso fica preso
+                // à promessa (que resolve mesmo com a tela já desmontada).
+                const exclusao = excluir.mutateAsync(rotina.id)
+                navegar('/rotina?visao=todas')
+                exclusao.then(() => toast.success('Tarefa excluída.')).catch(() => {})
+              }}
             />
           )}
         </div>
@@ -224,7 +224,15 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
 }
 
 /** Atalhos (todos os dias, segunda a sexta, fim de semana) + um botão por dia. */
-function EscolhaDias({ valor, aoMudar, erro }: { valor: number[]; aoMudar: (v: number[]) => void; erro?: string }) {
+function EscolhaDias({
+  valor,
+  aoMudar,
+  erro,
+}: {
+  valor: number[]
+  aoMudar: (v: number[]) => void
+  erro?: string
+}) {
   const id = useId()
   const atalhos = [
     { rotulo: 'Todos os dias', dias: TODOS },
