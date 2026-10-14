@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { CalendarDays, ListChecks, Pill, Plane, ShoppingCart } from 'lucide-react'
+import { ListChecks, Pill, Plane, ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
@@ -14,6 +14,8 @@ const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.
 const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
 const paginaPagamento = () =>
   import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
+const agenda = () => import('@/paginas/agenda/Agenda').then((m) => ({ Component: m.Agenda }))
+const paginaEvento = () => import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -36,12 +38,9 @@ export const definicaoRotas: RouteObject[] = [
         element: <LayoutApp />,
         children: [
           { index: true, element: <Hoje /> },
-          {
-            path: 'agenda',
-            element: (
-              <EmBreve titulo="Agenda" icone={CalendarDays} descricao="Consultas, exames, reuniões e lembretes." />
-            ),
-          },
+          { path: 'agenda', lazy: agenda },
+          { path: 'agenda/novo', lazy: paginaEvento },
+          { path: 'agenda/:id', lazy: paginaEvento },
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },

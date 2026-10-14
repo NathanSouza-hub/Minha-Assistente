@@ -64,3 +64,36 @@ export function descreverVencimento(vencimento: string, hoje = hojeISO()) {
   if (dias <= 7) return `Vence em ${dias} dias`
   return `Vence ${deDataISO(vencimento).toFormat('dd/MM')}`
 }
+
+/** Segunda-feira da semana da data ("2026-10-13" → "2026-10-12"). */
+export const inicioDaSemana = (data: string) => deDataISO(data).startOf('week').toISODate()!
+
+/** Os 7 dias (seg→dom) da semana que começa em `segunda`. */
+export const diasDaSemana = (segunda: string) =>
+  Array.from({ length: 7 }, (_, i) => deDataISO(segunda).plus({ days: i }).toISODate()!)
+
+export const somarDias = (data: string, dias: number) => deDataISO(data).plus({ days: dias }).toISODate()!
+
+/** "2026-10-13" + "14:30" → "2026-10-13T14:30:00-03:00" (horário de São Paulo). */
+export const combinarDataHora = (data: string, hora: string) =>
+  paraDataHoraISO(DateTime.fromISO(`${data}T${hora}`, { zone: FUSO }))
+
+/** "2026-10-13T14:30:00-03:00" → { data: "2026-10-13", hora: "14:30" } em São Paulo. */
+export function separarDataHora(texto: string) {
+  const dt = deDataHoraISO(texto)
+  return { data: dt.toISODate()!, hora: dt.toFormat('HH:mm') }
+}
+
+/** Dia (AAAA-MM-DD, São Paulo) de um instante ISO. */
+export const diaDe = (texto: string) => deDataHoraISO(texto).toISODate()!
+
+/** "2026-10-13" → "Terça, 13 de outubro" (curto, para cabeçalhos de lista). */
+export const diaCurto = (data: string) => maiuscula(deDataISO(data).toFormat("cccc, d 'de' LLLL").replace('-feira', ''))
+
+/** Rótulo relativo quando fizer sentido: "Hoje", "Amanhã", senão o dia curto. */
+export function rotuloDoDia(data: string, hoje = hojeISO()) {
+  const dias = diasAte(data, hoje)
+  if (dias === 0) return `Hoje, ${deDataISO(data).toFormat("d 'de' LLLL")}`
+  if (dias === 1) return `Amanhã, ${deDataISO(data).toFormat("d 'de' LLLL")}`
+  return diaCurto(data)
+}

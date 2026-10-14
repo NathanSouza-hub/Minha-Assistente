@@ -78,3 +78,43 @@ export type RelatorioGastos = {
   /** `id: null` = pagamentos sem imóvel ("Sem imóvel"). */
   itens: { id: string | null; nome: string; pagoCentavos: number; previstoCentavos: number }[]
 }
+
+export type TipoEvento =
+  | 'reuniao_pessoal'
+  | 'exame'
+  | 'consulta'
+  | 'video'
+  | 'programa_radio'
+  | 'fisioterapia'
+  | 'atividade_fisica'
+export type ModalidadeEvento = 'presencial' | 'telemedicina' | 'videoconferencia' | 'podcast' | 'gravacao'
+export type RecorrenciaEvento = 'nenhuma' | 'diaria' | 'semanal' | 'mensal' | 'anual'
+
+/** Corpo de POST/PUT /eventos. `inicio`/`fim` em ISO 8601 com fuso. */
+export type EventoCorpo = {
+  titulo: string
+  tipo: TipoEvento
+  modalidade: ModalidadeEvento | null
+  inicio: string
+  fim: string | null
+  local: string | null
+  link: string | null
+  observacoes: string | null
+  recorrencia: RecorrenciaEvento
+  recorrenciaFim: string | null
+  lembretesMinutosAntes: number[]
+}
+
+/**
+ * Evento como a API devolve. Na listagem, cada ocorrência de uma série vem separada, com o `id`
+ * da série e `inicio`/`fim` daquela ocorrência; `inicioSerie` é o `inicio` a mandar no PUT.
+ */
+export type Evento = EventoCorpo & {
+  id: string
+  recorrente: boolean
+  inicioSerie: string
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type FiltrosEvento = { inicio?: string; fim?: string; tipo?: TipoEvento }

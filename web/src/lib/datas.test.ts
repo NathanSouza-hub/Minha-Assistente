@@ -9,6 +9,12 @@ import {
   nomeDoMes,
   paraDataHoraISO,
   somarMeses,
+  inicioDaSemana,
+  diasDaSemana,
+  combinarDataHora,
+  separarDataHora,
+  diaDe,
+  rotuloDoDia,
 } from './datas'
 
 describe('datas sem hora', () => {
@@ -60,5 +66,27 @@ describe('descreverVencimento', () => {
     ['2026-10-25', 'Vence 25/10'],
   ])('%s → %s', (vencimento, esperado) => {
     expect(descreverVencimento(vencimento, '2026-10-13')).toBe(esperado)
+  })
+})
+
+describe('agenda', () => {
+  test('semana começa na segunda e tem 7 dias', () => {
+    expect(inicioDaSemana('2026-10-13')).toBe('2026-10-12')
+    expect(inicioDaSemana('2026-10-18')).toBe('2026-10-12')
+    expect(diasDaSemana('2026-10-12')).toHaveLength(7)
+    expect(diasDaSemana('2026-10-12').at(-1)).toBe('2026-10-18')
+  })
+
+  test('combina e separa data e hora no fuso de São Paulo', () => {
+    expect(combinarDataHora('2026-10-13', '14:30')).toBe('2026-10-13T14:30:00-03:00')
+    expect(separarDataHora('2026-10-13T17:30:00Z')).toEqual({ data: '2026-10-13', hora: '14:30' })
+    // 01h UTC do dia 14 ainda é dia 13 em São Paulo
+    expect(diaDe('2026-10-14T01:00:00Z')).toBe('2026-10-13')
+  })
+
+  test('rótulos de dia', () => {
+    expect(rotuloDoDia('2026-10-13', '2026-10-13')).toBe('Hoje, 13 de outubro')
+    expect(rotuloDoDia('2026-10-14', '2026-10-13')).toBe('Amanhã, 14 de outubro')
+    expect(rotuloDoDia('2026-10-16', '2026-10-13')).toBe('Sexta, 16 de outubro')
   })
 })

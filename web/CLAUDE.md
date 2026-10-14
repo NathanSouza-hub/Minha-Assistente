@@ -33,6 +33,11 @@ npm run lint                                  # oxlint
 - **Erros na tela**: `src/app/consultas.ts` mostra toast com a `mensagem` de qualquer erro de
   query/mutation, exceto `NAO_AUTORIZADO` (logout) e `VALIDACAO` (exibir no formulário).
 - Tipos do contrato em `src/lib/tipos.ts`.
+- **Agenda**: `inicio`/`fim` sempre com fuso (`combinarDataHora`/`separarDataHora` de
+  `src/lib/datas.ts`). A listagem devolve cada ocorrência de série separada (mesmo `id`); para
+  editar, abra `GET /eventos/:id` (a série) — o PUT precisa do início da série, não da ocorrência.
+  Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
+  em `src/paginas/agenda/lembretes.ts`.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no
   back-end; campos com `components/Campo.tsx`; erro da API com `aplicarErroApi()`
   (`src/lib/formulario.ts`), que liga códigos a campos (ex.: `EMAIL_EM_USO → email`) e distribui
