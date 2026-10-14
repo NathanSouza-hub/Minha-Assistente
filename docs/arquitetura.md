@@ -119,6 +119,11 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     - Arquivo salvo com nome aleatório em `UPLOADS_DIR` (`src/lib/armazenamento.js`, trocável por
       S3); download sempre como `attachment` com o nome original.
 
+16. **Compras (etapa 10)**: item `{ id, nome, categoria, quantidade, comprado, compradoEm }`.
+    `GET /compras?comprado=true|false` lista pendentes primeiro (categoria, nome) e depois os
+    comprados (mais recentes primeiro). `PATCH /compras/:id/comprado` sem corpo marca;
+    `{ "comprado": false }` desmarca. PUT edita nome/categoria/quantidade sem mudar o status.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
