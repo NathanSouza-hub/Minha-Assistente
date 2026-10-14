@@ -96,6 +96,14 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     - `POST /medicamentos/registros` `{ horarioId, data?, tomado? }` responde o item atualizado;
       é idempotente e `tomado: false` desmarca. Semanal fora do dia da semana → `400`.
 
+13. **Rotina (etapa 7)**:
+    - Tarefa: `{ titulo, hora?, diasSemana (padrão todos), ativo, ordem, lembrete }`; `lembrete`
+      exige `hora`.
+    - `GET /rotinas/hoje?data=` (padrão hoje): ativas previstas para o dia da semana, ordenadas por
+      `ordem`, hora e título. Item: `{ rotinaId, titulo, hora, ordem, data, concluida, concluidaEm }`.
+    - `POST /rotinas/:id/concluir` `{ data?, concluida? }` responde o item; idempotente;
+      `concluida: false` desfaz; dia fora de `diasSemana` → `400`.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).

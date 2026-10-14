@@ -23,10 +23,27 @@ const textoOpcional = (max) =>
     .nullish()
     .transform((valor) => valor || null);
 
+// Hora do dia "08:00"; ausente vira null.
+const hora = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida: use HH:MM, ex.: 08:00.')
+  .nullish()
+  .transform((v) => v ?? null);
+
 // Para docs das respostas.
 const instante = z.iso.datetime({ offset: true });
 
 const periodoValido = (v) => !v.inicio || !v.fim || v.inicio <= v.fim;
 const MENSAGEM_PERIODO = { message: 'O início precisa ser anterior ou igual ao fim.', path: ['fim'] };
 
-module.exports = { id, paramsId, data, centavos, textoOpcional, instante, periodoValido, MENSAGEM_PERIODO };
+module.exports = {
+  id,
+  paramsId,
+  data,
+  hora,
+  centavos,
+  textoOpcional,
+  instante,
+  periodoValido,
+  MENSAGEM_PERIODO,
+};

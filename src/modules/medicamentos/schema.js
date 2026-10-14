@@ -1,13 +1,7 @@
 const { z } = require('../../lib/zod');
-const { id, data, textoOpcional, instante } = require('../../lib/esquemas');
+const { id, data, hora, textoOpcional, instante } = require('../../lib/esquemas');
 
 const PERIODOS = ['manha', 'tarde', 'noite', 'semanal'];
-
-const hora = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida: use HH:MM, ex.: 08:00.')
-  .nullish()
-  .transform((v) => v ?? null);
 
 const horarioEntrada = z
   .object({
