@@ -6,6 +6,7 @@ import type {
   EventoCorpo,
   HorarioRemedio,
   Imovel,
+  ItemCompra,
   Recorrencia,
   Rotina,
   StatusPagamento,
@@ -72,6 +73,8 @@ export type AnexoViagemMock = {
   criadoEm: string
 }
 
+export type ItemCompraMock = ItemCompra & { usuarioId: string }
+
 // Mesmas categorias e ordem do seed do back-end (db/seeds/01_catalogos.js); ids fixos no mock.
 export const CATEGORIAS: CategoriaPagamento[] = [
   'Salários',
@@ -99,6 +102,7 @@ export const banco = {
   conclusoesRotina: [] as { rotinaId: string; data: string; concluidaEm: string }[],
   viagens: [] as ViagemMock[],
   anexosViagem: [] as AnexoViagemMock[],
+  compras: [] as ItemCompraMock[],
 }
 
 export function novoPagamento(
@@ -415,6 +419,30 @@ function semearViagens() {
   })
 }
 
+function semearCompras() {
+  const agora = agoraISO()
+  const item = (nome: string, categoria: string | null, quantidade: string | null, compradoEm: string | null = null) => ({
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    nome,
+    categoria,
+    quantidade,
+    comprado: compradoEm !== null,
+    compradoEm,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  })
+  const ontem = paraDataHoraISO(DateTime.now().setZone(FUSO).minus({ days: 1 }).set({ hour: 17, minute: 20, second: 0 }))
+  banco.compras.push(
+    item('Leite integral', 'Mercado', '6 caixas'),
+    item('Arroz', 'Mercado', '5 kg'),
+    item('Bananas', 'Feira', '1 dúzia'),
+    item('Protetor solar', 'Farmácia', null),
+    item('Pilhas AA', null, '4 un'),
+    item('Pão de forma', 'Mercado', null, ontem),
+  )
+}
+
 export function resetarBancoMock() {
   banco.usuarios.clear()
   banco.imoveis.length = 0
@@ -426,11 +454,13 @@ export function resetarBancoMock() {
   banco.conclusoesRotina = []
   banco.viagens.length = 0
   banco.anexosViagem.length = 0
+  banco.compras.length = 0
   semear()
   semearAgenda()
   semearRemedios()
   semearRotina()
   semearViagens()
+  semearCompras()
 }
 
 resetarBancoMock()

@@ -239,3 +239,19 @@ export type Viagem = {
 }
 
 export type ViagemCorpo = Pick<Viagem, 'destino' | 'ida' | 'volta' | 'hospedagem' | 'transporte' | 'observacoes'>
+
+// ---- Compras (etapa 10 do back-end) ----
+
+export type ItemCompra = {
+  id: string
+  nome: string
+  categoria: string | null
+  /** Texto livre: "2 kg", "6 caixas". */
+  quantidade: string | null
+  comprado: boolean
+  compradoEm: string | null
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type ItemCompraCorpo = Pick<ItemCompra, 'nome' | 'categoria' | 'quantidade'>

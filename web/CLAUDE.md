@@ -54,6 +54,12 @@ npm run lint                                  # oxlint
   manda o token) e entregue com `nomeOriginal`. Nos testes, `src/test/setup.ts` troca o `FormData`
   do jsdom pelo do Node (o `fetch` do Node não envia o do jsdom), os arquivos são `File` de
   `'node:buffer'` e o mock lê o multipart à mão (`request.formData()` falha nesse ambiente).
+- **Compras**: tudo numa tela (`/compras`); a edição (`/compras/:id`) pega o item da lista (não
+  existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), que
+  compara como o português; o Postgres compara byte a byte, então a ordem crua da API difere.
+  Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
+  que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
+  sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda.
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no
@@ -75,7 +81,7 @@ npm run lint                                  # oxlint
   não navegue manualmente no `onSuccess` do login, isso cria corrida com a guarda.
 - Rotas em `src/app/rotas.tsx` (`definicaoRotas`, reaproveitado nos testes por
   `src/test/renderizarApp.tsx`, que monta o app inteiro com `createMemoryRouter`); cada tela usa `components/layout/Pagina.tsx` (título da aba +
-  cabeçalho). Áreas ainda não feitas usam `paginas/EmBreve.tsx`.
+  cabeçalho).
 - Telas com formulário e as maiores entram com `lazy` em `rotas.tsx` (mantém o pacote principal
   abaixo de 500 kB); `hydrateFallbackElement` mostra `Carregando` enquanto baixam.
 - **Dados** em `src/consultas/<area>.ts`: hooks do TanStack Query com as chaves em `chaves`.

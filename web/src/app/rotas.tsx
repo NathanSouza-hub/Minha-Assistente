@@ -1,8 +1,6 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
-import { EmBreve } from '@/paginas/EmBreve'
 import { Mais } from '@/paginas/Mais'
 import { NaoEncontrada } from '@/paginas/NaoEncontrada'
 
@@ -28,6 +26,9 @@ const detalheViagem = () =>
   import('@/paginas/viagens/DetalheViagem').then((m) => ({ Component: m.DetalheViagem }))
 const paginaViagem = () =>
   import('@/paginas/viagens/PaginaViagem').then((m) => ({ Component: m.PaginaViagem }))
+const compras = () => import('@/paginas/compras/Compras').then((m) => ({ Component: m.Compras }))
+const paginaItemCompra = () =>
+  import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -67,16 +68,8 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'viagens/nova', lazy: paginaViagem },
           { path: 'viagens/:id', lazy: detalheViagem },
           { path: 'viagens/:id/editar', lazy: paginaViagem },
-          {
-            path: 'compras',
-            element: (
-              <EmBreve
-                titulo="Compras"
-                icone={ShoppingCart}
-                descricao="A lista do mercado e de tudo o que falta comprar."
-              />
-            ),
-          },
+          { path: 'compras', lazy: compras },
+          { path: 'compras/:id', lazy: paginaItemCompra },
           { path: 'imoveis', lazy: imoveis },
           { path: 'relatorio', lazy: relatorio },
           { path: '*', element: <NaoEncontrada /> },
