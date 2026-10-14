@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { ListChecks, Plane, ShoppingCart } from 'lucide-react'
+import { Plane, ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
@@ -20,6 +20,9 @@ const paginaEvento = () =>
 const remedios = () => import('@/paginas/remedios/Remedios').then((m) => ({ Component: m.Remedios }))
 const paginaRemedio = () =>
   import('@/paginas/remedios/PaginaRemedio').then((m) => ({ Component: m.PaginaRemedio }))
+const rotina = () => import('@/paginas/rotina/Rotina').then((m) => ({ Component: m.Rotina }))
+const paginaRotina = () =>
+  import('@/paginas/rotina/PaginaRotina').then((m) => ({ Component: m.PaginaRotina }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -52,16 +55,9 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'remedios/novo', lazy: paginaRemedio },
           { path: 'remedios/:id', lazy: paginaRemedio },
           { path: 'mais', element: <Mais /> },
-          {
-            path: 'rotina',
-            element: (
-              <EmBreve
-                titulo="Rotina"
-                icone={ListChecks}
-                descricao="Tarefas que se repetem e o check de cada dia."
-              />
-            ),
-          },
+          { path: 'rotina', lazy: rotina },
+          { path: 'rotina/nova', lazy: paginaRotina },
+          { path: 'rotina/:id', lazy: paginaRotina },
           {
             path: 'viagens',
             element: (

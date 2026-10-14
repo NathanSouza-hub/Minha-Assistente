@@ -1,12 +1,14 @@
-import { ChevronLeft, ChevronRight, CircleCheck, Pill, Plus, Undo2 } from 'lucide-react'
+import { CircleCheck, Pill, Plus, Undo2 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { NavegadorDia } from '@/components/NavegadorDia'
+import { Progresso } from '@/components/Progresso'
 import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDosesDoDia, useMedicamentos, useRegistrarDose } from '@/consultas/medicamentos'
-import { hojeISO, horaDe, rotuloDoDia, somarDias } from '@/lib/datas'
+import { hojeISO, horaDe } from '@/lib/datas'
 import type { DoseDoDia, PeriodoRemedio } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { descreverHorario } from './textos'
@@ -84,37 +86,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <nav
-          aria-label="Dia"
-          className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => mudarData(somarDias(data, -1))}
-            aria-label="Dia anterior"
-          >
-            <ChevronLeft className="size-7" aria-hidden />
-          </Button>
-          <h2 className="text-center text-lg font-bold min-[400px]:text-xl" aria-live="polite">
-            {rotuloDoDia(data)}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => mudarData(somarDias(data, 1))}
-            aria-label="Próximo dia"
-          >
-            <ChevronRight className="size-7" aria-hidden />
-          </Button>
-        </nav>
-        {data !== hojeISO() && (
-          <Button variant="link" className="self-center" onClick={() => mudarData(hojeISO())}>
-            Voltar para hoje
-          </Button>
-        )}
-      </div>
+      <NavegadorDia data={data} aoMudar={mudarData} />
 
       {consulta.isPending ? (
         <div className="flex flex-col gap-3" role="status" aria-label="Carregando remédios">
@@ -144,7 +116,12 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
         </EstadoVazio>
       ) : (
         <>
-          <Progresso tomadas={tomadas} total={doses.length} />
+          <Progresso
+            feitos={tomadas}
+            total={doses.length}
+            texto={`${tomadas} de ${doses.length} ${doses.length === 1 ? 'dose tomada' : 'doses tomadas'}`}
+            textoCompleto="Tudo tomado neste dia."
+          />
           {GRUPOS.map(({ periodo, titulo }) => {
             const doGrupo = doses.filter((d) => d.periodo === periodo)
             if (!doGrupo.length) return null
@@ -164,25 +141,6 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
         </>
       )}
     </>
-  )
-}
-
-function Progresso({ tomadas, total }: { tomadas: number; total: number }) {
-  const tudo = tomadas === total
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-4">
-      <p className="text-lg font-semibold" aria-live="polite">
-        {tudo
-          ? 'Tudo tomado neste dia.'
-          : `${tomadas} de ${total} ${total === 1 ? 'dose tomada' : 'doses tomadas'}`}
-      </p>
-      <div className="h-3 rounded-full bg-muted" aria-hidden>
-        <div
-          className="h-full rounded-full bg-primary transition-[width]"
-          style={{ width: `${(tomadas / total) * 100}%` }}
-        />
-      </div>
-    </div>
   )
 }
 

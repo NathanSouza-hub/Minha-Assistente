@@ -4,7 +4,8 @@ import { handlersAuth } from './auth'
 import { handlersEventos } from './eventos'
 import { handlersMedicamentos } from './medicamentos'
 import { handlersPagamentos } from './pagamentos'
+import { handlersRotinas } from './rotinas'
 
 export { resetarBancoMock } from './banco'
 
-export const handlers = [...handlersAuth, ...handlersPagamentos, ...handlersEventos, ...handlersMedicamentos]
+export const handlers = [...handlersAuth, ...handlersPagamentos, ...handlersEventos, ...handlersMedicamentos, ...handlersRotinas]

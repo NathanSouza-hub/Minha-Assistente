@@ -42,6 +42,7 @@ npm run lint                                  # oxlint
   horário e o histórico de "tomei" se perde (o formulário guarda o `id` em cada linha do
   `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
   na hora e volta atrás se o servidor recusar.
+- **Rotina**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista (`useRotinas`).
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

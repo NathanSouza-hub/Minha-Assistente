@@ -1,0 +1,290 @@
+import { useEffect, useId } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ArrowLeft, Check, Trash2 } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { toast } from 'sonner'
+import { Pagina } from '@/components/layout/Pagina'
+import { Campo } from '@/components/Campo'
+import { Confirmar } from '@/components/Confirmar'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
+import { useExcluirRotina, useRotinas, useSalvarRotina } from '@/consultas/rotinas'
+import { aplicarErroApi } from '@/lib/formulario'
+import type { Rotina, RotinaCorpo } from '@/lib/tipos'
+import { cn } from '@/lib/utils'
+import { DIAS, FIM_DE_SEMANA, ORDEM_EXIBICAO, TODOS, UTEIS } from './dias'
+
+const esquema = z
+  .object({
+    titulo: z.string().trim().min(1, 'Informe a tarefa.').max(200, 'Texto longo demais.'),
+    hora: z.string().refine((v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v), 'Hora inválida.'),
+    diasSemana: z.array(z.number()).min(1, 'Escolha pelo menos um dia.'),
+    lembrete: z.boolean(),
+    ativo: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.lembrete && !v.hora) {
+      ctx.addIssue({ code: 'custom', path: ['hora'], message: 'Para receber lembrete, informe a hora.' })
+    }
+  })
+type Dados = z.infer<typeof esquema>
+
+const iniciais = (r?: Rotina): Dados =>
+  r
+    ? { titulo: r.titulo, hora: r.hora ?? '', diasSemana: r.diasSemana, lembrete: r.lembrete, ativo: r.ativo }
+    : { titulo: '', hora: '', diasSemana: TODOS, lembrete: false, ativo: true }
+
+const paraCorpo = (d: Dados): RotinaCorpo => ({
+  titulo: d.titulo.trim(),
+  hora: d.hora || null,
+  diasSemana: [...d.diasSemana].sort(),
+  lembrete: Boolean(d.hora) && d.lembrete,
+  ativo: d.ativo,
+})
+
+/** /rotina/nova e /rotina/:id (a lista já traz tudo; o back-end não tem GET /rotinas/:id). */
+export function PaginaRotina() {
+  const { id } = useParams()
+  const consulta = useRotinas()
+  const rotina = consulta.data?.find((r) => r.id === id)
+
+  if (id && consulta.isPending) {
+    return (
+      <Pagina titulo="Editar tarefa">
+        <Skeleton className="h-60 rounded-xl" />
+      </Pagina>
+    )
+  }
+  if (id && !rotina) {
+    return (
+      <Pagina titulo="Tarefa não encontrada">
+        <p className="mb-4 text-lg">Esta tarefa não existe mais ou foi excluída.</p>
+        <Button asChild variant="outline">
+          <Link to="/rotina?visao=todas">Voltar para a rotina</Link>
+        </Button>
+      </Pagina>
+    )
+  }
+  return <FormularioRotina key={id ?? 'nova'} rotina={rotina} />
+}
+
+function FormularioRotina({ rotina }: { rotina?: Rotina }) {
+  const navegar = useNavigate()
+  const editando = Boolean(rotina)
+  const salvar = useSalvarRotina()
+  const excluir = useExcluirRotina()
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setError,
+    setFocus,
+    formState: { errors, isSubmitting },
+  } = useForm<Dados>({ resolver: zodResolver(esquema), defaultValues: iniciais(rotina) })
+  const hora = watch('hora')
+
+  useEffect(() => {
+    if (!editando) setFocus('titulo')
+  }, [editando, setFocus])
+
+  async function enviar(dados: Dados) {
+    try {
+      await salvar.mutateAsync({ id: rotina?.id, dados: paraCorpo(dados) })
+      toast.success(editando ? 'Tarefa salva.' : 'Tarefa criada.')
+      navegar(editando ? '/rotina?visao=todas' : '/rotina')
+    } catch (erro) {
+      aplicarErroApi(erro, setError)
+    }
+  }
+
+  const titulo = editando ? 'Editar tarefa' : 'Nova tarefa'
+  const voltar = editando ? '/rotina?visao=todas' : '/rotina'
+
+  return (
+    <Pagina
+      titulo={titulo}
+      cabecalho={
+        <div className="flex flex-col gap-2">
+          <Link
+            to={voltar}
+            className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
+          >
+            <ArrowLeft className="size-5" aria-hidden />
+            Rotina
+          </Link>
+          <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
+        </div>
+      }
+    >
+      <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
+        <Campo
+          rotulo="Tarefa"
+          placeholder="Ex.: Ler e-mails"
+          erro={errors.titulo?.message}
+          {...register('titulo')}
+        />
+
+        <Controller
+          control={control}
+          name="diasSemana"
+          render={({ field }) => (
+            <EscolhaDias valor={field.value} aoMudar={field.onChange} erro={errors.diasSemana?.message} />
+          )}
+        />
+
+        <Campo
+          rotulo="Hora (opcional)"
+          type="time"
+          dica="Em branco, a tarefa vale para qualquer hora do dia."
+          erro={errors.hora?.message}
+          {...register('hora')}
+          className="sm:max-w-56"
+        />
+
+        <Controller
+          control={control}
+          name="lembrete"
+          render={({ field }) => (
+            <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="lembrete" className="text-lg">
+                  Lembrar na hora
+                </Label>
+                <Switch id="lembrete" checked={field.value} onCheckedChange={field.onChange} />
+              </div>
+              <p className="text-base text-muted-foreground">
+                {hora ? `Avisa às ${hora} nos dias escolhidos.` : 'Precisa de uma hora para avisar.'}
+              </p>
+            </div>
+          )}
+        />
+
+        {editando && (
+          <Controller
+            control={control}
+            name="ativo"
+            render={({ field }) => (
+              <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <Label htmlFor="ativa" className="text-lg">
+                    Na rotina
+                  </Label>
+                  <Switch id="ativa" checked={field.value} onCheckedChange={field.onChange} />
+                </div>
+                <p className="text-base text-muted-foreground">
+                  {field.value
+                    ? 'Aparece nas tarefas do dia.'
+                    : 'Pausada: some das tarefas do dia, mas fica guardada.'}
+                </p>
+              </div>
+            )}
+          />
+        )}
+
+        {errors.root && (
+          <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 font-semibold text-destructive">
+            {errors.root.message}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
+          <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
+            {isSubmitting ? 'Salvando…' : editando ? 'Salvar alterações' : 'Criar tarefa'}
+          </Button>
+          {rotina && (
+            <Confirmar
+              gatilho={
+                <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
+                  <Trash2 aria-hidden />
+                  Excluir tarefa
+                </Button>
+              }
+              titulo={`Excluir "${rotina.titulo}"?`}
+              descricao="O histórico dos dias em que ela foi feita também será apagado. Para parar por um tempo, desligue “Na rotina”."
+              confirmar="Excluir tarefa"
+              aoConfirmar={() =>
+                excluir.mutate(rotina.id, {
+                  onSuccess: () => {
+                    toast.success('Tarefa excluída.')
+                    navegar('/rotina?visao=todas')
+                  },
+                })
+              }
+            />
+          )}
+        </div>
+      </form>
+    </Pagina>
+  )
+}
+
+/** Atalhos (todos os dias, segunda a sexta, fim de semana) + um botão por dia. */
+function EscolhaDias({ valor, aoMudar, erro }: { valor: number[]; aoMudar: (v: number[]) => void; erro?: string }) {
+  const id = useId()
+  const atalhos = [
+    { rotulo: 'Todos os dias', dias: TODOS },
+    { rotulo: 'Segunda a sexta', dias: UTEIS },
+    { rotulo: 'Fim de semana', dias: FIM_DE_SEMANA },
+  ]
+  const igual = (dias: number[]) => dias.length === valor.length && dias.every((d) => valor.includes(d))
+  const alternar = (d: number) => aoMudar(valor.includes(d) ? valor.filter((x) => x !== d) : [...valor, d])
+  const base =
+    'flex min-h-11 items-center gap-2 border px-4 text-base font-semibold outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+
+  return (
+    <fieldset className="flex flex-col gap-3" aria-describedby={erro ? `${id}-erro` : undefined}>
+      <legend className="mb-1 text-base font-semibold">Em quais dias?</legend>
+      {/* Dias: ligam e desligam um a um (preenchidos quando escolhidos). */}
+      <div className="flex flex-wrap gap-2">
+        {ORDEM_EXIBICAO.map((d) => {
+          const ligado = valor.includes(d)
+          return (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={ligado}
+              onClick={() => alternar(d)}
+              className={cn(
+                base,
+                'rounded-full',
+                ligado ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card',
+              )}
+            >
+              {ligado && <Check className="size-5" aria-hidden />}
+              {DIAS[d]}
+            </button>
+          )
+        })}
+      </div>
+      {/* Atalhos: escolhem vários dias de uma vez (estilo mais leve, para não parecer mais um dia). */}
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        <span className="w-full text-base text-muted-foreground sm:w-auto sm:pr-2">Atalhos:</span>
+        {atalhos.map((a) => (
+          <button
+            key={a.rotulo}
+            type="button"
+            aria-pressed={igual(a.dias)}
+            onClick={() => aoMudar(a.dias)}
+            className={cn(
+              base,
+              'rounded-lg border-transparent px-3 text-primary underline underline-offset-4',
+              igual(a.dias) && 'border-primary bg-secondary no-underline',
+            )}
+          >
+            {a.rotulo}
+          </button>
+        ))}
+      </div>
+      {erro && (
+        <p id={`${id}-erro`} className="text-base font-semibold text-destructive">
+          {erro}
+        </p>
+      )}
+    </fieldset>
+  )
+}

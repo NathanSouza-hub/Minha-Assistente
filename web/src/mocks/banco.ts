@@ -7,6 +7,7 @@ import type {
   HorarioRemedio,
   Imovel,
   Recorrencia,
+  Rotina,
   StatusPagamento,
   Usuario,
 } from '@/lib/tipos'
@@ -52,6 +53,12 @@ export type MedicamentoMock = {
   atualizadoEm: string
 }
 
+export type RotinaMock = Omit<Rotina, 'criadoEm' | 'atualizadoEm'> & {
+  usuarioId: string
+  criadoEm: string
+  atualizadoEm: string
+}
+
 // Mesmas categorias e ordem do seed do back-end (db/seeds/01_catalogos.js); ids fixos no mock.
 export const CATEGORIAS: CategoriaPagamento[] = [
   'Salários',
@@ -75,6 +82,8 @@ export const banco = {
   eventos: [] as EventoMock[],
   medicamentos: [] as MedicamentoMock[],
   registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
+  rotinas: [] as RotinaMock[],
+  conclusoesRotina: [] as { rotinaId: string; data: string; concluidaEm: string }[],
 }
 
 export function novoPagamento(
@@ -307,6 +316,47 @@ function semearRemedios() {
   })
 }
 
+function semearRotina() {
+  const agora = agoraISO()
+  const hoje = DateTime.now().setZone(FUSO)
+  const todos = [0, 1, 2, 3, 4, 5, 6]
+  const uteis = [1, 2, 3, 4, 5]
+  const rotina = (
+    titulo: string,
+    hora: string | null,
+    diasSemana: number[],
+    extra: Partial<RotinaMock> = {},
+  ) => ({
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    titulo,
+    hora,
+    diasSemana,
+    ativo: true,
+    ordem: 0,
+    lembrete: false,
+    criadoEm: agora,
+    atualizadoEm: agora,
+    ...extra,
+  })
+  const emails = rotina('Ler e-mails', '08:30', uteis, { lembrete: true })
+  banco.rotinas.push(
+    emails,
+    rotina('Ler mensagens do WhatsApp', '09:00', todos),
+    rotina('Responder mensagens pendentes', '17:00', uteis),
+    rotina('Regar as plantas', null, [hoje.weekday % 7, (hoje.weekday + 3) % 7]),
+    rotina('Organizar a agenda da semana', '19:00', [0]),
+    rotina('Revisar contas do mês', null, todos, { ativo: false }),
+  )
+  if (uteis.includes(hoje.weekday % 7)) {
+    banco.conclusoesRotina.push({
+      rotinaId: emails.id,
+      data: hoje.toISODate()!,
+      concluidaEm: paraDataHoraISO(hoje.set({ hour: 8, minute: 40, second: 0 })),
+    })
+  }
+}
+
 export function resetarBancoMock() {
   banco.usuarios.clear()
   banco.imoveis.length = 0
@@ -314,9 +364,12 @@ export function resetarBancoMock() {
   banco.eventos.length = 0
   banco.medicamentos.length = 0
   banco.registrosRemedio = []
+  banco.rotinas.length = 0
+  banco.conclusoesRotina = []
   semear()
   semearAgenda()
   semearRemedios()
+  semearRotina()
 }
 
 resetarBancoMock()

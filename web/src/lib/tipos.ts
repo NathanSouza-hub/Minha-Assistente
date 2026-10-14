@@ -162,3 +162,31 @@ export type DoseDoDia = {
   tomado: boolean
   tomadoEm: string | null
 }
+
+// ---- Rotina (etapa 7 do back-end) ----
+
+export type Rotina = {
+  id: string
+  titulo: string
+  hora: string | null
+  /** 0 = domingo ... 6 = sábado; pelo menos um. */
+  diasSemana: number[]
+  ativo: boolean
+  ordem: number
+  lembrete: boolean
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type RotinaCorpo = Pick<Rotina, 'titulo' | 'hora' | 'diasSemana' | 'ativo' | 'lembrete'> & { ordem?: number }
+
+/** Item de GET /rotinas/hoje: uma tarefa do dia com o status. */
+export type TarefaDoDia = {
+  rotinaId: string
+  titulo: string
+  hora: string | null
+  ordem: number
+  data: string
+  concluida: boolean
+  concluidaEm: string | null
+}
