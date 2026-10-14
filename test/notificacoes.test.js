@@ -22,7 +22,7 @@ const chaves = () => ({
 let contador = 0;
 const inscricao = () => {
   contador += 1;
-  return { endpoint: `https://push.exemplo.com/envio/${contador}`, expirationTime: null, keys: chaves() };
+  return { endpoint: `https://fcm.googleapis.com/fcm/send/${contador}`, expirationTime: null, keys: chaves() };
 };
 
 const inscrever = (sessao, dados, status = 201) =>
@@ -67,7 +67,12 @@ test('inscreve, atualiza a mesma inscrição e passa o aparelho para quem entrou
 
 test('valida a inscrição', async () => {
   const casos = [
-    [{ ...inscricao(), endpoint: 'http://push.exemplo.com/x' }, /endpoint/],
+    [{ ...inscricao(), endpoint: 'http://fcm.googleapis.com/fcm/send/x' }, /endpoint/],
+    [{ ...inscricao(), endpoint: 'https://169.254.169.254/latest' }, /Serviço de push não reconhecido/],
+    [{ ...inscricao(), endpoint: 'https://api:3000/auth' }, /Serviço de push não reconhecido/],
+    [{ ...inscricao(), endpoint: 'https://fcm.googleapis.com:8443/x' }, /Serviço de push não reconhecido/],
+    [{ ...inscricao(), endpoint: 'https://fcm.googleapis.com.evil.com/x' }, /Serviço de push não reconhecido/],
+    [{ ...inscricao(), endpoint: 'https://evilnotify.windows.com/x' }, /Serviço de push não reconhecido/],
     [{ ...inscricao(), keys: { ...chaves(), p256dh: 'tem espaço' } }, /keys\.p256dh/],
     [{ ...inscricao(), keys: { ...chaves(), p256dh: 'BNcRdreALRFXTkOO' } }, /keys\.p256dh: A chave precisa ter 65 bytes/],
     [{ ...inscricao(), keys: { ...chaves(), auth: 'curta' } }, /keys\.auth: A chave precisa ter 16 bytes/],
@@ -142,4 +147,33 @@ test('teste: todas as inscrições expiradas → 409; outro erro do serviço →
   });
   await request(app).post('/notificacoes/teste').set(davi.auth).expect(500);
   assert.equal((await inscricoesDe(davi)).length, 1);
+});
+
+test('aceita os serviços de push dos navegadores', async () => {
+  for (const endpoint of [
+    'https://fcm.googleapis.com/fcm/send/abc',
+    'https://updates.push.services.mozilla.com/wpush/v2/abc',
+    'https://web.push.apple.com/abc',
+    'https://wns2-bl2p.notify.windows.com/w/?token=abc',
+    'https://FCM.googleapis.com./fcm/send/abc',
+  ]) {
+    await inscrever(ana, { ...inscricao(), endpoint });
+  }
+});
+
+test('envio ignora e apaga inscrição gravada fora da lista de serviços de push', async (t) => {
+  const elis = await criarSessao(app);
+  const valida = inscricao();
+  await inscrever(elis, valida);
+  const { keys } = inscricao();
+  await db('pushInscricao').insert({ usuarioId: elis.usuario.id, endpoint: 'https://api:3000/interno', p256dh: keys.p256dh, auth: keys.auth });
+
+  const destinos = [];
+  t.mock.method(webpush, 'sendNotification', async (sub) => {
+    destinos.push(sub.endpoint);
+    return { statusCode: 201 };
+  });
+  await request(app).post('/notificacoes/teste').set(elis.auth).expect(204);
+  assert.deepEqual(destinos, [valida.endpoint]);
+  assert.deepEqual(await inscricoesDe(elis), [valida.endpoint]);
 });

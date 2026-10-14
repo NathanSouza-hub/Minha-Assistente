@@ -1,6 +1,7 @@
 // Canal "app": notificação Web Push (VAPID) em cada navegador inscrito pelo usuário.
 const webpush = require('web-push');
 const env = require('../../config/env');
+const { endpointPermitido } = require('../../lib/push');
 
 const nome = 'app';
 
@@ -25,7 +26,11 @@ const expirou = (erro) => erro?.statusCode === 404 || erro?.statusCode === 410;
  *   lança erro (para tentar de novo) se todos falharam por outro motivo.
  */
 async function enviar(conexao, usuarioId, mensagem) {
-  const inscricoes = await conexao('pushInscricao').select('id', 'endpoint', 'p256dh', 'auth').where({ usuarioId });
+  const todas = await conexao('pushInscricao').select('id', 'endpoint', 'p256dh', 'auth').where({ usuarioId });
+  // Defesa extra: inscrição gravada fora da lista de serviços de push nunca recebe POST; é apagada.
+  const invalidas = todas.filter((i) => !endpointPermitido(i.endpoint));
+  if (invalidas.length) await conexao('pushInscricao').whereIn('id', invalidas.map((i) => i.id)).del();
+  const inscricoes = todas.filter((i) => endpointPermitido(i.endpoint));
   if (!inscricoes.length) return { entregue: false, motivo: 'Nenhum aparelho inscrito.' };
 
   configurar();

@@ -1,4 +1,5 @@
 const { z } = require('../../lib/zod');
+const { endpointPermitido } = require('../../lib/push');
 
 // Chaves da inscrição do navegador (PushSubscription.toJSON().keys), em base64url. O tamanho é
 // conferido aqui: com uma chave malformada, todo envio para o usuário falharia depois.
@@ -12,8 +13,12 @@ const endpoint = z
   .url({ protocol: /^https$/, error: 'Endereço de inscrição inválido.' })
   .max(1000, 'Endereço de inscrição longo demais.');
 
+// Ao inscrever, só serviços de push conhecidos (src/lib/push.js). Cancelar aceita qualquer URL,
+// para que uma inscrição antiga fora da lista ainda possa ser removida.
+const endpointInscricao = endpoint.refine(endpointPermitido, 'Serviço de push não reconhecido.');
+
 const inscricao = z
-  .object({ endpoint, keys: z.object({ p256dh: chave(65), auth: chave(16) }) })
+  .object({ endpoint: endpointInscricao, keys: z.object({ p256dh: chave(65), auth: chave(16) }) })
   .meta({
     example: {
       endpoint: 'https://fcm.googleapis.com/fcm/send/c1KrmpTuRm...',

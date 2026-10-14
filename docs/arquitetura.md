@@ -138,7 +138,8 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
     - O único de `lembrete_envio` inclui `agendado_para` (migration 11): um evento pode ter vários
       lembretes da mesma ocorrência.
     - `POST /notificacoes/inscricoes` recebe `PushSubscription.toJSON()` (`{ endpoint, keys: {
-      p256dh, auth } }`, endpoint https) e responde `201 { id, endpoint }`; o mesmo endpoint
+      p256dh, auth } }`, endpoint https de um serviço de push conhecido — FCM, Mozilla, Apple ou
+      WNS, lista em `src/lib/push.js`; outro host → `400`) e responde `201 { id, endpoint }`; o mesmo endpoint
       atualiza a inscrição e, se for de outro usuário, passa para quem enviou.
       `DELETE /notificacoes/inscricoes` `{ endpoint }` é idempotente (`204`).
     - `GET /notificacoes/chave-publica` → `{ chavePublica }` (o `applicationServerKey`).
