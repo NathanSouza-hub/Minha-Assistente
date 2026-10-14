@@ -87,6 +87,15 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
     - Editar ou excluir um evento cancela os lembretes ainda pendentes dele.
     - `link` aceita só http(s); texto vazio vira `null`.
 
+12. **Medicamentos (etapa 6)**:
+    - Medicamento traz `horarios: [{ id, periodo, hora, diaSemana }]` (`diaSemana` 0 = domingo,
+      obrigatório só no semanal). No PUT, horário com `id` é mantido (com o histórico de "tomei"),
+      sem `id` é criado, e os ausentes são removidos.
+    - `GET /medicamentos/hoje?data=` (padrão hoje): diários + semanais do dia da semana, só ativos.
+      Item: `{ horarioId, medicamentoId, nome, dose, observacoes, periodo, hora, data, tomado, tomadoEm }`.
+    - `POST /medicamentos/registros` `{ horarioId, data?, tomado? }` responde o item atualizado;
+      é idempotente e `tomado: false` desmarca. Semanal fora do dia da semana → `400`.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).

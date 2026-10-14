@@ -14,6 +14,7 @@ const { rotasCategorias } = require('./modules/categorias/routes');
 const { rotasPagamentos } = require('./modules/pagamentos/routes');
 const { rotasRelatorios } = require('./modules/relatorios/routes');
 const { rotasEventos } = require('./modules/eventos/routes');
+const { rotasMedicamentos } = require('./modules/medicamentos/routes');
 
 function criarApp() {
   const app = express();
@@ -46,6 +47,7 @@ function criarApp() {
   app.use('/pagamentos', autenticar, rotasPagamentos());
   app.use('/relatorios', autenticar, rotasRelatorios());
   app.use('/eventos', autenticar, rotasEventos());
+  app.use('/medicamentos', autenticar, rotasMedicamentos());
 
   app.use(rotaNaoEncontrada);
   app.use(tratarErro);
