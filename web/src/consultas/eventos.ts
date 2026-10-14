@@ -48,6 +48,9 @@ export function useExcluirEvento() {
   return useMutation({
     mutationFn: (id: string) => api<void>(`/eventos/${id}`, { method: 'DELETE' }),
     onSuccess: (_r, id) => {
+      // O item apagado sai do cache antes de recarregar: senão a tela ainda aberta dele buscaria
+      // de novo e receberia 404 (aviso de erro logo depois de "excluído").
+      cliente.removeQueries({ queryKey: chavesEventos.item(id) })
       // Tira todas as ocorrências da série das listas já em cache (sem "piscar" ao voltar).
       cliente.setQueriesData<Evento[]>({ queryKey: ['eventos', 'lista'] }, (lista) =>
         lista?.filter((e) => e.id !== id),

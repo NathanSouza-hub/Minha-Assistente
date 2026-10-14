@@ -122,6 +122,9 @@ describe('formulário de pagamento', () => {
     const dialogo = await screen.findByRole('alertdialog')
     await usuario.click(within(dialogo).getByRole('button', { name: 'Excluir pagamento' }))
     expect(await screen.findByText('Pagamento excluído.')).toBeInTheDocument()
+    // A tela do item apagado não pode buscar de novo e mostrar "não encontrado".
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()
     await item('Condomínio')
     expect(screen.queryByRole('link', { name: /^Exame de sangue/ })).not.toBeInTheDocument()
   })

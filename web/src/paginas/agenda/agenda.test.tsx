@@ -193,6 +193,9 @@ describe('formulário de compromisso', () => {
     expect(dialogo).toHaveTextContent('todas as datas serão excluídas')
     await usuario.click(within(dialogo).getByRole('button', { name: 'Excluir todas as datas' }))
     expect(await screen.findByText('Compromisso e repetições excluídos.')).toBeInTheDocument()
+    // A tela do item apagado não pode buscar de novo e mostrar "não encontrado".
+    await new Promise((r) => setTimeout(r, 300))
+    expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()
     await cartao('Consulta com cardiologista')
     expect(screen.queryByRole('link', { name: /Fisioterapia/ })).not.toBeInTheDocument()
   })

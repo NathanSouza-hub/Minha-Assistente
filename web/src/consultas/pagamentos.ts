@@ -121,11 +121,14 @@ export function usePagarPagamento() {
 }
 
 export function useExcluirPagamento() {
+  const cliente = useQueryClient()
   const invalidar = useInvalidarPagamentos()
   const atualizarListas = useAtualizarListas()
   return useMutation({
     mutationFn: (id: string) => api<void>(`/pagamentos/${id}`, { method: 'DELETE' }),
     onSuccess: (_resposta, id) => {
+      // Sai do cache antes de recarregar, para a tela ainda aberta não buscar de novo (404).
+      cliente.removeQueries({ queryKey: chaves.pagamento(id) })
       atualizarListas((lista) => lista.filter((p) => p.id !== id))
       return invalidar()
     },
