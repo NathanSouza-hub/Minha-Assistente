@@ -118,3 +118,47 @@ export type Evento = EventoCorpo & {
 }
 
 export type FiltrosEvento = { inicio?: string; fim?: string; tipo?: TipoEvento }
+
+export type PeriodoRemedio = 'manha' | 'tarde' | 'noite' | 'semanal'
+
+export type HorarioRemedio = {
+  id: string
+  periodo: PeriodoRemedio
+  hora: string | null
+  /** 0 = domingo ... 6 = sábado. Só no semanal. */
+  diaSemana: number | null
+}
+
+export type Medicamento = {
+  id: string
+  nome: string
+  dose: string | null
+  observacoes: string | null
+  ativo: boolean
+  horarios: HorarioRemedio[]
+  criadoEm: string
+  atualizadoEm: string
+}
+
+/** Corpo de POST/PUT. No PUT, horário com `id` é mantido (com o histórico); sem `id` é novo. */
+export type MedicamentoCorpo = {
+  nome: string
+  dose: string | null
+  observacoes: string | null
+  ativo: boolean
+  horarios: (Omit<HorarioRemedio, 'id'> & { id?: string })[]
+}
+
+/** Item de GET /medicamentos/hoje: uma dose do dia com o status. */
+export type DoseDoDia = {
+  horarioId: string
+  medicamentoId: string
+  nome: string
+  dose: string | null
+  observacoes: string | null
+  periodo: PeriodoRemedio
+  hora: string | null
+  data: string
+  tomado: boolean
+  tomadoEm: string | null
+}

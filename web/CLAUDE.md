@@ -38,6 +38,12 @@ npm run lint                                  # oxlint
   editar, abra `GET /eventos/:id` (a série) — o PUT precisa do início da série, não da ocorrência.
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
+- **Remédios**: no PUT, mande o `id` dos horários que continuam — sem ele o back-end recria o
+  horário e o histórico de "tomei" se perde (o formulário guarda o `id` em cada linha do
+  `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
+  na hora e volta atrás se o servidor recusar.
+- Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
+  mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no
   back-end; campos com `components/Campo.tsx`; erro da API com `aplicarErroApi()`
   (`src/lib/formulario.ts`), que liga códigos a campos (ex.: `EMAIL_EM_USO → email`) e distribui

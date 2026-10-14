@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
-import { ListChecks, Pill, Plane, ShoppingCart } from 'lucide-react'
+import { ListChecks, Plane, ShoppingCart } from 'lucide-react'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { EmBreve } from '@/paginas/EmBreve'
@@ -15,7 +15,11 @@ const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => (
 const paginaPagamento = () =>
   import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
 const agenda = () => import('@/paginas/agenda/Agenda').then((m) => ({ Component: m.Agenda }))
-const paginaEvento = () => import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
+const paginaEvento = () =>
+  import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
+const remedios = () => import('@/paginas/remedios/Remedios').then((m) => ({ Component: m.Remedios }))
+const paginaRemedio = () =>
+  import('@/paginas/remedios/PaginaRemedio').then((m) => ({ Component: m.PaginaRemedio }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
@@ -44,23 +48,28 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },
-          {
-            path: 'remedios',
-            element: (
-              <EmBreve titulo="Remédios" icone={Pill} descricao="Horários de cada remédio e o que já foi tomado." />
-            ),
-          },
+          { path: 'remedios', lazy: remedios },
+          { path: 'remedios/novo', lazy: paginaRemedio },
+          { path: 'remedios/:id', lazy: paginaRemedio },
           { path: 'mais', element: <Mais /> },
           {
             path: 'rotina',
             element: (
-              <EmBreve titulo="Rotina" icone={ListChecks} descricao="Tarefas que se repetem e o check de cada dia." />
+              <EmBreve
+                titulo="Rotina"
+                icone={ListChecks}
+                descricao="Tarefas que se repetem e o check de cada dia."
+              />
             ),
           },
           {
             path: 'viagens',
             element: (
-              <EmBreve titulo="Viagens" icone={Plane} descricao="Datas, hospedagem, transporte e passagens." />
+              <EmBreve
+                titulo="Viagens"
+                icone={Plane}
+                descricao="Datas, hospedagem, transporte e passagens."
+              />
             ),
           },
           {

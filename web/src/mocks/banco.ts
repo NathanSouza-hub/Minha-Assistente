@@ -1,10 +1,10 @@
 // "Banco" em memória da API falsa. Recriado ao recarregar a página (e por resetarBancoMock nos testes).
-import { deDataISO, hojeISO } from '@/lib/datas'
 import { DateTime } from 'luxon'
-import { FUSO, paraDataHoraISO } from '@/lib/datas'
+import { deDataISO, FUSO, hojeISO, paraDataHoraISO } from '@/lib/datas'
 import type {
   CategoriaPagamento,
   EventoCorpo,
+  HorarioRemedio,
   Imovel,
   Recorrencia,
   StatusPagamento,
@@ -40,6 +40,18 @@ export type EventoMock = EventoCorpo & {
   atualizadoEm: string
 }
 
+export type MedicamentoMock = {
+  id: string
+  usuarioId: string
+  nome: string
+  dose: string | null
+  observacoes: string | null
+  ativo: boolean
+  horarios: HorarioRemedio[]
+  criadoEm: string
+  atualizadoEm: string
+}
+
 // Mesmas categorias e ordem do seed do back-end (db/seeds/01_catalogos.js); ids fixos no mock.
 export const CATEGORIAS: CategoriaPagamento[] = [
   'Salários',
@@ -61,6 +73,8 @@ export const banco = {
   imoveis: [] as ImovelMock[],
   pagamentos: [] as PagamentoMock[],
   eventos: [] as EventoMock[],
+  medicamentos: [] as MedicamentoMock[],
+  registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
 }
 
 export function novoPagamento(
@@ -233,13 +247,76 @@ function semearAgenda() {
   )
 }
 
+function semearRemedios() {
+  const agora = agoraISO()
+  const hoje = DateTime.now().setZone(FUSO)
+  const horario = (
+    periodo: HorarioRemedio['periodo'],
+    hora: string | null,
+    diaSemana: number | null = null,
+  ) => ({
+    id: crypto.randomUUID(),
+    periodo,
+    hora,
+    diaSemana,
+  })
+  const remedio = (dados: Omit<MedicamentoMock, 'id' | 'usuarioId' | 'criadoEm' | 'atualizadoEm'>) => ({
+    ...dados,
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  })
+  const omeprazol = remedio({
+    nome: 'Omeprazol',
+    dose: '1 cápsula de 20 mg',
+    observacoes: 'Em jejum, 30 minutos antes do café.',
+    ativo: true,
+    horarios: [horario('manha', '07:00')],
+  })
+  banco.medicamentos.push(
+    omeprazol,
+    remedio({
+      nome: 'Losartana',
+      dose: '1 comprimido de 50 mg',
+      observacoes: null,
+      ativo: true,
+      horarios: [horario('manha', '08:00'), horario('noite', '20:00')],
+    }),
+    // Semanal no dia da semana de hoje, para aparecer na tela "Hoje".
+    remedio({
+      nome: 'Vitamina D',
+      dose: '1 gota de 50.000 UI',
+      observacoes: null,
+      ativo: true,
+      horarios: [horario('semanal', '09:00', hoje.weekday % 7)],
+    }),
+    remedio({
+      nome: 'Dipirona',
+      dose: '1 comprimido',
+      observacoes: 'Só se tiver dor.',
+      ativo: false,
+      horarios: [horario('tarde', null)],
+    }),
+  )
+  // Omeprazol de hoje já tomado.
+  banco.registrosRemedio.push({
+    horarioId: omeprazol.horarios[0].id,
+    data: hoje.toISODate()!,
+    tomadoEm: paraDataHoraISO(hoje.set({ hour: 7, minute: 5, second: 0 })),
+  })
+}
+
 export function resetarBancoMock() {
   banco.usuarios.clear()
   banco.imoveis.length = 0
   banco.pagamentos.length = 0
   banco.eventos.length = 0
+  banco.medicamentos.length = 0
+  banco.registrosRemedio = []
   semear()
   semearAgenda()
+  semearRemedios()
 }
 
 resetarBancoMock()
