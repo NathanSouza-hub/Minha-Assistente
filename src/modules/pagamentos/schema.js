@@ -89,8 +89,8 @@ const filtros = z
 const pagamento = z.object({
   id: z.uuid(),
   descricao: z.string(),
-  categoriaId: z.uuid(),
-  categoriaNome: z.string(),
+  categoriaId: z.uuid().nullable().describe('Nulo só na fatura de cartão'),
+  categoriaNome: z.string().nullable(),
   imovelId: z.uuid().nullable(),
   imovelNome: z.string().nullable(),
   valorCentavos: z.number().int(),
@@ -104,6 +104,9 @@ const pagamento = z.object({
   parcelaAtual: z.number().int().nullable(),
   parcelaTotal: z.number().int().nullable(),
   observacoes: z.string().nullable(),
+  cartaoId: z.uuid().nullable().describe('Preenchido na fatura de cartão (não editável aqui, só paga)'),
+  cartaoNome: z.string().nullable(),
+  competencia: z.iso.date().nullable().describe('Mês da fatura (dia 1)'),
   criadoEm: instante,
   atualizadoEm: instante,
 });

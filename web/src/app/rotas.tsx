@@ -12,6 +12,10 @@ const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.
 const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
 const paginaPagamento = () =>
   import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
+const paginaCartao = () =>
+  import('@/paginas/cartoes/PaginaCartao').then((m) => ({ Component: m.PaginaCartao }))
+const paginaCompra = () =>
+  import('@/paginas/cartoes/PaginaCompra').then((m) => ({ Component: m.PaginaCompra }))
 const agenda = () => import('@/paginas/agenda/Agenda').then((m) => ({ Component: m.Agenda }))
 const paginaEvento = () =>
   import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
@@ -60,6 +64,10 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },
+          { path: 'cartoes/novo', lazy: paginaCartao },
+          { path: 'cartoes/:id', lazy: paginaCartao },
+          { path: 'cartoes/:id/compras/nova', lazy: paginaCompra },
+          { path: 'cartoes/:id/compras/:compraId', lazy: paginaCompra },
           { path: 'remedios', lazy: remedios },
           { path: 'remedios/novo', lazy: paginaRemedio },
           { path: 'remedios/:id', lazy: paginaRemedio },

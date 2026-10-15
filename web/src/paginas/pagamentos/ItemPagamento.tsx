@@ -14,18 +14,24 @@ const textoRecorrencia = { mensal: 'Todo mês', anual: 'Todo ano' } as const
 export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
   const pagar = usePagarPagamento()
   const desfazer = useEditarPagamentoPorId()
-  const detalhes = [p.categoriaNome, p.imovelNome].filter(Boolean).join(', ')
+  const detalhes = [p.categoriaNome ?? p.cartaoNome, p.imovelNome].filter(Boolean).join(', ')
+  // A fatura do cartão abre na aba Cartões, no mês dela.
+  const endereco = p.cartaoId
+    ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}`
+    : `/pagamentos/${p.id}`
 
   function marcarComoPago() {
     pagar.mutate(p.id, {
       onSuccess: () =>
         toast.success(`${p.descricao} marcado como pago.`, {
           description: p.recorrencia !== 'nenhuma' ? 'A conta do próximo período já foi criada.' : undefined,
-          action: {
-            label: 'Desfazer',
-            onClick: () =>
-              desfazer.mutate({ id: p.id, dados: { ...paraEdicao(p), status: 'pendente', dataPagamento: null } }),
-          },
+          action: p.cartaoId
+            ? undefined
+            : {
+                label: 'Desfazer',
+                onClick: () =>
+                  desfazer.mutate({ id: p.id, dados: { ...paraEdicao(p), status: 'pendente', dataPagamento: null } }),
+              },
         }),
     })
   }
@@ -37,7 +43,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
         p.vencido && 'border-l-4 border-l-atraso',
       )}
     >
-      <Link to={`/pagamentos/${p.id}`} className="-m-1 flex flex-col gap-1 rounded-lg p-1 hover:bg-muted/60">
+      <Link to={endereco} className="-m-1 flex flex-col gap-1 rounded-lg p-1 hover:bg-muted/60">
         <span className="flex items-start justify-between gap-3">
           <span className="text-lg leading-snug font-bold">{p.descricao}</span>
           <span className="shrink-0 text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>

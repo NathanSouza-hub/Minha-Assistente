@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Trash2 } from 'lucide-react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
@@ -64,6 +64,15 @@ export function PaginaPagamento() {
           <Link to="/pagamentos">Voltar para pagamentos</Link>
         </Button>
       </Pagina>
+    )
+  }
+  const fatura = consulta.data
+  if (fatura?.cartaoId) {
+    return (
+      <Navigate
+        replace
+        to={`/pagamentos?aba=cartoes&cartao=${fatura.cartaoId}&mes=${fatura.competencia!.slice(0, 7)}`}
+      />
     )
   }
   // key: ao trocar de pagamento, o formulário recomeça com os dados certos.

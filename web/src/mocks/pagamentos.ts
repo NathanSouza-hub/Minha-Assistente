@@ -57,7 +57,8 @@ function paraResposta(p: PagamentoMock): Pagamento {
   const { usuarioId: _u, ...resto } = p
   return {
     ...resto,
-    categoriaNome: banco.categorias.find((c) => c.id === p.categoriaId)!.nome,
+    categoriaNome: banco.categorias.find((c) => c.id === p.categoriaId)?.nome ?? null,
+    cartaoNome: banco.cartoes.find((c) => c.id === p.cartaoId)?.nome ?? null,
     imovelNome: banco.imoveis.find((i) => i.id === p.imovelId)?.nome ?? null,
     vencido: p.status === 'pendente' && p.vencimento < hojeISO(),
   }
@@ -143,6 +144,9 @@ const gravaveis = (d: PagamentoEdicao) => ({
 const doUsuario = (usuarioId: string, id: string) =>
   banco.pagamentos.find((p) => p.id === id && p.usuarioId === usuarioId)
 
+// A conta da fatura é mantida pelas compras do cartão (mocks/cartoes.ts): aqui só pode ser paga.
+const faturaAutomatica = () => erro(409, 'FATURA_AUTOMATICA', 'O valor da fatura vem das compras do cartão.')
+
 type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imovelId', string | null>>
 
 /** Mesmo que listar() no back-end: filtros pelo vencimento, em ordem de vencimento. */
@@ -202,7 +206,8 @@ export const handlersPagamentos = [
     autenticado(({ params }, u) => {
       const indice = banco.categorias.findIndex((c) => c.id === idDe(params) && c.usuarioId === u.id)
       if (indice < 0) return naoEncontrado('Categoria')
-      if (banco.pagamentos.some((p) => p.categoriaId === idDe(params))) {
+      const id = idDe(params)
+      if (banco.pagamentos.some((p) => p.categoriaId === id) || banco.comprasCartao.some((c) => c.categoriaId === id)) {
         return erro(
           409,
           'REFERENCIA_INVALIDA',
@@ -331,6 +336,7 @@ export const handlersPagamentos = [
     autenticado(async ({ request, params }, u) => {
       const p = doUsuario(u.id, idDe(params))
       if (!p) return naoEncontrado('Pagamento')
+      if (p.cartaoId) return faturaAutomatica()
       const dados = comPadroes((await request.json()) as PagamentoEdicao)
       const invalido = validar(dados, u.id)
       if (invalido) return invalido
@@ -364,6 +370,7 @@ export const handlersPagamentos = [
     autenticado(({ params }, u) => {
       const indice = banco.pagamentos.findIndex((p) => p.id === idDe(params) && p.usuarioId === u.id)
       if (indice < 0) return naoEncontrado('Pagamento')
+      if (banco.pagamentos[indice].cartaoId) return faturaAutomatica()
       const [apagado] = banco.pagamentos.splice(indice, 1)
       // ON DELETE SET NULL de recorrencia_origem_id
       banco.pagamentos.forEach((p) => {
@@ -400,7 +407,9 @@ export const handlersPagamentos = [
       const itens = [...grupos.entries()]
         .map(([id, valores]) => {
           const ref = referencia.find((r) => r.id === id)
-          return { id, nome: ref?.nome ?? 'Sem imóvel', ordem: ref?.ordem ?? Infinity, ...valores }
+          // Sem categoria = faturas de cartão, juntas no fim (como no back-end).
+          const semGrupo = agruparPor === 'categoria' ? 'Cartão de crédito' : 'Sem imóvel'
+          return { id, nome: ref?.nome ?? semGrupo, ordem: ref?.ordem ?? Infinity, ...valores }
         })
         .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
         .map(({ ordem: _o, ...item }) => item)

@@ -2,7 +2,9 @@
 import { DateTime } from 'luxon'
 import { deDataISO, FUSO, hojeISO, paraDataHoraISO } from '@/lib/datas'
 import type {
+  CartaoCorpo,
   CategoriaPagamento,
+  CompraCartaoCorpo,
   EventoCorpo,
   HorarioRemedio,
   Imovel,
@@ -20,7 +22,7 @@ export type PagamentoMock = {
   id: string
   usuarioId: string
   descricao: string
-  categoriaId: string
+  categoriaId: string | null
   imovelId: string | null
   valorCentavos: number
   vencimento: string
@@ -32,9 +34,14 @@ export type PagamentoMock = {
   parcelaAtual: number | null
   parcelaTotal: number | null
   observacoes: string | null
+  cartaoId: string | null
+  competencia: string | null
   criadoEm: string
   atualizadoEm: string
 }
+
+export type CartaoMock = Required<CartaoCorpo> & { id: string; usuarioId: string }
+export type CompraCartaoMock = CompraCartaoCorpo & { id: string; cartaoId: string; criadoEm: string }
 
 export type EventoMock = EventoCorpo & {
   id: string
@@ -111,6 +118,8 @@ export const banco = {
   imoveis: [] as ImovelMock[],
   categorias: [] as CategoriaMock[],
   pagamentos: [] as PagamentoMock[],
+  cartoes: [] as CartaoMock[],
+  comprasCartao: [] as CompraCartaoMock[],
   eventos: [] as EventoMock[],
   medicamentos: [] as MedicamentoMock[],
   registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
@@ -138,6 +147,8 @@ export function novoPagamento(
     parcelaAtual: null,
     parcelaTotal: null,
     observacoes: null,
+    cartaoId: null,
+    competencia: null,
     criadoEm: agora,
     atualizadoEm: agora,
     ...dados,
@@ -466,6 +477,8 @@ export function resetarBancoMock() {
   banco.imoveis.length = 0
   banco.categorias.length = 0
   banco.pagamentos.length = 0
+  banco.cartoes.length = 0
+  banco.comprasCartao.length = 0
   banco.eventos.length = 0
   banco.medicamentos.length = 0
   banco.registrosRemedio = []

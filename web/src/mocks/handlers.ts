@@ -1,6 +1,7 @@
 // API falsa para desenvolver as telas antes do back-end. Os dados vivem só na memória da aba.
 // Siga o contrato do back-end à risca: trocar pelo servidor real não pode exigir mudar telas.
 import { handlersAuth } from './auth'
+import { handlersCartoes } from './cartoes'
 import { handlersCompras } from './compras'
 import { handlersEventos } from './eventos'
 import { handlersHoje } from './hoje'
@@ -15,6 +16,7 @@ export { resetarBancoMock } from './banco'
 export const handlers = [
   ...handlersAuth,
   ...handlersPagamentos,
+  ...handlersCartoes,
   ...handlersEventos,
   ...handlersMedicamentos,
   ...handlersRotinas,

@@ -22,8 +22,9 @@ export type Recorrencia = 'nenhuma' | 'mensal' | 'anual'
 export type Pagamento = {
   id: string
   descricao: string
-  categoriaId: string
-  categoriaNome: string
+  /** Nulo só na fatura de cartão. */
+  categoriaId: string | null
+  categoriaNome: string | null
   imovelId: string | null
   imovelNome: string | null
   /** Em parcelas, é o valor de cada parcela. */
@@ -39,6 +40,11 @@ export type Pagamento = {
   parcelaAtual: number | null
   parcelaTotal: number | null
   observacoes: string | null
+  /** Fatura de cartão: o valor vem das compras; só dá para pagar (PUT/DELETE → FATURA_AUTOMATICA). */
+  cartaoId: string | null
+  cartaoNome: string | null
+  /** Mês da fatura, dia 1 ("2026-11-01"). */
+  competencia: string | null
   criadoEm: string
   atualizadoEm: string
 }
@@ -65,6 +71,68 @@ export type FiltrosPagamento = {
   status?: StatusPagamento
   categoriaId?: string
   imovelId?: string
+}
+
+export type CorCartao = 'azul' | 'roxo' | 'verde' | 'laranja' | 'vermelho' | 'grafite'
+export type SituacaoFatura = 'aberta' | 'fechada' | 'paga'
+
+/** Corpo de POST e PUT /cartoes. */
+export type CartaoCorpo = {
+  nome: string
+  final: string | null
+  cor: CorCartao
+  diaFechamento: number
+  diaVencimento: number
+  limiteCentavos: number | null
+  ordem?: number
+}
+
+export type Cartao = Required<CartaoCorpo> & {
+  id: string
+  /** Limite menos as parcelas em faturas não pagas; nulo sem limite. */
+  limiteDisponivelCentavos: number | null
+  /** Primeira fatura não paga a partir do mês atual. */
+  faturaAtual: { competencia: string; totalCentavos: number; vencimento: string; situacao: SituacaoFatura }
+}
+
+/** Corpo de POST e PUT /cartoes/:id/compras. */
+export type CompraCartaoCorpo = {
+  descricao: string
+  valorTotalCentavos: number
+  parcelas: number
+  dataCompra: string
+  categoriaId: string | null
+  observacoes: string | null
+}
+
+export type CompraCartao = CompraCartaoCorpo & {
+  id: string
+  cartaoId: string
+  /** Faturas (dia 1 do mês) em que caem as parcelas, em ordem. */
+  competencias: string[]
+}
+
+export type ParcelaFatura = {
+  compraId: string
+  descricao: string
+  categoriaId: string | null
+  categoriaNome: string | null
+  dataCompra: string
+  parcela: number
+  totalParcelas: number
+  valorCentavos: number
+}
+
+/** GET /cartoes/:id/faturas/:AAAA-MM */
+export type Fatura = {
+  competencia: string
+  fechamento: string
+  vencimento: string
+  situacao: SituacaoFatura
+  totalCentavos: number
+  /** Conta da fatura em /pagamentos (nula sem compras). */
+  pagamentoId: string | null
+  parcelas: ParcelaFatura[]
 }
 
 export type AgruparGastosPor = 'imovel' | 'categoria'

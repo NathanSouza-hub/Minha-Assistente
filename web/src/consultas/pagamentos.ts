@@ -54,12 +54,13 @@ export const useRelatorioGastos = (periodo: { inicio: string; fim: string; agrup
     placeholderData: (anterior) => anterior,
   })
 
-/** Tudo que depende de pagamentos (listas, itens, relatório). */
+/** Tudo que depende de pagamentos (listas, itens, relatório e, pela fatura, os cartões). */
 function useInvalidarPagamentos() {
   const cliente = useQueryClient()
   return () =>
     Promise.all([
       cliente.invalidateQueries({ queryKey: chaves.pagamentos }),
+      cliente.invalidateQueries({ queryKey: ['cartoes'] }),
       cliente.invalidateQueries({ queryKey: chaves.relatorio }),
       invalidarPainel(cliente),
     ])

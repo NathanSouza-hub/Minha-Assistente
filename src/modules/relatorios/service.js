@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 
 const SEM_IMOVEL = 'Sem imóvel';
+const CARTAO_DE_CREDITO = 'Cartão de crédito';
 
 // Pago = status pago com data de pagamento no período.
 // Previsto = pendente com vencimento no período.
@@ -20,10 +21,11 @@ async function gastos(usuarioId, { inicio, fim, agruparPor }) {
     );
 
   if (agruparPor === 'categoria') {
-    q.join('categoriaPagamento as g', 'g.id', 'p.categoriaId')
-      .select('g.id', 'g.nome')
+    // Faturas de cartão não têm categoria: entram juntas em "Cartão de crédito", no fim.
+    q.leftJoin('categoriaPagamento as g', 'g.id', 'p.categoriaId')
+      .select('g.id', db.raw('COALESCE(g.nome, ?) AS nome', [CARTAO_DE_CREDITO]))
       .groupBy('g.id', 'g.nome', 'g.ordem')
-      .orderBy('g.ordem');
+      .orderByRaw('g.ordem NULLS LAST');
   } else {
     q.leftJoin('imovel as g', 'g.id', 'p.imovelId')
       .select('g.id', db.raw('COALESCE(g.nome, ?) AS nome', [SEM_IMOVEL]))

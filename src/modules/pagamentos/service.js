@@ -21,6 +21,9 @@ const COLUNAS = [
   'p.parcelaAtual',
   'p.parcelaTotal',
   'p.observacoes',
+  'p.cartaoId',
+  'k.nome as cartaoNome',
+  'p.competencia',
   'p.criadoEm',
   'p.atualizadoEm',
 ];
@@ -28,9 +31,11 @@ const COLUNAS = [
 // current_date usa o fuso da sessão (America/Sao_Paulo).
 const VENCIDO = "(p.status = 'pendente' AND p.vencimento < current_date) AS vencido";
 
+// Fatura de cartão não tem categoria: os dois joins são left.
 const consulta = (conexao, usuarioId) =>
   conexao('pagamento as p')
-    .join('categoriaPagamento as c', 'c.id', 'p.categoriaId')
+    .leftJoin('categoriaPagamento as c', 'c.id', 'p.categoriaId')
+    .leftJoin('cartao as k', 'k.id', 'p.cartaoId')
     .leftJoin('imovel as i', 'i.id', 'p.imovelId')
     .where('p.usuarioId', usuarioId)
     .select(COLUNAS)
@@ -147,9 +152,14 @@ const cancelarLembretesPendentes = (conexao, id) =>
     .where({ origemTipo: 'pagamento', origemId: id, status: 'pendente' })
     .update({ status: 'cancelado' });
 
+// A conta da fatura é mantida pelo módulo de cartões: aqui ela só pode ser paga.
+const faturaAutomatica = () =>
+  new AppError(409, 'FATURA_AUTOMATICA', 'O valor da fatura vem das compras do cartão.');
+
 async function atualizar(usuarioId, id, dados) {
   return db.transaction(async (trx) => {
     const atual = await buscar(usuarioId, id, trx);
+    if (atual.cartaoId) throw faturaAutomatica();
     await validarReferencias(trx, usuarioId, dados);
     if (atual.parcelamentoGrupoId && dados.recorrencia !== 'nenhuma') {
       throw requisicaoInvalida('recorrencia: parcela não pode ser recorrente.');
@@ -179,10 +189,11 @@ async function pagar(usuarioId, id, { dataPagamento }) {
 
 async function remover(usuarioId, id) {
   await db.transaction(async (trx) => {
-    const apagados = await trx('pagamento').where({ id, usuarioId }).del();
-    if (!apagados) throw naoEncontrado('Pagamento');
+    const atual = await buscar(usuarioId, id, trx);
+    if (atual.cartaoId) throw faturaAutomatica();
+    await trx('pagamento').where({ id, usuarioId }).del();
     await cancelarLembretesPendentes(trx, id);
   });
 }
 
-module.exports = { listar, buscar, criar, atualizar, pagar, remover };
+module.exports = { listar, buscar, criar, atualizar, pagar, remover, cancelarLembretesPendentes };

@@ -75,6 +75,13 @@ npm run lint                                  # oxlint
   `<form>` (aparece dentro do formulário de conta): envia pelo botão ou Enter. A conta nova aberta
   numa aba vem com a categoria dela e volta para a aba. Categorias também se gerenciam em Mais →
   Categorias (renomear, subir/descer, excluir).
+- **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
+  de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
+  `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem
+  edição (`PUT`/`DELETE` → `FATURA_AUTOMATICA`). Toda mutação de cartão ou compra invalida
+  cartões, pagamentos, relatório e painel (`consultas/cartoes.ts`). As regras de competência e
+  parcelas estão em `src/lib/fatura.ts` (cópia de `src/lib/fatura.js` do back-end, usada pelo mock
+  e pelo resumo "10× de" do formulário).
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

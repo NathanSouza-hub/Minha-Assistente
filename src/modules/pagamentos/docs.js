@@ -13,6 +13,7 @@ const {
 
 const TAG = ['Pagamentos'];
 const NAO_ENCONTRADO = { 404: 'Pagamento não encontrado (NAO_ENCONTRADO)' };
+const FATURA_AUTOMATICA = { 409: 'Fatura de cartão: o valor vem das compras, só dá para pagar (FATURA_AUTOMATICA)' };
 const INVALIDO = { 400: 'Dados inválidos, categoria ou imóvel inexistente (VALIDACAO)' };
 
 module.exports = {
@@ -73,7 +74,7 @@ module.exports = {
         requestBody: corpoJson(esquemas.edicao),
         responses: {
           200: respostaJson('Pagamento atualizado', esquemas.pagamento),
-          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH, ...NAO_ENCONTRADO }),
+          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH, ...NAO_ENCONTRADO, ...FATURA_AUTOMATICA }),
         },
       },
       delete: {
@@ -82,7 +83,7 @@ module.exports = {
         parameters: [paramId],
         responses: {
           204: respostaVazia('Removido'),
-          ...respostasErro({ ...ERRO_AUTH, ...NAO_ENCONTRADO }),
+          ...respostasErro({ ...ERRO_AUTH, ...NAO_ENCONTRADO, ...FATURA_AUTOMATICA }),
         },
       },
     },

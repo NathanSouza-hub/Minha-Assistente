@@ -12,10 +12,14 @@ import { intervaloDoMes, mesDe, nomeDoMes, somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { CategoriaPagamento, StatusPagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import { ItemPagamento } from './ItemPagamento'
 
 type FiltroStatus = 'todos' | StatusPagamento
+
+/** Valor de ?aba= da aba Cartões (as outras abas são ids de categoria). */
+const ABA_CARTOES = 'cartoes'
 
 /** Mês, aba e filtros moram na URL: recarregar ou voltar mantém o que a pessoa escolheu. */
 function useFiltros() {
@@ -41,7 +45,7 @@ function useFiltros() {
   return { mes, status, aba, imovelId, mudar }
 }
 
-/** Uma aba por categoria, mais "Todas" e o botão de criar outra. Rola para o lado no celular. */
+/** "Todas", uma aba por categoria, "Cartões" e o botão de criar categoria. Rola para o lado no celular. */
 function Abas({
   categorias,
   ativa,
@@ -52,7 +56,7 @@ function Abas({
   aoMudar: (aba: string) => void
 }) {
   const [criando, setCriando] = useState(false)
-  const abas = [{ id: '', nome: 'Todas' }, ...categorias]
+  const abas = [{ id: '', nome: 'Todas' }, ...categorias, { id: ABA_CARTOES, nome: 'Cartões' }]
 
   return (
     <div className="flex flex-col gap-3">
@@ -100,8 +104,29 @@ function Abas({
 }
 
 export function Pagamentos() {
-  const { mes, status, aba, imovelId, mudar } = useFiltros()
+  const filtros = useFiltros()
   const { data: categorias = [] } = useCategorias()
+
+  if (filtros.aba === ABA_CARTOES) {
+    return (
+      <Pagina titulo="Contas">
+        <div className="flex flex-col gap-5">
+          <Abas categorias={categorias} ativa={ABA_CARTOES} aoMudar={(nova) => filtros.mudar({ aba: nova, mes: '', cartao: '' })} />
+          <AbaCartoes />
+        </div>
+      </Pagina>
+    )
+  }
+  return <ListaDeContas filtros={filtros} categorias={categorias} />
+}
+
+function ListaDeContas({
+  filtros: { mes, status, aba, imovelId, mudar },
+  categorias,
+}: {
+  filtros: ReturnType<typeof useFiltros>
+  categorias: CategoriaPagamento[]
+}) {
   const { data: imoveis = [] } = useImoveis()
   // Aba de categoria que não existe mais (apagada, link antigo) vira "Todas".
   const categoriaAtiva = categorias.find((c) => c.id === aba)
@@ -134,7 +159,12 @@ export function Pagamentos() {
       }
     >
       <div className="flex flex-col gap-5">
-        <Abas categorias={categorias} ativa={categoriaId} aoMudar={(nova) => mudar({ aba: nova })} />
+        <Abas
+          categorias={categorias}
+          ativa={categoriaId}
+          // A aba Cartões abre na fatura atual, não no mês que estava na lista.
+          aoMudar={(nova) => mudar(nova === ABA_CARTOES ? { aba: nova, mes: '' } : { aba: nova })}
+        />
 
         <nav aria-label="Mês" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
           <Button variant="ghost" size="icon" onClick={() => mudar({ mes: somarMeses(mes, -1) })} aria-label="Mês anterior">

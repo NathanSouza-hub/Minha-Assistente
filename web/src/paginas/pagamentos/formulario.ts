@@ -69,7 +69,7 @@ export function valoresIniciais(
     descricao: pagamento.descricao,
     valor: centavosParaTexto(pagamento.valorCentavos),
     vencimento: pagamento.vencimento,
-    categoriaId: pagamento.categoriaId,
+    categoriaId: pagamento.categoriaId ?? '',
     imovelId: pagamento.imovelId ?? '',
     repeticao: pagamento.recorrencia,
     totalParcelas: '2',
@@ -99,7 +99,7 @@ export function paraCorpo(d: DadosPagamento): PagamentoCriacao {
 /** Pagamento da API → corpo completo do PUT (para editar um campo só, como no "Desfazer"). */
 export const paraEdicao = (p: Pagamento): PagamentoEdicao => ({
   descricao: p.descricao,
-  categoriaId: p.categoriaId,
+  categoriaId: p.categoriaId!,
   imovelId: p.imovelId,
   valorCentavos: p.valorCentavos,
   vencimento: p.vencimento,

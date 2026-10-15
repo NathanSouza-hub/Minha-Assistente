@@ -33,6 +33,8 @@ GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELE
 PATCH /pagamentos/:id/pagar
 GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
 GET/POST /categorias-pagamento | PUT/DELETE /categorias-pagamento/:id
+GET/POST /cartoes | GET/PUT/DELETE /cartoes/:id | GET /cartoes/:id/faturas/:AAAA-MM   (acrescentadas)
+POST /cartoes/:id/compras | GET/PUT/DELETE /cartoes/:id/compras/:compraId            (acrescentadas)
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
@@ -163,6 +165,33 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
       De outro usuário → `404`; numa conta → `400` ("categoria não encontrada").
     - No front cada categoria é uma aba da tela Contas (`/pagamentos?aba=<id>`).
 
+19. **Cartões de crédito** (migration 13; mesma spec da decisão 18):
+    - `cartao` (nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem) e
+      `cartao_compra` (descricao, categoria_id?, valor_total_centavos, parcelas 1–48, data_compra).
+      As parcelas não são guardadas: saem de `src/lib/fatura.js` (funções puras).
+    - **Competência** = mês do vencimento (dia 1). A fatura da competência M fecha no dia de
+      fechamento de M se `dia_vencimento > dia_fechamento`, senão de M−1; dia que não existe no mês
+      vira o último. A compra entra na primeira fatura que fecha **depois** dela (no dia do
+      fechamento vai para a seguinte); a parcela k cai k−1 meses depois; o resto dos centavos vai
+      para a parcela 1.
+    - **A fatura é uma conta**: `pagamento` ganhou `cartao_id` + `competencia` (sem categoria,
+      recorrência nem parcelamento; `categoria_id` passou a aceitar nulo só nela; uma por cartão e
+      mês). Toda escrita de cartão ou compra recalcula todas as faturas do cartão na mesma
+      transação (cria, atualiza valor/vencimento/descrição ou apaga a pendente). Se o valor de uma
+      fatura **paga** mudaria, a operação é recusada: `409 FATURA_PAGA`.
+    - Em `/pagamentos` a fatura vem com `cartaoId`, `cartaoNome`, `competencia` (nulos nas outras
+      contas) e `categoriaNome` nulo; `PUT`/`DELETE` → `409 FATURA_AUTOMATICA`; `PATCH /pagar`
+      funciona. Painel Hoje e lembretes tratam a fatura como qualquer conta pendente. No relatório
+      por categoria as faturas somam num item `{ id: null, nome: "Cartão de crédito" }`.
+    - `GET /cartoes` traz `limiteDisponivelCentavos` (limite − parcelas em faturas não pagas) e
+      `faturaAtual` `{ competencia, totalCentavos, vencimento, situacao }` (a primeira não paga a
+      partir do mês atual). `GET /cartoes/:id/faturas/:AAAA-MM` → `{ competencia, fechamento,
+      vencimento, situacao: aberta|fechada|paga, totalCentavos, pagamentoId, parcelas[] }`; mês sem
+      compras vem zerado. Apagar cartão com fatura paga → `409 REFERENCIA_INVALIDA`; sem, leva
+      compras e faturas pendentes. Nome único por usuário sem diferenciar maiúsculas
+      (`409 CARTAO_DUPLICADO`).
+    - No front é a aba "Cartões" de Contas (`/pagamentos?aba=cartoes&cartao=<id>&mes=AAAA-MM`).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -184,7 +213,9 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 | usuario | id, nome, email (citext unique), senha_hash | |
 | imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
-| pagamento | descricao, categoria_id, imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
+| cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
+| cartao_compra | cartao_id, descricao, categoria_id?, valor_total_centavos, parcelas, data_compra, observacoes | parcelas 1–48; idx (cartao_id, data_compra) |
+| pagamento | descricao, categoria_id? (nulo só na fatura), cartao_id?, competencia?, imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
 | evento | titulo, tipo, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
 | rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |
 | rotina_conclusao | rotina_id, data, concluida_em | unique (rotina_id, data) |
