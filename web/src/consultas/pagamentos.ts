@@ -22,12 +22,11 @@ export const chaves = {
   relatorio: ['relatorios', 'gastos'] as const,
 }
 
-// Categorias são fixas (seed do back-end): uma busca por sessão basta.
+// Categorias são de cada usuário (as 6 padrão nascem no cadastro); cada uma é uma aba de Contas.
 export const useCategorias = () =>
   useQuery({
     queryKey: chaves.categorias,
     queryFn: () => api<CategoriaPagamento[]>('/categorias-pagamento'),
-    staleTime: Infinity,
   })
 
 export const useImoveis = () =>
@@ -137,6 +136,45 @@ export function useExcluirPagamento() {
       atualizarListas((lista) => lista.filter((p) => p.id !== id))
       return invalidar()
     },
+  })
+}
+
+function useInvalidarCategorias() {
+  const cliente = useQueryClient()
+  // Nome da categoria aparece nos pagamentos, no relatório e no painel.
+  return () =>
+    Promise.all([
+      cliente.invalidateQueries({ queryKey: chaves.categorias }),
+      cliente.invalidateQueries({ queryKey: chaves.pagamentos }),
+      cliente.invalidateQueries({ queryKey: chaves.relatorio }),
+      invalidarPainel(cliente),
+    ])
+}
+
+/** Cria (sem id) ou renomeia/reordena uma categoria. Já põe a resposta na lista em cache. */
+export function useSalvarCategoria() {
+  const cliente = useQueryClient()
+  const invalidar = useInvalidarCategorias()
+  return useMutation({
+    mutationFn: ({ id, ...dados }: { id?: string; nome?: string; ordem?: number }) =>
+      id
+        ? api<CategoriaPagamento>(`/categorias-pagamento/${id}`, { method: 'PUT', corpo: dados })
+        : api<CategoriaPagamento>('/categorias-pagamento', { method: 'POST', corpo: dados }),
+    meta: { semAviso: true },
+    onSuccess: (salva) => {
+      cliente.setQueryData<CategoriaPagamento[]>(chaves.categorias, (lista) =>
+        lista && [...lista.filter((c) => c.id !== salva.id), salva].sort((a, b) => a.ordem - b.ordem),
+      )
+      return invalidar()
+    },
+  })
+}
+
+export function useExcluirCategoria() {
+  const invalidar = useInvalidarCategorias()
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/categorias-pagamento/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidar,
   })
 }
 

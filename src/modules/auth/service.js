@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../../config/db');
 const token = require('../../lib/token');
 const { AppError } = require('../../lib/erros');
+const { criarPadrao } = require('../categorias/padrao');
 
 const CUSTO_BCRYPT = 12;
 
@@ -18,7 +19,11 @@ const publico = ({ id, nome, email, criadoEm }) => ({ id, nome, email, criadoEm 
 async function cadastrar({ nome, email, senha }) {
   const senhaHash = await bcrypt.hash(senha, CUSTO_BCRYPT);
   try {
-    const [usuario] = await db('usuario').insert({ nome, email, senhaHash }).returning(CAMPOS_PUBLICOS);
+    const usuario = await db.transaction(async (trx) => {
+      const [criado] = await trx('usuario').insert({ nome, email, senhaHash }).returning(CAMPOS_PUBLICOS);
+      await criarPadrao(trx, criado.id);
+      return criado;
+    });
     return sessao(usuario);
   } catch (erro) {
     if (erro.code === '23505') {

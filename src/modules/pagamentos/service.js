@@ -58,7 +58,7 @@ function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId }) {
 }
 
 async function validarReferencias(trx, usuarioId, { categoriaId, imovelId }) {
-  const categoria = await trx('categoriaPagamento').where({ id: categoriaId }).first('id');
+  const categoria = await trx('categoriaPagamento').where({ id: categoriaId, usuarioId }).first('id');
   if (!categoria) throw requisicaoInvalida('categoriaId: categoria não encontrada.');
   if (imovelId) {
     const imovel = await trx('imovel').where({ id: imovelId, usuarioId }).first('id');

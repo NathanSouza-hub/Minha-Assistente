@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import { deDataISO, hojeISO } from '@/lib/datas'
 import type { Pagamento, PagamentoCriacao, PagamentoEdicao } from '@/lib/tipos'
-import { agoraISO, banco, CATEGORIAS, novoPagamento, type PagamentoMock } from './banco'
+import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock } from './banco'
 import { autenticado, erro, naoEncontrado } from './util'
 
 const idDe = (params: Record<string, unknown>) => String(params.id)
@@ -26,13 +26,38 @@ const nomeRepetido = (usuarioId: string, nome: string, exceto?: string) =>
 
 const imovelDuplicado = () => erro(409, 'IMOVEL_DUPLICADO', 'Você já tem um imóvel com esse nome.')
 
+// ---------- Categorias (de cada usuário) ----------
+
+const categoriasDo = (usuarioId: string) =>
+  banco.categorias
+    .filter((c) => c.usuarioId === usuarioId)
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
+
+const publicoCategoria = ({ id, nome, ordem }: CategoriaMock) => ({ id, nome, ordem })
+
+// Mesmo índice do back-end: lower(nome) por usuário.
+const categoriaRepetida = (usuarioId: string, nome: string, exceto?: string) =>
+  banco.categorias.some(
+    (c) => c.usuarioId === usuarioId && c.nome.toLowerCase() === nome.toLowerCase() && c.id !== exceto,
+  )
+
+const categoriaDuplicada = () =>
+  erro(409, 'CATEGORIA_DUPLICADA', 'Você já tem uma categoria com esse nome.')
+
+function validarNomeCategoria(nome: unknown) {
+  const limpo = typeof nome === 'string' ? nome.trim() : ''
+  if (!limpo) return { problema: erro(400, 'VALIDACAO', 'nome: Informe o nome da categoria.') }
+  if (limpo.length > 40) return { problema: erro(400, 'VALIDACAO', 'nome: Nome longo demais.') }
+  return { limpo }
+}
+
 // ---------- Pagamentos ----------
 
 function paraResposta(p: PagamentoMock): Pagamento {
   const { usuarioId: _u, ...resto } = p
   return {
     ...resto,
-    categoriaNome: CATEGORIAS.find((c) => c.id === p.categoriaId)!.nome,
+    categoriaNome: banco.categorias.find((c) => c.id === p.categoriaId)!.nome,
     imovelNome: banco.imoveis.find((i) => i.id === p.imovelId)?.nome ?? null,
     vencido: p.status === 'pendente' && p.vencimento < hojeISO(),
   }
@@ -86,7 +111,7 @@ function validar(d: PagamentoEdicao, usuarioId: string) {
   if (d.status === 'pendente' && d.dataPagamento)
     problemas.push('dataPagamento: Pagamento pendente não tem data de pagamento.')
   if (problemas.length) return erro(400, 'VALIDACAO', problemas.join('; '))
-  if (!CATEGORIAS.some((c) => c.id === d.categoriaId))
+  if (!banco.categorias.some((c) => c.id === d.categoriaId && c.usuarioId === usuarioId))
     return erro(400, 'VALIDACAO', 'categoriaId: categoria não encontrada.')
   if (d.imovelId && !banco.imoveis.some((i) => i.id === d.imovelId && i.usuarioId === usuarioId))
     return erro(400, 'VALIDACAO', 'imovelId: imóvel não encontrado.')
@@ -136,7 +161,57 @@ export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
 export const handlersPagamentos = [
   http.get(
     `${API_URL}/categorias-pagamento`,
-    autenticado(() => HttpResponse.json(CATEGORIAS)),
+    autenticado((_ctx, u) => HttpResponse.json(categoriasDo(u.id).map(publicoCategoria))),
+  ),
+
+  http.post(
+    `${API_URL}/categorias-pagamento`,
+    autenticado(async ({ request }, u) => {
+      const { nome, ordem } = (await request.json()) as { nome?: string; ordem?: number }
+      const { limpo, problema } = validarNomeCategoria(nome)
+      if (problema) return problema
+      if (categoriaRepetida(u.id, limpo)) return categoriaDuplicada()
+      const ultima = Math.max(0, ...categoriasDo(u.id).map((c) => c.ordem))
+      const categoria = { id: crypto.randomUUID(), usuarioId: u.id, nome: limpo, ordem: ordem ?? ultima + 1 }
+      banco.categorias.push(categoria)
+      return HttpResponse.json(publicoCategoria(categoria), { status: 201 })
+    }),
+  ),
+
+  http.put(
+    `${API_URL}/categorias-pagamento/:id`,
+    autenticado(async ({ request, params }, u) => {
+      const { nome, ordem } = (await request.json()) as { nome?: string; ordem?: number }
+      const categoria = banco.categorias.find((c) => c.id === idDe(params) && c.usuarioId === u.id)
+      if (!categoria) return naoEncontrado('Categoria')
+      if (nome === undefined && ordem === undefined)
+        return erro(400, 'VALIDACAO', 'Informe o nome ou a ordem.')
+      if (nome !== undefined) {
+        const { limpo, problema } = validarNomeCategoria(nome)
+        if (problema) return problema
+        if (categoriaRepetida(u.id, limpo, categoria.id)) return categoriaDuplicada()
+        categoria.nome = limpo
+      }
+      if (ordem !== undefined) categoria.ordem = ordem
+      return HttpResponse.json(publicoCategoria(categoria))
+    }),
+  ),
+
+  http.delete(
+    `${API_URL}/categorias-pagamento/:id`,
+    autenticado(({ params }, u) => {
+      const indice = banco.categorias.findIndex((c) => c.id === idDe(params) && c.usuarioId === u.id)
+      if (indice < 0) return naoEncontrado('Categoria')
+      if (banco.pagamentos.some((p) => p.categoriaId === idDe(params))) {
+        return erro(
+          409,
+          'REFERENCIA_INVALIDA',
+          'Esta categoria tem contas. Mude a categoria dessas contas antes de apagar.',
+        )
+      }
+      banco.categorias.splice(indice, 1)
+      return new HttpResponse(null, { status: 204 })
+    }),
   ),
 
   http.get(
@@ -321,7 +396,7 @@ export const handlersPagamentos = [
         grupos.set(chave, g)
       }
 
-      const referencia = agruparPor === 'categoria' ? CATEGORIAS : imoveisDo(u.id).map(publicoImovel)
+      const referencia = agruparPor === 'categoria' ? categoriasDo(u.id) : imoveisDo(u.id).map(publicoImovel)
       const itens = [...grupos.entries()]
         .map(([id, valores]) => {
           const ref = referencia.find((r) => r.id === id)

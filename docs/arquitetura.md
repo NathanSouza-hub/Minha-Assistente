@@ -31,7 +31,8 @@ POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me
 GET  /hoje
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
-GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada) | GET /categorias-pagamento
+GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
+GET/POST /categorias-pagamento | PUT/DELETE /categorias-pagamento/:id
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
@@ -66,8 +67,9 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 8. **Lembretes de evento em lista**: `lembretesMinutosAntes: [1080, 120]` (ex.: véspera e 2h
    antes); `[]` = sem lembrete. Até 5 valores positivos, sem repetição.
 9. **Multiusuário**: cadastro aberto (`POST /auth/cadastro` com `{ nome, email, senha }`, devolve
-   o token como o login). Imóveis são de cada usuário (CRUD em `/imoveis`); categorias são
-   globais (seed). Apagar um imóvel usado por pagamentos responde `409 REFERENCIA_INVALIDA`.
+   o token como o login). Imóveis e categorias são de cada usuário (CRUD em `/imoveis` e
+   `/categorias-pagamento`, decisão 18). Apagar um imóvel usado por pagamentos responde
+   `409 REFERENCIA_INVALIDA`.
 
 10. **Pagamentos (etapa 4)**:
     - Resposta inclui `categoriaNome`, `imovelNome` e `vencido` (pendente com vencimento < hoje),
@@ -149,17 +151,30 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
     - Carga do push (JSON): `{ titulo, corpo, url, tag }`; `tag` repete para o mesmo lembrete da
       mesma ocorrência (o aparelho substitui em vez de empilhar).
 
+18. **Categorias de cada usuário** (migration 12; spec
+    `docs/superpowers/specs/2026-10-14-contas-abas-cartoes-design.md`):
+    - O cadastro cria as 6 padrão (`src/modules/categorias/padrao.js`); não há mais seed. A
+      migration copiou as categorias globais para cada usuário e repontou as contas dele.
+    - `GET /categorias-pagamento` → `[{ id, nome, ordem }]` por ordem. `POST { nome, ordem? }`
+      (sem ordem vai para o fim) → `201`. `PUT /:id { nome?, ordem? }` (pelo menos um).
+      `DELETE /:id` → `204`.
+    - Nome: 1–40 caracteres, aparado; único por usuário sem diferenciar maiúsculas
+      (`409 CATEGORIA_DUPLICADA`). Apagar categoria com contas → `409 REFERENCIA_INVALIDA`.
+      De outro usuário → `404`; numa conta → `400` ("categoria não encontrada").
+    - No front cada categoria é uma aba da tela Contas (`/pagamentos?aba=<id>`).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
 - "Enums" como `text` + `CHECK` (adicionar valor = migration trocando o CHECK).
 - `date` para datas sem hora (driver configurado para devolver string), `timestamptz` para
   instantes, `time` para hora do dia. Sessão do Postgres em `America/Sao_Paulo`.
-- Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, pagamento, evento, rotina,
+- Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, categoria_pagamento, pagamento, evento, rotina,
   medicamento, viagem, compra_item, lembrete_envio, push_inscricao. Tabelas filhas (conclusões,
   horários, registros, anexos) herdam o dono pela tabela pai. Índices começam por `usuario_id`.
-- `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)`: FK composta impede apontar
-  para imóvel de outro usuário.
+- `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)` e `pagamento (categoria_id,
+  usuario_id)` → `categoria_pagamento (id, usuario_id)`: FKs compostas impedem apontar para imóvel
+  ou categoria de outro usuário.
 - `criado_em` / `atualizado_em` (trigger) nas tabelas de domínio.
 
 ## Schema
@@ -168,7 +183,7 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 |---|---|---|
 | usuario | id, nome, email (citext unique), senha_hash | |
 | imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
-| categoria_pagamento | id, nome (unique), ordem | seed |
+| categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | pagamento | descricao, categoria_id, imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
 | evento | titulo, tipo, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
 | rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |

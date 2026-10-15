@@ -46,13 +46,17 @@ export const camposDaApi = {
 
 const centavosParaTexto = (centavos: number) => (centavos / 100).toFixed(2).replace('.', ',')
 
-export function valoresIniciais(pagamento?: Pagamento, vencimentoPadrao = hojeISO()): DadosPagamento {
+export function valoresIniciais(
+  pagamento?: Pagamento,
+  vencimentoPadrao = hojeISO(),
+  categoriaPadrao = '',
+): DadosPagamento {
   if (!pagamento) {
     return {
       descricao: '',
       valor: '',
       vencimento: vencimentoPadrao,
-      categoriaId: '',
+      categoriaId: categoriaPadrao,
       imovelId: '',
       repeticao: 'nenhuma',
       totalParcelas: '2',

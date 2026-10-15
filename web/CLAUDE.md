@@ -69,6 +69,12 @@ npm run lint                                  # oxlint
   lembrete chama `convidar()` de `useConvidarNotificacoes` depois de salvar (uma vez por aparelho,
   nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. Nos testes,
   `src/test/pushFalso.ts` simula `Notification`, `PushManager` e o service worker.
+- **Contas** (`/pagamentos`, rótulo "Contas"): cada categoria do usuário é uma aba (`?aba=<id>`,
+  filtra por `categoriaId`; aba de categoria que não existe vira "Todas"). "+ Nova" (aba) e
+  "+ Nova categoria…" (formulário de conta) usam `paginas/categorias/FormCategoria.tsx`, que não é um
+  `<form>` (aparece dentro do formulário de conta): envia pelo botão ou Enter. A conta nova aberta
+  numa aba vem com a categoria dela e volta para a aba. Categorias também se gerenciam em Mais →
+  Categorias (renomear, subir/descer, excluir).
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

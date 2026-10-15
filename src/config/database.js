@@ -41,9 +41,6 @@ function configKnex(url = urlDoBanco()) {
       directory: path.join(RAIZ, 'db/migrations'),
       tableName: 'knex_migrations',
     },
-    seeds: {
-      directory: path.join(RAIZ, 'db/seeds'),
-    },
     wrapIdentifier: (valor, original) => original(valor === '*' ? valor : paraSnake(valor)),
     postProcessResponse: posProcessar,
   };

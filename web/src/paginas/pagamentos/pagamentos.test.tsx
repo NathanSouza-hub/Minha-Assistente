@@ -49,7 +49,7 @@ describe('lista de pagamentos', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
     expect(await screen.findByRole('heading', { name: 'Novembro de 2026' })).toBeInTheDocument()
-    expect(await screen.findByText('Nenhum pagamento com esses filtros')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhuma conta com esses filtros')).toBeInTheDocument()
   })
 
   test('marcar como pago avisa e, sendo recorrente, cria a conta do mês seguinte', async () => {
@@ -73,7 +73,68 @@ describe('lista de pagamentos', () => {
   })
 })
 
+describe('abas de categoria', () => {
+  test('cada categoria é uma aba que filtra a lista e fica na URL', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    await item('Condomínio')
+    expect(screen.getByRole('button', { name: 'Todas', pressed: true })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Exames' }))
+    expect(await item('Exame de sangue')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Honorários médicos' }))
+    expect(await screen.findByText('Nenhuma conta de honorários médicos em outubro de 2026')).toBeInTheDocument()
+  })
+
+  test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    await item('Condomínio')
+
+    await usuario.click(screen.getByRole('button', { name: 'Nova' }))
+    await usuario.type(screen.getByLabelText('Nome da categoria'), 'exames{Enter}')
+    expect(await screen.findByText('Você já tem uma categoria com esse nome.')).toBeInTheDocument()
+
+    await usuario.clear(screen.getByLabelText('Nome da categoria'))
+    await usuario.type(screen.getByLabelText('Nome da categoria'), 'Plano de saúde')
+    await usuario.click(screen.getByRole('button', { name: 'Criar categoria' }))
+    expect(await screen.findByRole('button', { name: 'Plano de saúde', pressed: true })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Nome da categoria')).not.toBeInTheDocument()
+    expect(await screen.findByText('Nenhuma conta de plano de saúde em outubro de 2026')).toBeInTheDocument()
+  })
+
+  test('conta nova aberta numa aba já vem com a categoria e volta para a aba', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    await item('Condomínio')
+    await usuario.click(screen.getByRole('button', { name: 'Exames' }))
+    await item('Exame de sangue')
+    await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
+
+    expect(await screen.findByLabelText('Categoria')).toHaveDisplayValue('Exames')
+    await usuario.type(screen.getByLabelText('Descrição'), 'Raio X')
+    await usuario.type(screen.getByLabelText('Valor'), '180')
+    await usuario.click(screen.getByRole('button', { name: 'Criar pagamento' }))
+
+    expect(await item('Raio X')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
+  })
+})
+
 describe('formulário de pagamento', () => {
+  test('"+ Nova categoria…" abre o campo e seleciona a categoria criada', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos/novo')
+    await usuario.selectOptions(await screen.findByLabelText('Categoria'), '+ Nova categoria…')
+    await usuario.type(screen.getByLabelText('Nome da nova categoria'), 'Pets{Enter}')
+
+    await waitFor(() => expect(screen.getByLabelText('Categoria')).toHaveDisplayValue('Pets'))
+    expect(screen.queryByLabelText('Nome da nova categoria')).not.toBeInTheDocument()
+  })
+
   test('barra campos obrigatórios antes de enviar', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos/novo')

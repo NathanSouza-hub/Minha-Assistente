@@ -39,10 +39,11 @@ before(async () => {
 
   // Outro usuário no mesmo período não entra.
   const outra = await criarSessao(app);
+  const [daOutra] = (await request(app).get('/categorias-pagamento').set(outra.auth)).body;
   await request(app)
     .post('/pagamentos')
     .set(outra.auth)
-    .send({ descricao: 'Alheio', categoriaId: contas, valorCentavos: 77777, vencimento: '2026-10-10' })
+    .send({ descricao: 'Alheio', categoriaId: daOutra.id, valorCentavos: 77777, vencimento: '2026-10-10' })
     .expect(201);
 });
 

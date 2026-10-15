@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
@@ -9,17 +10,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
 import { intervaloDoMes, mesDe, nomeDoMes, somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
-import type { StatusPagamento } from '@/lib/tipos'
+import type { CategoriaPagamento, StatusPagamento } from '@/lib/tipos'
+import { cn } from '@/lib/utils'
+import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import { ItemPagamento } from './ItemPagamento'
 
 type FiltroStatus = 'todos' | StatusPagamento
 
-/** Mês e filtros moram na URL: recarregar ou voltar mantém o que a pessoa escolheu. */
+/** Mês, aba e filtros moram na URL: recarregar ou voltar mantém o que a pessoa escolheu. */
 function useFiltros() {
   const [params, setParams] = useSearchParams()
   const mes = /^\d{4}-\d{2}$/.test(params.get('mes') ?? '') ? params.get('mes')! : mesDe()
   const status = (params.get('status') as FiltroStatus | null) ?? 'todos'
-  const categoriaId = params.get('categoria') ?? ''
+  const aba = params.get('aba') ?? ''
   const imovelId = params.get('imovel') ?? ''
 
   const mudar = (mudancas: Record<string, string>) =>
@@ -35,13 +38,74 @@ function useFiltros() {
       { replace: true },
     )
 
-  return { mes, status, categoriaId, imovelId, mudar }
+  return { mes, status, aba, imovelId, mudar }
+}
+
+/** Uma aba por categoria, mais "Todas" e o botão de criar outra. Rola para o lado no celular. */
+function Abas({
+  categorias,
+  ativa,
+  aoMudar,
+}: {
+  categorias: CategoriaPagamento[]
+  ativa: string
+  aoMudar: (aba: string) => void
+}) {
+  const [criando, setCriando] = useState(false)
+  const abas = [{ id: '', nome: 'Todas' }, ...categorias]
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="-mx-4 overflow-x-auto px-4 pb-1 md:-mx-8 md:px-8">
+        <div role="group" aria-label="Categorias" className="flex w-max gap-2">
+          {abas.map((aba) => (
+            <button
+              key={aba.id}
+              type="button"
+              aria-pressed={ativa === aba.id}
+              onClick={() => aoMudar(aba.id)}
+              className={cn(
+                'min-h-11 rounded-full border px-4 font-semibold whitespace-nowrap',
+                ativa === aba.id ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-muted',
+              )}
+            >
+              {aba.nome}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-expanded={criando}
+            onClick={() => setCriando((v) => !v)}
+            className="flex min-h-11 items-center gap-1 rounded-full border border-dashed px-4 font-semibold whitespace-nowrap text-primary hover:bg-muted"
+          >
+            <Plus className="size-5" aria-hidden />
+            Nova
+          </button>
+        </div>
+      </div>
+      {criando && (
+        <div className="rounded-xl border bg-card p-4">
+          <FormCategoria
+            autoFocus
+            aoSalvar={(nova) => {
+              setCriando(false)
+              aoMudar(nova.id)
+            }}
+            aoCancelar={() => setCriando(false)}
+          />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function Pagamentos() {
-  const { mes, status, categoriaId, imovelId, mudar } = useFiltros()
+  const { mes, status, aba, imovelId, mudar } = useFiltros()
   const { data: categorias = [] } = useCategorias()
   const { data: imoveis = [] } = useImoveis()
+  // Aba de categoria que não existe mais (apagada, link antigo) vira "Todas".
+  const categoriaAtiva = categorias.find((c) => c.id === aba)
+  const categoriaId = categoriaAtiva?.id ?? ''
   const consulta = usePagamentos({
     ...intervaloDoMes(mes),
     status: status === 'todos' ? undefined : status,
@@ -53,22 +117,25 @@ export function Pagamentos() {
   const aPagar = pagamentos.filter((p) => p.status === 'pendente')
   const vencidos = aPagar.filter((p) => p.vencido).length
   const soma = (lista: typeof pagamentos) => lista.reduce((total, p) => total + p.valorCentavos, 0)
-  const filtrosExtras = [categoriaId, imovelId].filter(Boolean).length
-  const temFiltro = status !== 'todos' || filtrosExtras > 0
+  const temFiltro = status !== 'todos' || Boolean(imovelId)
+  const novo = `/pagamentos/novo?mes=${mes}${categoriaId ? `&aba=${categoriaId}` : ''}`
+  const ondeEstou = categoriaAtiva ? ` de ${categoriaAtiva.nome.toLowerCase()}` : ''
 
   return (
     <Pagina
-      titulo="Pagamentos"
+      titulo="Contas"
       acoes={
         <Button asChild size="lg">
-          <Link to={`/pagamentos/novo?mes=${mes}`}>
+          <Link to={novo}>
             <Plus aria-hidden />
-            Novo
+            Nova
           </Link>
         </Button>
       }
     >
       <div className="flex flex-col gap-5">
+        <Abas categorias={categorias} ativa={categoriaId} aoMudar={(nova) => mudar({ aba: nova })} />
+
         <nav aria-label="Mês" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
           <Button variant="ghost" size="icon" onClick={() => mudar({ mes: somarMeses(mes, -1) })} aria-label="Mês anterior">
             <ChevronLeft className="size-7" aria-hidden />
@@ -94,34 +161,26 @@ export function Pagamentos() {
           ]}
         />
 
-        <details className="group rounded-xl border bg-card" open={filtrosExtras > 0 || undefined}>
-          <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
-            <SlidersHorizontal className="size-5 text-primary" aria-hidden />
-            Categoria e imóvel
-            {filtrosExtras > 0 && (
-              <span className="rounded-full bg-primary px-2 text-sm text-primary-foreground">{filtrosExtras}</span>
-            )}
-            <ChevronRight className="ml-auto size-5 transition-transform group-open:rotate-90" aria-hidden />
-          </summary>
-          <div className="grid gap-4 border-t p-4 sm:grid-cols-2">
-            <Selecao rotulo="Categoria" value={categoriaId} onChange={(e) => mudar({ categoria: e.target.value })}>
-              <option value="">Todas</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </Selecao>
-            <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
-              <option value="">Todos</option>
-              {imoveis.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nome}
-                </option>
-              ))}
-            </Selecao>
-          </div>
-        </details>
+        {imoveis.length > 0 && (
+          <details className="group rounded-xl border bg-card" open={Boolean(imovelId) || undefined}>
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
+              <SlidersHorizontal className="size-5 text-primary" aria-hidden />
+              Imóvel
+              {imovelId && <span className="rounded-full bg-primary px-2 text-sm text-primary-foreground">1</span>}
+              <ChevronRight className="ml-auto size-5 transition-transform group-open:rotate-90" aria-hidden />
+            </summary>
+            <div className="border-t p-4">
+              <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
+                <option value="">Todos</option>
+                {imoveis.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.nome}
+                  </option>
+                ))}
+              </Selecao>
+            </div>
+          </details>
+        )}
 
         {pagamentos.length > 0 && (
           <dl className="grid grid-cols-2 gap-3">
@@ -144,7 +203,7 @@ export function Pagamentos() {
         )}
 
         {consulta.isPending ? (
-          <div className="flex flex-col gap-3" role="status" aria-label="Carregando pagamentos">
+          <div className="flex flex-col gap-3" role="status" aria-label="Carregando contas">
             {[1, 2, 3].map((n) => (
               <Skeleton key={n} className="h-36 rounded-xl" />
             ))}
@@ -152,7 +211,7 @@ export function Pagamentos() {
         ) : consulta.isError ? (
           <EstadoVazio
             icone={Wallet}
-            titulo="Não foi possível carregar os pagamentos"
+            titulo="Não foi possível carregar as contas"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           >
             Verifique a internet e tente de novo.
@@ -161,9 +220,9 @@ export function Pagamentos() {
           temFiltro ? (
             <EstadoVazio
               icone={Wallet}
-              titulo="Nenhum pagamento com esses filtros"
+              titulo="Nenhuma conta com esses filtros"
               acao={
-                <Button variant="outline" onClick={() => mudar({ status: '', categoria: '', imovel: '' })}>
+                <Button variant="outline" onClick={() => mudar({ status: '', imovel: '' })}>
                   Limpar filtros
                 </Button>
               }
@@ -171,16 +230,16 @@ export function Pagamentos() {
           ) : (
             <EstadoVazio
               icone={Wallet}
-              titulo={`Nenhum pagamento em ${nomeDoMes(mes).toLowerCase()}`}
+              titulo={`Nenhuma conta${ondeEstou} em ${nomeDoMes(mes).toLowerCase()}`}
               acao={
                 <Button asChild>
-                  <Link to={`/pagamentos/novo?mes=${mes}`}>Adicionar pagamento</Link>
+                  <Link to={novo}>Adicionar conta</Link>
                 </Button>
               }
             />
           )
         ) : (
-          <ul className="flex flex-col gap-3" aria-label="Pagamentos do mês">
+          <ul className="flex flex-col gap-3" aria-label={`Contas${ondeEstou} do mês`}>
             {pagamentos.map((p) => (
               <ItemPagamento key={p.id} pagamento={p} />
             ))}

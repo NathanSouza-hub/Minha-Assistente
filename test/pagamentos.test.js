@@ -18,9 +18,15 @@ let imovelBia;
 const criar = (sessao, dados, status = 201) =>
   request(app).post('/pagamentos').set(sessao.auth).send(dados).expect(status);
 
-const base = () => ({
+// Categorias são de cada usuário: quem cria a conta precisa usar as suas.
+const categoriasDe = async (sessao) => {
+  const lista = (await request(app).get('/categorias-pagamento').set(sessao.auth)).body;
+  return Object.fromEntries(lista.map((c) => [c.nome, c.id]));
+};
+
+const base = (cats = categorias) => ({
   descricao: 'Conta de luz',
-  categoriaId: categorias['Contas residenciais'],
+  categoriaId: cats['Contas residenciais'],
   valorCentavos: 15990,
   vencimento: '2999-01-10',
 });
@@ -30,8 +36,7 @@ before(async () => {
   app = criarApp();
   ana = await criarSessao(app);
   bia = await criarSessao(app);
-  const lista = (await request(app).get('/categorias-pagamento').set(ana.auth)).body;
-  categorias = Object.fromEntries(lista.map((c) => [c.nome, c.id]));
+  categorias = await categoriasDe(ana);
   imovelAna = (await request(app).post('/imoveis').set(ana.auth).send({ nome: 'Cobertura' })).body;
   imovelBia = (await request(app).post('/imoveis').set(bia.auth).send({ nome: 'Casa' })).body;
 });
@@ -110,11 +115,12 @@ test('parcelamento não pode ser recorrente nem pago', async () => {
 
 test('listagem filtra por período, status, categoria e imóvel, e só do próprio usuário', async () => {
   const sessao = await criarSessao(app);
+  const cats = await categoriasDe(sessao);
   const { body: imovel } = await request(app).post('/imoveis').set(sessao.auth).send({ nome: 'Serra' });
-  await criar(sessao, { ...base(), vencimento: '2026-05-01' });
-  await criar(sessao, { ...base(), vencimento: '2026-05-20', imovelId: imovel.id });
-  await criar(sessao, { ...base(), vencimento: '2026-06-01', categoriaId: categorias.Exames });
-  await criar(sessao, { ...base(), vencimento: '2026-05-10', status: 'pago', dataPagamento: '2026-05-09' });
+  await criar(sessao, { ...base(cats), vencimento: '2026-05-01' });
+  await criar(sessao, { ...base(cats), vencimento: '2026-05-20', imovelId: imovel.id });
+  await criar(sessao, { ...base(cats), vencimento: '2026-06-01', categoriaId: cats.Exames });
+  await criar(sessao, { ...base(cats), vencimento: '2026-05-10', status: 'pago', dataPagamento: '2026-05-09' });
 
   const listar = async (query) =>
     (await request(app).get('/pagamentos').query(query).set(sessao.auth).expect(200)).body;
@@ -125,7 +131,7 @@ test('listagem filtra por período, status, categoria e imóvel, e só do própr
     ['2026-05-01', '2026-05-10', '2026-05-20'],
   );
   assert.equal((await listar({ status: 'pago' })).length, 1);
-  assert.equal((await listar({ categoriaId: categorias.Exames })).length, 1);
+  assert.equal((await listar({ categoriaId: cats.Exames })).length, 1);
   assert.equal((await listar({ imovelId: imovel.id })).length, 1);
 
   const periodoInvertido = await request(app)
@@ -165,7 +171,8 @@ test('PATCH /pagar usa hoje por padrão e recusa pagar duas vezes', async () => 
 
 test('recorrente mensal do dia 31 gera a próxima sem perder o dia', async () => {
   const sessao = await criarSessao(app);
-  const { body: jan } = await criar(sessao, { ...base(), vencimento: '2027-01-31', recorrencia: 'mensal' });
+  const cats = await categoriasDe(sessao);
+  const { body: jan } = await criar(sessao, { ...base(cats), vencimento: '2027-01-31', recorrencia: 'mensal' });
 
   await request(app).patch(`/pagamentos/${jan.id}/pagar`).set(sessao.auth).expect(200);
   let lista = (await request(app).get('/pagamentos').set(sessao.auth)).body;
@@ -182,8 +189,9 @@ test('recorrente mensal do dia 31 gera a próxima sem perder o dia', async () =>
 
 test('recorrente anual e criado já pago geram a próxima; pagar-desfazer-pagar não duplica', async () => {
   const sessao = await criarSessao(app);
+  const cats = await categoriasDe(sessao);
   const { body: ipva } = await criar(sessao, {
-    ...base(),
+    ...base(cats),
     descricao: 'IPVA',
     vencimento: '2027-03-15',
     recorrencia: 'anual',
@@ -194,7 +202,7 @@ test('recorrente anual e criado já pago geram a próxima; pagar-desfazer-pagar 
   assert.deepEqual(lista.map((p) => p.vencimento), ['2027-03-15', '2028-03-15']);
 
   // Desfaz o pagamento e paga de novo: a próxima já existe, não cria outra.
-  const desfeito = { ...base(), descricao: 'IPVA', vencimento: '2027-03-15', recorrencia: 'anual' };
+  const desfeito = { ...base(cats), descricao: 'IPVA', vencimento: '2027-03-15', recorrencia: 'anual' };
   await request(app).put(`/pagamentos/${ipva.id}`).set(sessao.auth).send(desfeito).expect(200);
   await request(app).patch(`/pagamentos/${ipva.id}/pagar`).set(sessao.auth).expect(200);
   lista = (await request(app).get('/pagamentos').set(sessao.auth)).body;
@@ -203,7 +211,8 @@ test('recorrente anual e criado já pago geram a próxima; pagar-desfazer-pagar 
 
 test('PUT de pendente para pago num recorrente também gera a próxima', async () => {
   const sessao = await criarSessao(app);
-  const dados = { ...base(), vencimento: '2027-05-05', recorrencia: 'mensal' };
+  const cats = await categoriasDe(sessao);
+  const dados = { ...base(cats), vencimento: '2027-05-05', recorrencia: 'mensal' };
   const { body: p } = await criar(sessao, dados);
   await request(app)
     .put(`/pagamentos/${p.id}`)

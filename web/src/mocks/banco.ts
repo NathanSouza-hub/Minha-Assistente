@@ -75,17 +75,32 @@ export type AnexoViagemMock = {
 
 export type ItemCompraMock = ItemCompra & { usuarioId: string }
 
-// Mesmas categorias e ordem do seed do back-end (db/seeds/01_catalogos.js); ids fixos no mock.
-export const CATEGORIAS: CategoriaPagamento[] = [
+export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
+
+// Mesmas categorias e ordem de src/modules/categorias/padrao.js: toda conta nova começa com elas.
+export const CATEGORIAS_PADRAO = [
   'Salários',
   'Honorários médicos',
   'Consultas',
   'Exames',
   'Parcelamentos',
   'Contas residenciais',
-].map((nome, i) => ({ id: `00000000-0000-4000-8000-00000000000${i + 1}`, nome, ordem: i + 1 }))
+]
 
-const categoria = (nome: string) => CATEGORIAS.find((c) => c.nome === nome)!.id
+/** Como o cadastro do back-end: cria as categorias padrão do usuário (ids fixos para a Maria). */
+export function criarCategoriasPadrao(usuarioId: string, idsFixos = false) {
+  CATEGORIAS_PADRAO.forEach((nome, i) =>
+    banco.categorias.push({
+      id: idsFixos ? `00000000-0000-4000-8000-00000000000${i + 1}` : crypto.randomUUID(),
+      usuarioId,
+      nome,
+      ordem: i + 1,
+    }),
+  )
+}
+
+const categoria = (nome: string) =>
+  banco.categorias.find((c) => c.usuarioId === MARIA_ID && c.nome === nome)!.id
 
 export const MARIA_ID = '6f1c7a52-2d1e-4b8a-9f3e-1a2b3c4d5e6f'
 
@@ -94,6 +109,7 @@ export const agoraISO = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 export const banco = {
   usuarios: new Map<string, UsuarioMock>(),
   imoveis: [] as ImovelMock[],
+  categorias: [] as CategoriaMock[],
   pagamentos: [] as PagamentoMock[],
   eventos: [] as EventoMock[],
   medicamentos: [] as MedicamentoMock[],
@@ -137,6 +153,7 @@ function semear() {
     senha: 'uma-senha-forte',
     criadoEm: '2026-10-01T09:00:00-03:00',
   })
+  criarCategoriasPadrao(MARIA_ID, true)
 
   const cobertura = { id: crypto.randomUUID(), usuarioId: MARIA_ID, nome: 'Apartamento cobertura', ordem: 1 }
   const serra = { id: crypto.randomUUID(), usuarioId: MARIA_ID, nome: 'Casa da Serra', ordem: 2 }
@@ -447,6 +464,7 @@ function semearCompras() {
 export function resetarBancoMock() {
   banco.usuarios.clear()
   banco.imoveis.length = 0
+  banco.categorias.length = 0
   banco.pagamentos.length = 0
   banco.eventos.length = 0
   banco.medicamentos.length = 0

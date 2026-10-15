@@ -35,7 +35,7 @@ describe('rotas protegidas', () => {
 
     await preencherLogin('maria@exemplo.com', 'uma-senha-forte')
 
-    expect(await screen.findByRole('heading', { name: 'Pagamentos' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Contas' })).toBeInTheDocument()
     expect(roteador.state.location.pathname).toBe('/pagamentos')
     expect(lerToken()).toBeTruthy()
   })

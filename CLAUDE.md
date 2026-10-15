@@ -15,7 +15,7 @@ antes de criar um módulo e mantenha-o atualizado quando o contrato mudar.
 ```bash
 docker compose up -d          # Postgres 18 local na porta 5433 (não 5432)
 cp .env.example .env          # JWT_SECRET precisa de ≥ 32 caracteres
-npm run db:setup              # migrations + seed
+npm run db:setup              # migrations (não há seed)
 npm run dev                   # node --watch; Swagger em http://localhost:3000/docs
 npm test                      # todos os testes (node:test, sequenciais)
 node --test test/auth.test.js                     # um arquivo
@@ -68,14 +68,15 @@ sempre inteiro em centavos.
 `criado_em`/`atualizado_em` e trigger), `donoUsuario`, `checkIn` para "enums" (`text` + `CHECK`
 chamado `<tabela>_<coluna>_check`). Migrations são histórico imutável: para mudar valores de um
 enum, crie uma nova migration que troca o CHECK. Índices de tabelas raiz começam por
-`usuario_id`. Categorias de pagamento são globais (seed `db/seeds/01_catalogos.js`).
+`usuario_id`. Categorias de pagamento são de cada usuário; as 6 padrão são criadas no cadastro
+(`src/modules/categorias/padrao.js`).
 
 **Rate limit** (`middlewares/limitar.js`): os limitadores guardam o contador em memória e são
 fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 
 ## Próximas etapas
 
-Prontos: `/auth`, `/imoveis`, `/categorias-pagamento`, `/pagamentos`, `/relatorios/gastos`,
+Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`,
 `/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
 `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
 temporária definida em `test/setup.js`), `/compras`, `/notificacoes` e os lembretes

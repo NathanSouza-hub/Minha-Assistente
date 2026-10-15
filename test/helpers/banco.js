@@ -1,4 +1,5 @@
-// Prepara o banco de teste do zero: cria se não existir, desfaz e refaz as migrations, roda a seed.
+// Prepara o banco de teste do zero: cria se não existir, desfaz e refaz as migrations. Não há seed:
+// as categorias padrão nascem no cadastro de cada usuário.
 const knex = require('knex');
 
 function nomeDoBanco(url) {
@@ -35,7 +36,6 @@ async function prepararBanco(db) {
   await criarBancoSeNaoExistir();
   await db.migrate.rollback(undefined, true);
   await db.migrate.latest();
-  await db.seed.run();
 }
 
 module.exports = { prepararBanco, criarBancoSeNaoExistir };

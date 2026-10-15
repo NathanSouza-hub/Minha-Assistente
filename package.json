@@ -14,8 +14,7 @@
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:reset": "knex migrate:rollback --all && knex migrate:latest",
-    "seed": "knex seed:run",
-    "db:setup": "knex migrate:latest && knex seed:run",
+    "db:setup": "knex migrate:latest",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
   },
   "dependencies": {

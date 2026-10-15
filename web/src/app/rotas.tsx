@@ -31,6 +31,8 @@ const paginaItemCompra = () =>
   import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
 const notificacoes = () => import('@/paginas/Notificacoes').then((m) => ({ Component: m.Notificacoes }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
+const categorias = () =>
+  import('@/paginas/categorias/Categorias').then((m) => ({ Component: m.Categorias }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 
 // Exportado separado para os testes montarem com createMemoryRouter.
@@ -73,6 +75,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'compras/:id', lazy: paginaItemCompra },
           { path: 'notificacoes', lazy: notificacoes },
           { path: 'imoveis', lazy: imoveis },
+          { path: 'categorias', lazy: categorias },
           { path: 'relatorio', lazy: relatorio },
           { path: '*', element: <NaoEncontrada /> },
         ],

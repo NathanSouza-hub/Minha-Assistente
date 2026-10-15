@@ -15,11 +15,10 @@ after(async () => {
 test('migrations são reversíveis (down de tudo e up de novo)', async () => {
   await db.migrate.rollback(undefined, true);
   const [, pendentes] = await db.migrate.list();
-  assert.equal(pendentes.length, 11);
+  assert.equal(pendentes.length, 12);
   await db.migrate.latest();
-  await db.seed.run();
   const [feitas, aindaPendentes] = await db.migrate.list();
-  assert.equal(feitas.length, 11);
+  assert.equal(feitas.length, 12);
   assert.equal(aindaPendentes.length, 0);
 });
 
@@ -27,15 +26,6 @@ const criarUsuario = async (email) => {
   const [usuario] = await db('usuario').insert({ nome: 'Teste', email, senhaHash: 'x' }).returning('*');
   return usuario;
 };
-
-test('seed é idempotente e cria só as categorias', async () => {
-  await db.seed.run();
-  const categorias = await db('categoria_pagamento').orderBy('ordem');
-  assert.equal(categorias.length, 6);
-  assert.equal(categorias[0].nome, 'Salários');
-  assert.equal((await db('imovel').count('* as n'))[0].n, 0);
-  assert.equal((await db('usuario').count('* as n'))[0].n, 0);
-});
 
 test('e-mail de usuário é único sem diferenciar maiúsculas', async () => {
   await criarUsuario('Ana@Exemplo.com');
@@ -46,7 +36,7 @@ test('pagamento não pode apontar para imóvel de outro usuário', async () => {
   const maria = await criarUsuario('maria@exemplo.com');
   const outra = await criarUsuario('outra@exemplo.com');
   const [imovelDaOutra] = await db('imovel').insert({ usuarioId: outra.id, nome: 'Casa' }).returning('*');
-  const [categoria] = await db('categoria_pagamento').select('id').limit(1);
+  const [categoria] = await db('categoria_pagamento').insert({ usuarioId: maria.id, nome: 'Casa' }).returning('id');
 
   await assert.rejects(
     db('pagamento').insert({
@@ -89,7 +79,7 @@ test('tipos do banco saem no formato do contrato', async () => {
 
 test('pagamento: CHECKs rejeitam dados inconsistentes', async () => {
   const usuario = await criarUsuario('checks-pagamento@exemplo.com');
-  const [categoria] = await db('categoria_pagamento').select('id').limit(1);
+  const [categoria] = await db('categoria_pagamento').insert({ usuarioId: usuario.id, nome: 'Teste' }).returning('id');
   const base = {
     usuarioId: usuario.id,
     descricao: 'Teste',

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import type { Usuario } from '@/lib/tipos'
-import { banco, type UsuarioMock } from './banco'
+import { banco, criarCategoriasPadrao, type UsuarioMock } from './banco'
 import { autenticado, erro } from './util'
 
 // JWT falso com `exp` em 30 dias; a assinatura não importa no mock.
@@ -32,6 +32,7 @@ export const handlersAuth = [
       criadoEm: '2026-10-13T09:00:00-03:00',
     }
     banco.usuarios.set(chave, usuario)
+    criarCategoriasPadrao(usuario.id)
     return HttpResponse.json({ token: tokenFalso(usuario.id), usuario: publico(usuario) }, { status: 201 })
   }),
 

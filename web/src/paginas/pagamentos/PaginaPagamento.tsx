@@ -1,4 +1,4 @@
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Trash2 } from 'lucide-react'
@@ -27,6 +27,7 @@ import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
 import { aplicarErroApi } from '@/lib/formulario'
 import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import type { Pagamento } from '@/lib/tipos'
+import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import {
   camposDaApi,
   esquemaPagamento,
@@ -35,6 +36,9 @@ import {
   type DadosPagamento,
   type Repeticao,
 } from './formulario'
+
+// Opção do <select> de categoria que abre o campo para digitar uma nova.
+const NOVA_CATEGORIA = '__nova__'
 
 /** /pagamentos/novo e /pagamentos/:id */
 export function PaginaPagamento() {
@@ -78,8 +82,11 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     mesDaLista && mesDaLista !== mesDe() && /^\d{4}-\d{2}$/.test(mesDaLista)
       ? intervaloDoMes(mesDaLista).inicio
       : hojeISO()
+  // Aberto de uma aba de categoria: já vem com ela (e volta para ela ao salvar).
+  const aba = params.get('aba') ?? ''
 
   const { data: categorias = [] } = useCategorias()
+  const [criandoCategoria, setCriandoCategoria] = useState(false)
   const { data: imoveis = [] } = useImoveis()
   const criar = useCriarPagamento()
   const editar = useEditarPagamento()
@@ -92,10 +99,11 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     handleSubmit,
     setError,
     setFocus,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<DadosPagamento>({
     resolver: zodResolver(esquemaPagamento),
-    defaultValues: valoresIniciais(pagamento, vencimentoPadrao),
+    defaultValues: valoresIniciais(pagamento, vencimentoPadrao, aba),
   })
 
   const [repeticao, jaPago, valor, parcelas] = useWatch({
@@ -110,7 +118,10 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     if (!editando) setFocus('descricao')
   }, [editando, setFocus])
 
-  const voltarParaLista = (vencimento: string) => navegar(`/pagamentos?mes=${mesDe(vencimento)}`)
+  const enderecoDaLista = (vencimento: string) =>
+    `/pagamentos?mes=${mesDe(vencimento)}${aba ? `&aba=${aba}` : ''}`
+  const voltarParaLista = (vencimento: string) => navegar(enderecoDaLista(vencimento))
+  const campoCategoria = register('categoriaId')
 
   async function salvar(dados: DadosPagamento) {
     const corpo = paraCorpo(dados)
@@ -159,11 +170,11 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
       cabecalho={
         <div className="flex flex-col gap-2">
           <Link
-            to={`/pagamentos?mes=${mesDe(pagamento?.vencimento ?? vencimentoPadrao)}`}
+            to={enderecoDaLista(pagamento?.vencimento ?? vencimentoPadrao)}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeft className="size-5" aria-hidden />
-            Pagamentos
+            Contas
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{editando ? 'Editar pagamento' : 'Novo pagamento'}</h1>
         </div>
@@ -190,16 +201,41 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Selecao rotulo="Categoria" erro={errors.categoriaId?.message} {...register('categoriaId')}>
-            <option value="" disabled>
-              Escolha a categoria
-            </option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
+          <div className="flex flex-col gap-3">
+            <Selecao
+              rotulo="Categoria"
+              erro={errors.categoriaId?.message}
+              {...campoCategoria}
+              onChange={(e) => {
+                if (e.target.value !== NOVA_CATEGORIA) return campoCategoria.onChange(e)
+                setValue('categoriaId', '')
+                setCriandoCategoria(true)
+              }}
+            >
+              <option value="" disabled>
+                Escolha a categoria
               </option>
-            ))}
-          </Selecao>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+              <option value={NOVA_CATEGORIA}>+ Nova categoria…</option>
+            </Selecao>
+            {criandoCategoria && (
+              <div className="rounded-xl border bg-card p-4">
+                <FormCategoria
+                  rotulo="Nome da nova categoria"
+                  autoFocus
+                  aoSalvar={(nova) => {
+                    setValue('categoriaId', nova.id, { shouldValidate: true })
+                    setCriandoCategoria(false)
+                  }}
+                  aoCancelar={() => setCriandoCategoria(false)}
+                />
+              </div>
+            )}
+          </div>
           <Selecao
             rotulo="Imóvel (opcional)"
             dica={

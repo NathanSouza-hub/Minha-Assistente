@@ -11,7 +11,7 @@ Internet ──443──▶ Caddy (container "web")
 
 - **HTTPS automático**: o Caddy tira e renova o certificado sozinho (Let's Encrypt).
 - **Um domínio só**: o front chama a API em `/api`, então não há CORS para configurar.
-- **Migrations automáticas**: a API aplica as migrations (e a seed) toda vez que sobe.
+- **Migrations automáticas**: a API aplica as migrations toda vez que sobe.
 - **Lembretes**: o agendador roda dentro da API. Mantenha **um** container `api` só.
 - **Dados** ficam em volumes do Docker: `postgres-dados` (banco), `anexos` (arquivos das viagens)
   e `caddy-dados` (certificados). Recriar os containers não apaga nada; `down -v` apaga.
