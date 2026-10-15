@@ -1,14 +1,22 @@
-# Caddy: HTTPS automático (Let's Encrypt) para {$DOMINIO}, o front (PWA) e a API em /api.
+# Caddy: HTTPS automático (Let's Encrypt) para {$SITE}, o front (PWA) e a API em /api.
+# Atrás de um proxy compartilhado (docker-compose.proxy.yml), SITE vira ":80" (só HTTP; o HTTPS
+# fica no proxy) e PROXIES_CONFIAVEIS aceita o IP do cliente que o proxy manda em X-Forwarded-For.
 {
 	email {$EMAIL_CERTIFICADO}
+	servers {
+		trusted_proxies static {$PROXIES_CONFIAVEIS:127.0.0.1/32}
+	}
 }
 
-{$DOMINIO} {
+{$SITE} {
 	encode zstd gzip
 
 	# API: o prefixo /api sai antes de repassar (a API responde em /, /eventos, /docs...).
 	handle_path /api/* {
-		reverse_proxy api:3000
+		# Só o IP do cliente: a API confia em um proxy (trust proxy 1) e lê o último da lista.
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Front: arquivos do build; rotas do app (/agenda, /remedios...) caem no index.html.

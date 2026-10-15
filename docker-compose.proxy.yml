@@ -1,0 +1,18 @@
+# Para servidor que já tem um proxy HTTPS compartilhado (outro Caddy nas portas 80/443, numa rede
+# Docker externa chamada "proxy"). O container web deixa de publicar portas e de tirar certificado:
+# atende só HTTP e o proxy repassa o domínio para minha-assistente-web:80. Guia: docs/deploy.md.
+# No .env: COMPOSE_FILE=docker-compose.prod.yml:docker-compose.proxy.yml
+services:
+  web:
+    ports: !reset []
+    environment:
+      SITE: ":80"
+      PROXIES_CONFIAVEIS: private_ranges
+    networks:
+      default:
+      proxy:
+        aliases: [minha-assistente-web]
+
+networks:
+  proxy:
+    external: true

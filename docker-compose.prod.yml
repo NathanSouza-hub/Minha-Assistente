@@ -1,6 +1,7 @@
 # Produção num servidor só (VPS): Postgres + API (com o agendador de lembretes) + Caddy (HTTPS e
 # front). Os valores vêm do .env do servidor (modelo: .env.producao.example). Guia: docs/deploy.md.
 #   docker compose -f docker-compose.prod.yml up -d --build
+# Servidor que já tem um proxy HTTPS nas portas 80/443: acrescente docker-compose.proxy.yml.
 name: minha-assistente
 
 services:
@@ -56,7 +57,7 @@ services:
       - "443:443"
       - "443:443/udp"
     environment:
-      DOMINIO: ${DOMINIO:?defina DOMINIO no .env}
+      SITE: ${DOMINIO:?defina DOMINIO no .env}
       EMAIL_CERTIFICADO: ${EMAIL_CERTIFICADO:?defina EMAIL_CERTIFICADO no .env}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro

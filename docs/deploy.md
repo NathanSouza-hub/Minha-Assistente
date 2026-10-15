@@ -34,8 +34,8 @@ ssh root@IP_DO_SERVIDOR
 ss -ltnp | grep -E ':(80|443)\s'   # sem saída = livres
 ```
 
-Se aparecer um nginx/apache, há outro site no servidor: pare aqui e me avise, porque aí o Caddy
-precisa entrar atrás dele (ou no lugar dele).
+Se as portas estiverem ocupadas, há outro site no servidor: veja **"Servidor com proxy
+compartilhado"** no fim deste guia antes de seguir.
 
 Atualize e instale o Docker (pule a instalação se você escolheu o modelo "Ubuntu com Docker"):
 
@@ -189,3 +189,32 @@ docker stats --no-stream      # uso de memória e CPU
 ```
 
 A documentação da API (Swagger) fica em `https://SEU_DOMINIO/api/docs`.
+
+## Servidor com proxy compartilhado
+
+Quando outro Caddy já ocupa as portas 80/443 e atende vários sistemas por uma rede Docker
+externa chamada `proxy` (é o caso do VPS atual: `/opt/proxy`), o container `web` deste app não
+publica portas nem tira certificado. Ele atende só HTTP na rede `proxy`, com o nome
+`minha-assistente-web`, e o proxy faz o HTTPS. Quem liga isso é `docker-compose.proxy.yml`.
+
+1. No `.env` do projeto, acrescente a linha abaixo. Assim os comandos `docker compose` (sem
+   `-f`) já usam os dois arquivos:
+   ```
+   COMPOSE_FILE=docker-compose.prod.yml:docker-compose.proxy.yml
+   ```
+2. Suba com `docker compose up -d --build`. Nos itens 5 e 8, troque
+   `docker compose -f docker-compose.prod.yml` por `docker compose`.
+3. No Caddyfile do proxy, acrescente o site e recarregue sem reiniciar (os outros sites não caem):
+   ```
+   SEU_DOMINIO {
+   	encode zstd gzip
+   	reverse_proxy minha-assistente-web:80
+   }
+   ```
+   ```bash
+   cd /opt/proxy && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+   ```
+
+O IP do cliente chega à API certo (o limite de tentativas de login é por IP): o proxy manda o
+IP em `X-Forwarded-For`, o Caddy do app confia nele por estar numa rede privada
+(`PROXIES_CONFIAVEIS`) e repassa só esse IP.
