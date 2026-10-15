@@ -10,6 +10,9 @@ VERSAO="${SSH_ORIGINAL_COMMAND:-${1:-}}"
 case "$VERSAO" in
   *[!0-9a-f]* | '') echo "versão inválida: '$VERSAO' (esperado o hash do commit)" >&2; exit 1 ;;
 esac
+# O `docker compose` sem -f usa o COMPOSE_FILE do .env; sem ele subiria o compose de desenvolvimento.
+grep -q '^COMPOSE_FILE=.*docker-compose\.prod\.yml' "$APP/.env" ||
+  { echo "defina COMPOSE_FILE=docker-compose.prod.yml[:docker-compose.proxy.yml] em $APP/.env" >&2; exit 1; }
 
 # Extrai numa pasta temporária primeiro: se o envio vier incompleto, o app fica como estava.
 NOVO="$(mktemp -d)"

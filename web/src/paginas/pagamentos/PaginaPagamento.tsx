@@ -127,6 +127,15 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     if (!editando) setFocus('descricao')
   }, [editando, setFocus])
 
+  // A categoria criada no "+ Nova categoria…" só é escolhida depois que a <option> dela aparece:
+  // antes disso o <select> descarta o valor e fica na primeira opção.
+  const [categoriaCriada, setCategoriaCriada] = useState<string | null>(null)
+  useEffect(() => {
+    if (!categoriaCriada || !categorias.some((c) => c.id === categoriaCriada)) return
+    setValue('categoriaId', categoriaCriada, { shouldValidate: true })
+    setCategoriaCriada(null)
+  }, [categoriaCriada, categorias, setValue])
+
   const enderecoDaLista = (vencimento: string) =>
     `/pagamentos?mes=${mesDe(vencimento)}${aba ? `&aba=${aba}` : ''}`
   const voltarParaLista = (vencimento: string) => navegar(enderecoDaLista(vencimento))
@@ -237,7 +246,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
                   rotulo="Nome da nova categoria"
                   autoFocus
                   aoSalvar={(nova) => {
-                    setValue('categoriaId', nova.id, { shouldValidate: true })
+                    setCategoriaCriada(nova.id)
                     setCriandoCategoria(false)
                   }}
                   aoCancelar={() => setCriandoCategoria(false)}
