@@ -24,7 +24,8 @@ npm run migrate:reset         # desfaz tudo e reaplica as migrations
 ```
 
 **Deploy**: VPS com Docker Compose (`docker-compose.prod.yml`: Postgres + API + Caddy com HTTPS
-servindo o front e repassando `/api`). Passo a passo, atualização e backups em `docs/deploy.md`;
+servindo o front e repassando `/api`). Push na `main` roda os testes e, se passarem, publica sozinho
+(`.github/workflows/ci.yml` → `deploy/atualizar.sh`). Passo a passo, atualização e backups em `docs/deploy.md`;
 modelo do `.env` de produção em `.env.producao.example`.
 
 Não há build nem lint configurados. Os testes usam o banco de `DATABASE_URL_TEST`, que é

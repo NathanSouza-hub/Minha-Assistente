@@ -120,11 +120,34 @@ outro emissor (ZeroSSL). O definitivo é um domínio próprio (item 7).
 
 ## 5. Atualizar para uma versão nova
 
+**Automático**: todo push na `main` roda os testes da API e do front (`.github/workflows/ci.yml`)
+e, se passarem, publica no servidor: o workflow manda o código (`git archive`) por SSH para
+`deploy/atualizar.sh`, que faz backup, troca os arquivos de `/opt/minha-assistente` (mantém `.env`
+e `uploads`), reconstrói os containers e espera ficarem saudáveis. Dá para disparar à mão em
+*Actions → CI e deploy → Run workflow*.
+
+Configuração (uma vez):
+
 ```bash
-cd /opt/minha-assistente
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-docker image prune -f   # apaga imagens antigas
+# no seu computador: chave só para o deploy, sem senha
+ssh-keygen -t ed25519 -N "" -C github-actions-minha-assistente -f deploy-github
+
+# no servidor (usuário deploy): a chave só pode rodar o script de atualização
+echo "restrict,command=\"/opt/minha-assistente/deploy/atualizar.sh\" $(cat deploy-github.pub)" \
+  | ssh deploy@IP_DO_SERVIDOR 'cat >> ~/.ssh/authorized_keys'
+
+# secrets do repositório (precisa ser admin do repo)
+gh secret set VPS_HOST --body IP_DO_SERVIDOR
+gh secret set VPS_SSH_KEY < deploy-github
+ssh-keyscan -t ed25519 IP_DO_SERVIDOR | gh secret set VPS_KNOWN_HOSTS
+rm deploy-github deploy-github.pub
+```
+
+**Manual** (do seu computador, mesma coisa que o workflow faz):
+
+```bash
+git archive HEAD | ssh deploy@IP_DO_SERVIDOR \
+  "/opt/minha-assistente/deploy/atualizar.sh $(git rev-parse --short HEAD)"
 ```
 
 As migrations novas rodam sozinhas quando a API sobe. Os aparelhos recebem o app novo na

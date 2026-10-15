@@ -1,0 +1,79 @@
+# Testes da API e do front em todo push e PR; na main, se passarem, publica no VPS.
+# O deploy usa uma chave SSH que só pode rodar deploy/atualizar.sh (docs/deploy.md, seção 5).
+name: CI e deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TZ: America/Sao_Paulo
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: minha_assistente
+          POSTGRES_PASSWORD: minha_assistente_ci
+          POSTGRES_DB: minha_assistente
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U minha_assistente"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgres://minha_assistente:minha_assistente_ci@localhost:5432/minha_assistente
+      DATABASE_URL_TEST: postgres://minha_assistente:minha_assistente_ci@localhost:5432/minha_assistente_test
+      JWT_SECRET: segredo-so-para-o-ci-com-mais-de-32-caracteres
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    needs: [api, web]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - name: Chave SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" >~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" >~/.ssh/known_hosts
+      - name: Publicar no VPS
+        run: |
+          git archive HEAD | ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+            "deploy@${{ secrets.VPS_HOST }}" "$(git rev-parse --short HEAD)"
