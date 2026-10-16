@@ -15,6 +15,7 @@
     "migrate:rollback": "knex migrate:rollback",
     "migrate:reset": "knex migrate:rollback --all && knex migrate:latest",
     "db:setup": "knex migrate:latest",
+    "senha:redefinir": "node src/cli/redefinir-senha.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
   },
   "dependencies": {

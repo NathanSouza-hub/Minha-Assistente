@@ -153,6 +153,16 @@ git archive HEAD | ssh deploy@IP_DO_SERVIDOR \
 As migrations novas rodam sozinhas quando a API sobe. Os aparelhos recebem o app novo na
 próxima vez que abrirem (o service worker se atualiza sozinho).
 
+### Alguém esqueceu a senha
+
+Enquanto não há redefinição por e-mail, gere uma senha temporária no servidor e passe à pessoa
+(ela troca depois em Mais → Trocar senha). Todas as sessões dela são encerradas:
+
+```bash
+cd /opt/minha-assistente
+docker compose exec api node src/cli/redefinir-senha.js email@da.pessoa
+```
+
 ## 6. Backups
 
 `deploy/backup.sh` salva o banco (`pg_dump`) e os anexos em `/var/backups/minha-assistente` e

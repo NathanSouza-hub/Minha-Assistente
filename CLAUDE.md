@@ -20,7 +20,8 @@ npm run dev                   # node --watch; Swagger em http://localhost:3000/d
 npm test                      # todos os testes (node:test, sequenciais)
 node --test test/auth.test.js                     # um arquivo
 node --test --test-name-pattern="409" test/auth.test.js   # um teste pelo nome
-npm run migrate:reset         # desfaz tudo e reaplica as migrations
+npm run migrate:reset         # desfaz tudo e reaplica as migrations (APAGA os dados locais)
+npm run senha:redefinir -- email  # senha temporária para quem esqueceu (encerra as sessões)
 ```
 
 **Deploy**: VPS com Docker Compose (`docker-compose.prod.yml`: Postgres + API + Caddy com HTTPS
@@ -69,7 +70,7 @@ sempre inteiro em centavos.
 `criado_em`/`atualizado_em` e trigger), `donoUsuario`, `checkIn` para "enums" (`text` + `CHECK`
 chamado `<tabela>_<coluna>_check`). Migrations são histórico imutável: para mudar valores de um
 enum, crie uma nova migration que troca o CHECK. Índices de tabelas raiz começam por
-`usuario_id`. Categorias de pagamento são de cada usuário; as 6 padrão são criadas no cadastro
+`usuario_id`. Categorias de pagamento são de cada usuário; as 7 padrão (com "Outros") são criadas no cadastro
 (`src/modules/categorias/padrao.js`).
 
 **Rate limit** (`middlewares/limitar.js`): os limitadores guardam o contador em memória e são

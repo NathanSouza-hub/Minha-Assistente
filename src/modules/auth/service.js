@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const db = require('../../config/db');
 const token = require('../../lib/token');
@@ -45,30 +46,57 @@ async function entrar({ email, senha }) {
 }
 
 /**
- * Troca a senha e encerra as sessões dos outros aparelhos (incrementa `versaoSessao`, conferida
- * em `autenticar`). Devolve uma sessão nova para quem trocou continuar conectado.
+ * Grava a senha nova e encerra todas as sessões (incrementa `versaoSessao`, conferida em
+ * `autenticar`). Só grava se o hash ainda é `hashAnterior`: de duas trocas ao mesmo tempo, vale a
+ * primeira. Devolve a versão nova.
  */
-async function trocarSenha(usuarioId, { senhaAtual, novaSenha }) {
-  const usuario = await db('usuario').where({ id: usuarioId }).first();
-  if (!(await bcrypt.compare(senhaAtual, usuario.senhaHash))) {
-    throw new AppError(400, 'SENHA_INCORRETA', 'A senha atual não confere.');
-  }
+async function gravarSenha(usuarioId, hashAnterior, novaSenha) {
   const senhaHash = await bcrypt.hash(novaSenha, CUSTO_BCRYPT);
-  const versaoSessao = await db.transaction(async (trx) => {
-    // Só troca se o hash ainda é o que foi conferido (duas trocas ao mesmo tempo: vale a primeira).
+  return db.transaction(async (trx) => {
     const [atualizado] = await trx('usuario')
-      .where({ id: usuarioId, senhaHash: usuario.senhaHash })
+      .where({ id: usuarioId, senhaHash: hashAnterior })
       .update({ senhaHash, versaoSessao: trx.raw('versao_sessao + 1') })
       .returning(['versaoSessao']);
     if (!atualizado) {
       throw new AppError(409, 'CONFLITO', 'A senha acabou de ser trocada em outro aparelho. Entre novamente.');
     }
-    // Um aparelho perdido também para de receber lembretes. O que trocou a senha reenvia a
+    // Um aparelho perdido também para de receber lembretes. Quem continua conectado reenvia a
     // inscrição sozinho quando recebe o token novo (acompanharInscricao, no front).
     await trx('pushInscricao').where({ usuarioId }).del();
     return atualizado.versaoSessao;
   });
+}
+
+/** Troca a senha e devolve uma sessão nova para quem trocou continuar conectado. */
+async function trocarSenha(usuarioId, { senhaAtual, novaSenha }) {
+  const usuario = await db('usuario').where({ id: usuarioId }).first();
+  if (!(await bcrypt.compare(senhaAtual, usuario.senhaHash))) {
+    throw new AppError(400, 'SENHA_INCORRETA', 'A senha atual não confere.');
+  }
+  const versaoSessao = await gravarSenha(usuarioId, usuario.senhaHash, novaSenha);
   return sessao(publico(usuario), versaoSessao);
+}
+
+// Sem letras e números que se confundem (0/O, 1/l/I), para ditar por telefone.
+const ALFABETO_TEMPORARIA = 'abcdefghjkmnpqrstuvwxyz23456789';
+
+/** "xxxx-xxxx-xxxx": 12 caracteres sorteados (~59 bits), fácil de ler e digitar. */
+function senhaTemporaria() {
+  const letras = Array.from({ length: 12 }, () => ALFABETO_TEMPORARIA[crypto.randomInt(ALFABETO_TEMPORARIA.length)]).join('');
+  return letras.match(/.{4}/g).join('-');
+}
+
+/**
+ * Para quem esqueceu a senha (enquanto não há redefinição por e-mail): gera uma senha temporária,
+ * encerra todas as sessões e devolve a senha para o administrador passar à pessoa, que a troca em
+ * Mais → Trocar senha. Usado por `src/cli/redefinir-senha.js`.
+ */
+async function redefinirSenha(email) {
+  const usuario = await db('usuario').where({ email }).first();
+  if (!usuario) throw new AppError(404, 'NAO_ENCONTRADO', `Nenhuma conta com o e-mail ${email}.`);
+  const senha = senhaTemporaria();
+  await gravarSenha(usuario.id, usuario.senhaHash, senha);
+  return { usuario: publico(usuario), senha };
 }
 
 /** Para `autenticar`: o usuário público e a versão de sessão que vale hoje. */
@@ -79,4 +107,4 @@ async function buscarParaSessao(id) {
   return { usuario, versaoSessao };
 }
 
-module.exports = { cadastrar, entrar, trocarSenha, buscarParaSessao };
+module.exports = { cadastrar, entrar, trocarSenha, redefinirSenha, buscarParaSessao };

@@ -92,6 +92,7 @@ export const CATEGORIAS_PADRAO = [
   'Exames',
   'Parcelamentos',
   'Contas residenciais',
+  'Outros',
 ]
 
 /** Como o cadastro do back-end: cria as categorias padrão do usuário (ids fixos para a Maria). */

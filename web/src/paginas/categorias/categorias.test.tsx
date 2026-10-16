@@ -37,6 +37,7 @@ describe('tela de categorias', () => {
       'Exames',
       'Parcelamentos',
       'Contas residenciais',
+      'Outros',
     ])
   })
 
@@ -58,7 +59,7 @@ describe('tela de categorias', () => {
     expect(screen.getByRole('button', { name: 'Descer Saúde' })).toBeDisabled()
     await usuario.click(screen.getByRole('button', { name: 'Subir Saúde' }))
     await waitFor(() => expect(nomes().at(-2)).toBe('Saúde'))
-    expect(nomes().at(-1)).toBe('Contas residenciais')
+    expect(nomes().at(-1)).toBe('Outros')
     expect(screen.getByRole('button', { name: 'Subir Salários' })).toBeDisabled()
   })
 

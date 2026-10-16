@@ -27,11 +27,11 @@ test('rotas de imóveis e categorias exigem token', async () => {
   await request(app).get('/categorias-pagamento').expect(401);
 });
 
-test('GET /categorias-pagamento lista as 6 categorias em ordem', async () => {
+test('GET /categorias-pagamento lista as 7 categorias em ordem', async () => {
   const res = await request(app).get('/categorias-pagamento').set(ana.auth).expect(200);
   assert.deepEqual(
     res.body.map((c) => c.nome),
-    ['Salários', 'Honorários médicos', 'Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais'],
+    ['Salários', 'Honorários médicos', 'Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'],
   );
 });
 

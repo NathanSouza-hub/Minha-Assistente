@@ -189,3 +189,19 @@ test('trocar a senha exige a atual correta, uma nova diferente e válida, e o to
   // Nada mudou: a senha antiga ainda entra.
   await request(app).post('/auth/login').send({ email: ana.usuario.email, senha: ana.senha }).expect(200);
 });
+
+test('redefinir senha (comando do administrador) gera temporária e encerra as sessões', async () => {
+  const { redefinirSenha } = require('../src/modules/auth/service');
+  // App novo: este arquivo já passou do limite de cadastros por hora do app compartilhado.
+  const bia = await criarSessao(criarApp());
+
+  const { usuario, senha } = await redefinirSenha(bia.usuario.email);
+  assert.equal(usuario.id, bia.usuario.id);
+  assert.match(senha, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+
+  await request(app).get('/auth/me').set(bia.auth).expect(401);
+  await request(app).post('/auth/login').send({ email: bia.usuario.email, senha: bia.senha }).expect(401);
+  await request(app).post('/auth/login').send({ email: bia.usuario.email, senha }).expect(200);
+
+  await assert.rejects(redefinirSenha('ninguem@exemplo.com'), { codigo: 'NAO_ENCONTRADO' });
+});

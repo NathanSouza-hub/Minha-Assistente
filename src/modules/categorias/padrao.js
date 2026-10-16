@@ -6,6 +6,7 @@ const CATEGORIAS_PADRAO = [
   'Exames',
   'Parcelamentos',
   'Contas residenciais',
+  'Outros',
 ];
 
 const criarPadrao = (conexao, usuarioId) =>
