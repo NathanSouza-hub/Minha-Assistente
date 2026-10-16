@@ -120,18 +120,16 @@ test('Swagger documenta as rotas de auth', async () => {
   assert.deepEqual(corpo.required.sort(), ['email', 'nome', 'senha']);
 });
 
-// Token emitido há 10 s: a troca de senha (truncada ao segundo) precisa encerrá-lo.
-const tokenAntigo = (usuarioId) =>
-  jwt.sign({ iat: Math.floor(Date.now() / 1000) - 10 }, process.env.JWT_SECRET, {
-    subject: usuarioId,
-    expiresIn: '30d',
-    algorithm: 'HS256',
-  });
-
 test('trocar a senha devolve sessão nova e encerra as dos outros aparelhos', async () => {
   const maria = await criarSessao(app);
-  const outroAparelho = { Authorization: `Bearer ${tokenAntigo(maria.usuario.id)}` };
+  // Outro aparelho com uma sessão de antes da troca (emitida no mesmo segundo, inclusive).
+  const outroAparelho = maria.auth;
+  // Token de antes de existir a versão de sessão (sem `v`): vale até a primeira troca.
+  const legado = {
+    Authorization: `Bearer ${jwt.sign({}, process.env.JWT_SECRET, { subject: maria.usuario.id, expiresIn: '30d' })}`,
+  };
   await request(app).get('/auth/me').set(outroAparelho).expect(200);
+  await request(app).get('/auth/me').set(legado).expect(200);
   await db('pushInscricao').insert({
     usuarioId: maria.usuario.id,
     endpoint: 'https://fcm.googleapis.com/fcm/send/perdido',
@@ -150,6 +148,7 @@ test('trocar a senha devolve sessão nova e encerra as dos outros aparelhos', as
   await request(app).get('/auth/me').set({ Authorization: `Bearer ${res.body.token}` }).expect(200);
   const caiu = await request(app).get('/auth/me').set(outroAparelho).expect(401);
   assert.equal(caiu.body.erro.mensagem, 'A senha foi trocada. Entre novamente.');
+  await request(app).get('/auth/me').set(legado).expect(401);
   // O aparelho perdido também para de receber lembretes.
   assert.equal((await db('pushInscricao').where({ usuarioId: maria.usuario.id })).length, 0);
 

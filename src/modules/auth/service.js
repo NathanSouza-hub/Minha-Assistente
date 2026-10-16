@@ -12,7 +12,7 @@ const HASH_FICTICIO = '$2b$12$J2vhzZrJqkxd6xxb8MRRluhQ4Wdtgszfz21FTQpB14zOGI1IYC
 
 const CAMPOS_PUBLICOS = ['id', 'nome', 'email', 'criadoEm'];
 
-const sessao = (usuario) => ({ token: token.assinar(usuario.id), usuario });
+const sessao = (usuario, versaoSessao = 0) => ({ token: token.assinar(usuario.id, versaoSessao), usuario });
 
 const publico = ({ id, nome, email, criadoEm }) => ({ id, nome, email, criadoEm });
 
@@ -39,12 +39,14 @@ async function entrar({ email, senha }) {
   if (!usuario || !senhaConfere) {
     throw new AppError(401, 'CREDENCIAIS_INVALIDAS', 'E-mail ou senha incorretos.');
   }
-  return sessao(publico(usuario));
+  // A versão vem da mesma linha do hash conferido: um login que corre junto com uma troca de
+  // senha sai com a versão antiga e cai logo em seguida.
+  return sessao(publico(usuario), usuario.versaoSessao);
 }
 
 /**
- * Troca a senha e encerra as sessões dos outros aparelhos (`sessoesDesde`, conferido em
- * `autenticar`). Devolve uma sessão nova para quem trocou continuar conectado.
+ * Troca a senha e encerra as sessões dos outros aparelhos (incrementa `versaoSessao`, conferida
+ * em `autenticar`). Devolve uma sessão nova para quem trocou continuar conectado.
  */
 async function trocarSenha(usuarioId, { senhaAtual, novaSenha }) {
   const usuario = await db('usuario').where({ id: usuarioId }).first();
@@ -52,25 +54,29 @@ async function trocarSenha(usuarioId, { senhaAtual, novaSenha }) {
     throw new AppError(400, 'SENHA_INCORRETA', 'A senha atual não confere.');
   }
   const senhaHash = await bcrypt.hash(novaSenha, CUSTO_BCRYPT);
-  await db.transaction(async (trx) => {
-    // Truncado ao segundo: o `iat` do JWT é em segundos, e o token novo (emitido logo depois)
-    // não pode cair antes desse instante.
-    await trx('usuario')
-      .where({ id: usuarioId })
-      .update({ senhaHash, sessoesDesde: trx.raw("date_trunc('second', now())") });
+  const versaoSessao = await db.transaction(async (trx) => {
+    // Só troca se o hash ainda é o que foi conferido (duas trocas ao mesmo tempo: vale a primeira).
+    const [atualizado] = await trx('usuario')
+      .where({ id: usuarioId, senhaHash: usuario.senhaHash })
+      .update({ senhaHash, versaoSessao: trx.raw('versao_sessao + 1') })
+      .returning(['versaoSessao']);
+    if (!atualizado) {
+      throw new AppError(409, 'CONFLITO', 'A senha acabou de ser trocada em outro aparelho. Entre novamente.');
+    }
     // Um aparelho perdido também para de receber lembretes. O que trocou a senha reenvia a
     // inscrição sozinho quando recebe o token novo (acompanharInscricao, no front).
     await trx('pushInscricao').where({ usuarioId }).del();
+    return atualizado.versaoSessao;
   });
-  return sessao(publico(usuario));
+  return sessao(publico(usuario), versaoSessao);
 }
 
-/** Para `autenticar`: o usuário público e desde quando as sessões valem. */
+/** Para `autenticar`: o usuário público e a versão de sessão que vale hoje. */
 async function buscarParaSessao(id) {
-  const linha = await db('usuario').select([...CAMPOS_PUBLICOS, 'sessoesDesde']).where({ id }).first();
+  const linha = await db('usuario').select([...CAMPOS_PUBLICOS, 'versaoSessao']).where({ id }).first();
   if (!linha) return null;
-  const { sessoesDesde, ...usuario } = linha;
-  return { usuario, sessoesDesde };
+  const { versaoSessao, ...usuario } = linha;
+  return { usuario, versaoSessao };
 }
 
 module.exports = { cadastrar, entrar, trocarSenha, buscarParaSessao };

@@ -21,8 +21,8 @@ async function autenticar(req, res, next) {
 
   const conta = await authService.buscarParaSessao(payload.sub);
   if (!conta) throw naoAutorizado('Conta não encontrada. Entre novamente.');
-  // Token de antes da última troca de senha (o iat é em segundos).
-  if (conta.sessoesDesde && payload.iat < Date.parse(conta.sessoesDesde) / 1000) {
+  // Token de antes da última troca de senha. Tokens sem `v` são de antes da versão existir (0).
+  if ((payload.v ?? 0) !== conta.versaoSessao) {
     throw naoAutorizado('A senha foi trocada. Entre novamente.');
   }
 

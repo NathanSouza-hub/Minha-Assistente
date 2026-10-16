@@ -192,11 +192,14 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
       (`409 CARTAO_DUPLICADO`).
     - No front é a aba "Cartões" de Contas (`/pagamentos?aba=cartoes&cartao=<id>&mes=AAAA-MM`).
 
-20. **Trocar senha** (migration 14): `PUT /auth/senha` com `{ senhaAtual, novaSenha }` (nova com
+20. **Trocar senha** (migrations 14 e 15): `PUT /auth/senha` com `{ senhaAtual, novaSenha }` (nova com
     as regras do cadastro e diferente da atual) devolve uma sessão nova `{ token, usuario }`. Senha
-    atual errada → `400 SENHA_INCORRETA`; as tentativas contam no limite do login. A troca grava
-    `usuario.sessoes_desde` (truncado ao segundo) e `autenticar` recusa tokens com `iat` anterior
-    (`401 "A senha foi trocada. Entre novamente."`): os outros aparelhos saem. As inscrições de push
+    atual errada → `400 SENHA_INCORRETA`; as tentativas contam no limite do login. O token leva
+    a versão da sessão (claim `v`; sem ela = 0) e a troca incrementa `usuario.versao_sessao` no
+    mesmo UPDATE do hash (só se o hash ainda é o conferido; senão `409 CONFLITO`). `autenticar`
+    recusa token de outra versão (`401 "A senha foi trocada. Entre novamente."`): os outros
+    aparelhos saem. (A 14 usava horário, `sessoes_desde`; a 15 trocou por versão para não depender
+    de relógio.) As inscrições de push
     da conta são apagadas; o aparelho que trocou reenvia a dele ao receber o token novo. "Esqueci
     minha senha" (por e-mail) ainda não existe.
 
@@ -218,7 +221,7 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
-| usuario | id, nome, email (citext unique), senha_hash, sessoes_desde? | |
+| usuario | id, nome, email (citext unique), senha_hash, versao_sessao | |
 | imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
