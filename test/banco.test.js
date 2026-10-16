@@ -15,10 +15,10 @@ after(async () => {
 test('migrations são reversíveis (down de tudo e up de novo)', async () => {
   await db.migrate.rollback(undefined, true);
   const [, pendentes] = await db.migrate.list();
-  assert.equal(pendentes.length, 13);
+  assert.equal(pendentes.length, 14);
   await db.migrate.latest();
   const [feitas, aindaPendentes] = await db.migrate.list();
-  assert.equal(feitas.length, 13);
+  assert.equal(feitas.length, 14);
   assert.equal(aindaPendentes.length, 0);
 });
 

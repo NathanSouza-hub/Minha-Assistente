@@ -44,6 +44,7 @@ const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Im
 const categorias = () =>
   import('@/paginas/categorias/Categorias').then((m) => ({ Component: m.Categorias }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
+const trocarSenha = () => import('@/paginas/TrocarSenha').then((m) => ({ Component: m.TrocarSenha }))
 
 // Exportado separado para os testes montarem com createMemoryRouter.
 export const definicaoRotas: RouteObject[] = [
@@ -94,6 +95,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'imoveis', lazy: imoveis },
           { path: 'categorias', lazy: categorias },
           { path: 'relatorio', lazy: relatorio },
+          { path: 'conta/senha', lazy: trocarSenha },
           { path: '*', element: <NaoEncontrada /> },
         ],
       },

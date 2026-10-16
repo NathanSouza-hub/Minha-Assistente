@@ -8,8 +8,12 @@ async function entrar(req, res) {
   res.json(await service.entrar(req.validado.body));
 }
 
+async function trocarSenha(req, res) {
+  res.json(await service.trocarSenha(req.usuario.id, req.validado.body));
+}
+
 function eu(req, res) {
   res.json(req.usuario);
 }
 
-module.exports = { cadastrar, entrar, eu };
+module.exports = { cadastrar, entrar, trocarSenha, eu };

@@ -6,15 +6,17 @@ const email = z
   .toLowerCase()
   .pipe(z.email('E-mail inválido.').max(254, 'E-mail longo demais.'));
 
+// bcrypt considera só os primeiros 72 bytes.
+const novaSenha = z
+  .string()
+  .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
+  .max(72, 'A senha pode ter no máximo 72 caracteres.');
+
 const cadastro = z
   .object({
     nome: z.string().trim().min(1, 'Informe o nome.').max(100, 'Nome longo demais.'),
     email,
-    // bcrypt considera só os primeiros 72 bytes.
-    senha: z
-      .string()
-      .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
-      .max(72, 'A senha pode ter no máximo 72 caracteres.'),
+    senha: novaSenha,
   })
   .meta({ example: { nome: 'Maria Silva', email: 'maria@exemplo.com', senha: 'uma-senha-forte' } });
 
@@ -25,6 +27,17 @@ const login = z
   })
   .meta({ example: { email: 'maria@exemplo.com', senha: 'uma-senha-forte' } });
 
+const trocaSenha = z
+  .object({
+    senhaAtual: z.string().min(1, 'Informe a senha atual.'),
+    novaSenha,
+  })
+  .refine((v) => v.novaSenha !== v.senhaAtual, {
+    message: 'A nova senha precisa ser diferente da atual.',
+    path: ['novaSenha'],
+  })
+  .meta({ example: { senhaAtual: 'uma-senha-forte', novaSenha: 'outra-senha-forte' } });
+
 const usuario = z.object({
   id: z.uuid(),
   nome: z.string(),
@@ -34,4 +47,4 @@ const usuario = z.object({
 
 const sessao = z.object({ token: z.string(), usuario });
 
-module.exports = { cadastro, login, usuario, sessao };
+module.exports = { cadastro, login, trocaSenha, usuario, sessao };

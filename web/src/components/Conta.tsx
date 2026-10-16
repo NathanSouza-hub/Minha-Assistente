@@ -1,9 +1,10 @@
-import { LogOut } from 'lucide-react'
+import { KeyRound, LogOut } from 'lucide-react'
+import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useSessao } from '@/app/useSessao'
 import { cn } from '@/lib/utils'
 
-/** Nome e e-mail da pessoa logada, com o botão de sair. */
+/** Nome e e-mail da pessoa logada, com trocar senha e sair. */
 export function Conta({ className }: { className?: string }) {
   const { usuario, sair } = useSessao()
   if (!usuario) return null
@@ -14,6 +15,12 @@ export function Conta({ className }: { className?: string }) {
         <p className="truncate text-lg font-bold">{usuario.nome}</p>
         <p className="truncate text-base text-muted-foreground">{usuario.email}</p>
       </div>
+      <Button asChild variant="outline" className="w-full justify-start">
+        <Link to="/conta/senha">
+          <KeyRound aria-hidden />
+          Trocar senha
+        </Link>
+      </Button>
       <Button variant="outline" onClick={sair} className="w-full justify-start">
         <LogOut aria-hidden />
         Sair da conta

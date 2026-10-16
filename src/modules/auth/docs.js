@@ -38,6 +38,24 @@ module.exports = {
         },
       },
     },
+    '/auth/senha': {
+      put: {
+        tags: ['Auth'],
+        summary: 'Troca a senha e encerra as sessões dos outros aparelhos',
+        description:
+          'Tokens emitidos antes da troca passam a responder 401. Devolve uma sessão nova para ' +
+          'quem trocou continuar conectado. Tentativas erradas contam no mesmo limite do login.',
+        requestBody: corpoJson(esquemas.trocaSenha),
+        responses: {
+          200: respostaJson('Senha trocada; sessão nova', esquemas.sessao),
+          ...respostasErro({
+            ...ERRO_AUTH,
+            400: 'Dados inválidos (VALIDACAO) ou senha atual errada (SENHA_INCORRETA)',
+            ...LIMITE,
+          }),
+        },
+      },
+    },
     '/auth/me': {
       get: {
         tags: ['Auth'],

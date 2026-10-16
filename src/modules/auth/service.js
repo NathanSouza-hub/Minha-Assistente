@@ -42,6 +42,35 @@ async function entrar({ email, senha }) {
   return sessao(publico(usuario));
 }
 
-const buscarPorId = (id) => db('usuario').select(CAMPOS_PUBLICOS).where({ id }).first();
+/**
+ * Troca a senha e encerra as sessões dos outros aparelhos (`sessoesDesde`, conferido em
+ * `autenticar`). Devolve uma sessão nova para quem trocou continuar conectado.
+ */
+async function trocarSenha(usuarioId, { senhaAtual, novaSenha }) {
+  const usuario = await db('usuario').where({ id: usuarioId }).first();
+  if (!(await bcrypt.compare(senhaAtual, usuario.senhaHash))) {
+    throw new AppError(400, 'SENHA_INCORRETA', 'A senha atual não confere.');
+  }
+  const senhaHash = await bcrypt.hash(novaSenha, CUSTO_BCRYPT);
+  await db.transaction(async (trx) => {
+    // Truncado ao segundo: o `iat` do JWT é em segundos, e o token novo (emitido logo depois)
+    // não pode cair antes desse instante.
+    await trx('usuario')
+      .where({ id: usuarioId })
+      .update({ senhaHash, sessoesDesde: trx.raw("date_trunc('second', now())") });
+    // Um aparelho perdido também para de receber lembretes. O que trocou a senha reenvia a
+    // inscrição sozinho quando recebe o token novo (acompanharInscricao, no front).
+    await trx('pushInscricao').where({ usuarioId }).del();
+  });
+  return sessao(publico(usuario));
+}
 
-module.exports = { cadastrar, entrar, buscarPorId };
+/** Para `autenticar`: o usuário público e desde quando as sessões valem. */
+async function buscarParaSessao(id) {
+  const linha = await db('usuario').select([...CAMPOS_PUBLICOS, 'sessoesDesde']).where({ id }).first();
+  if (!linha) return null;
+  const { sessoesDesde, ...usuario } = linha;
+  return { usuario, sessoesDesde };
+}
+
+module.exports = { cadastrar, entrar, trocarSenha, buscarParaSessao };

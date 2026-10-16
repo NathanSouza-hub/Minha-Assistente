@@ -49,4 +49,21 @@ export const handlersAuth = [
     `${API_URL}/auth/me`,
     autenticado((_ctx, usuario) => HttpResponse.json(publico(usuario))),
   ),
+
+  // Como trocarSenha do back-end (o mock não encerra as outras sessões: o token não tem `iat`).
+  http.put(
+    `${API_URL}/auth/senha`,
+    autenticado(async ({ request }, usuario) => {
+      const { senhaAtual, novaSenha } = (await request.json()) as Record<string, string>
+      if (!novaSenha || novaSenha.length < 8) {
+        return erro(400, 'VALIDACAO', 'novaSenha: A senha precisa ter pelo menos 8 caracteres.')
+      }
+      if (novaSenha === senhaAtual) {
+        return erro(400, 'VALIDACAO', 'novaSenha: A nova senha precisa ser diferente da atual.')
+      }
+      if (senhaAtual !== usuario.senha) return erro(400, 'SENHA_INCORRETA', 'A senha atual não confere.')
+      usuario.senha = novaSenha
+      return HttpResponse.json({ token: tokenFalso(usuario.id), usuario: publico(usuario) })
+    }),
+  ),
 ]

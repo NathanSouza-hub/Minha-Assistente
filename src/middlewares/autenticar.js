@@ -19,10 +19,14 @@ async function autenticar(req, res, next) {
     );
   }
 
-  const usuario = await authService.buscarPorId(payload.sub);
-  if (!usuario) throw naoAutorizado('Conta não encontrada. Entre novamente.');
+  const conta = await authService.buscarParaSessao(payload.sub);
+  if (!conta) throw naoAutorizado('Conta não encontrada. Entre novamente.');
+  // Token de antes da última troca de senha (o iat é em segundos).
+  if (conta.sessoesDesde && payload.iat < Date.parse(conta.sessoesDesde) / 1000) {
+    throw naoAutorizado('A senha foi trocada. Entre novamente.');
+  }
 
-  req.usuario = usuario;
+  req.usuario = conta.usuario;
   next();
 }
 

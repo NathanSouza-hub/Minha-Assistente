@@ -119,3 +119,74 @@ test('Swagger documenta as rotas de auth', async () => {
   const corpo = res.body.paths['/auth/cadastro'].post.requestBody.content['application/json'].schema;
   assert.deepEqual(corpo.required.sort(), ['email', 'nome', 'senha']);
 });
+
+// Token emitido há 10 s: a troca de senha (truncada ao segundo) precisa encerrá-lo.
+const tokenAntigo = (usuarioId) =>
+  jwt.sign({ iat: Math.floor(Date.now() / 1000) - 10 }, process.env.JWT_SECRET, {
+    subject: usuarioId,
+    expiresIn: '30d',
+    algorithm: 'HS256',
+  });
+
+test('trocar a senha devolve sessão nova e encerra as dos outros aparelhos', async () => {
+  const maria = await criarSessao(app);
+  const outroAparelho = { Authorization: `Bearer ${tokenAntigo(maria.usuario.id)}` };
+  await request(app).get('/auth/me').set(outroAparelho).expect(200);
+  await db('pushInscricao').insert({
+    usuarioId: maria.usuario.id,
+    endpoint: 'https://fcm.googleapis.com/fcm/send/perdido',
+    p256dh: 'x',
+    auth: 'y',
+  });
+
+  const res = await request(app)
+    .put('/auth/senha')
+    .set(maria.auth)
+    .send({ senhaAtual: maria.senha, novaSenha: 'senha-nova-forte' })
+    .expect(200);
+  assert.equal(res.body.usuario.id, maria.usuario.id);
+
+  // O aparelho que trocou continua com o token novo; o outro cai.
+  await request(app).get('/auth/me').set({ Authorization: `Bearer ${res.body.token}` }).expect(200);
+  const caiu = await request(app).get('/auth/me').set(outroAparelho).expect(401);
+  assert.equal(caiu.body.erro.mensagem, 'A senha foi trocada. Entre novamente.');
+  // O aparelho perdido também para de receber lembretes.
+  assert.equal((await db('pushInscricao').where({ usuarioId: maria.usuario.id })).length, 0);
+
+  await request(app)
+    .post('/auth/login')
+    .send({ email: maria.usuario.email, senha: maria.senha })
+    .expect(401);
+  await request(app)
+    .post('/auth/login')
+    .send({ email: maria.usuario.email, senha: 'senha-nova-forte' })
+    .expect(200);
+});
+
+test('trocar a senha exige a atual correta, uma nova diferente e válida, e o token', async () => {
+  const ana = await criarSessao(app);
+  const errada = await request(app)
+    .put('/auth/senha')
+    .set(ana.auth)
+    .send({ senhaAtual: 'nao-e-essa', novaSenha: 'senha-nova-forte' })
+    .expect(400);
+  assert.equal(errada.body.erro.codigo, 'SENHA_INCORRETA');
+
+  const igual = await request(app)
+    .put('/auth/senha')
+    .set(ana.auth)
+    .send({ senhaAtual: ana.senha, novaSenha: ana.senha })
+    .expect(400);
+  assert.match(igual.body.erro.mensagem, /diferente da atual/);
+
+  const curta = await request(app)
+    .put('/auth/senha')
+    .set(ana.auth)
+    .send({ senhaAtual: ana.senha, novaSenha: 'curta' })
+    .expect(400);
+  assert.match(curta.body.erro.mensagem, /pelo menos 8/);
+
+  await request(app).put('/auth/senha').send({ senhaAtual: 'x', novaSenha: 'senha-nova-forte' }).expect(401);
+  // Nada mudou: a senha antiga ainda entra.
+  await request(app).post('/auth/login').send({ email: ana.usuario.email, senha: ana.senha }).expect(200);
+});

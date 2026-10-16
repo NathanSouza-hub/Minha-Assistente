@@ -10,6 +10,7 @@ function rotasAuth() {
   rotas.post('/cadastro', limiteCadastro(), validar({ body: esquemas.cadastro }), controller.cadastrar);
   rotas.post('/login', limiteLogin(), validar({ body: esquemas.login }), controller.entrar);
   rotas.get('/me', autenticar, controller.eu);
+  rotas.put('/senha', autenticar, limiteLogin(), validar({ body: esquemas.trocaSenha }), controller.trocarSenha);
   return rotas;
 }
 

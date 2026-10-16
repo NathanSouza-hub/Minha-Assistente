@@ -27,7 +27,7 @@ separadamente e depende do contrato de API descrito aqui.
 ## Rotas
 
 ```
-POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me
+POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me | PUT /auth/senha
 GET  /hoje
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
@@ -192,6 +192,14 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
       (`409 CARTAO_DUPLICADO`).
     - No front é a aba "Cartões" de Contas (`/pagamentos?aba=cartoes&cartao=<id>&mes=AAAA-MM`).
 
+20. **Trocar senha** (migration 14): `PUT /auth/senha` com `{ senhaAtual, novaSenha }` (nova com
+    as regras do cadastro e diferente da atual) devolve uma sessão nova `{ token, usuario }`. Senha
+    atual errada → `400 SENHA_INCORRETA`; as tentativas contam no limite do login. A troca grava
+    `usuario.sessoes_desde` (truncado ao segundo) e `autenticar` recusa tokens com `iat` anterior
+    (`401 "A senha foi trocada. Entre novamente."`): os outros aparelhos saem. As inscrições de push
+    da conta são apagadas; o aparelho que trocou reenvia a dele ao receber o token novo. "Esqueci
+    minha senha" (por e-mail) ainda não existe.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -210,7 +218,7 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
-| usuario | id, nome, email (citext unique), senha_hash | |
+| usuario | id, nome, email (citext unique), senha_hash, sessoes_desde? | |
 | imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
