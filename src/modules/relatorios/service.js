@@ -1,11 +1,15 @@
 const db = require('../../config/db');
+const { garantirContas } = require('../equipe/contas');
 
 const SEM_IMOVEL = 'Sem imóvel';
 const CARTAO_DE_CREDITO = 'Cartão de crédito';
+const SALARIOS_EQUIPE = 'Salários equipe';
 
 // Pago = status pago com data de pagamento no período.
 // Previsto = pendente com vencimento no período.
 async function gastos(usuarioId, { inicio, fim, agruparPor }) {
+  // As contas da equipe do mês atual e do seguinte entram no previsto mesmo sem abrir Contas antes.
+  await garantirContas(db, usuarioId);
   const pago = "p.status = 'pago' AND p.data_pagamento BETWEEN ? AND ?";
   const previsto = "p.status = 'pendente' AND p.vencimento BETWEEN ? AND ?";
 
@@ -21,11 +25,18 @@ async function gastos(usuarioId, { inicio, fim, agruparPor }) {
     );
 
   if (agruparPor === 'categoria') {
-    // Faturas de cartão não têm categoria: entram juntas em "Cartão de crédito", no fim.
+    // Sem categoria: a equipe entra em "Salários equipe" e as faturas em "Cartão de crédito", no fim.
     q.leftJoin('categoriaPagamento as g', 'g.id', 'p.categoriaId')
-      .select('g.id', db.raw('COALESCE(g.nome, ?) AS nome', [CARTAO_DE_CREDITO]))
+      .select(
+        'g.id',
+        db.raw('COALESCE(g.nome, CASE WHEN p.membro_id IS NOT NULL THEN ? ELSE ? END) AS nome', [
+          SALARIOS_EQUIPE,
+          CARTAO_DE_CREDITO,
+        ]),
+      )
       .groupBy('g.id', 'g.nome', 'g.ordem')
-      .orderByRaw('g.ordem NULLS LAST');
+      .groupByRaw('(p.membro_id IS NOT NULL)')
+      .orderByRaw('g.ordem NULLS LAST, nome');
   } else {
     q.leftJoin('imovel as g', 'g.id', 'p.imovelId')
       .select('g.id', db.raw('COALESCE(g.nome, ?) AS nome', [SEM_IMOVEL]))

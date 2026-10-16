@@ -72,9 +72,20 @@ const criacao = z
     },
   });
 
-const edicao = z.object(campos).superRefine(regraDataPagamento);
+// Na conta da equipe a categoria não existe e o valor pode ficar a definir (null); nas outras
+// contas o service exige os dois.
+const edicao = z
+  .object({
+    ...campos,
+    categoriaId: id.nullish().transform((v) => v ?? null),
+    valorCentavos: centavos.nullish().transform((v) => v ?? null),
+  })
+  .superRefine(regraDataPagamento);
 
-const pagar = z.object({ dataPagamento: data.optional() });
+const pagar = z.object({
+  dataPagamento: data.optional(),
+  valorCentavos: centavos.optional().describe('Só na conta da equipe: o valor pago (obrigatório se estava a definir)'),
+});
 
 const filtros = z
   .object({
@@ -89,11 +100,11 @@ const filtros = z
 const pagamento = z.object({
   id: z.uuid(),
   descricao: z.string(),
-  categoriaId: z.uuid().nullable().describe('Nulo só na fatura de cartão'),
+  categoriaId: z.uuid().nullable().describe('Nulo na fatura de cartão e na conta da equipe'),
   categoriaNome: z.string().nullable(),
   imovelId: z.uuid().nullable(),
   imovelNome: z.string().nullable(),
-  valorCentavos: z.number().int(),
+  valorCentavos: z.number().int().nullable().describe('Nulo = conta da equipe com valor a definir'),
   vencimento: z.iso.date(),
   status: z.enum(STATUS),
   dataPagamento: z.iso.date().nullable(),
@@ -108,6 +119,8 @@ const pagamento = z.object({
   cartaoNome: z.string().nullable(),
   competencia: z.iso.date().nullable().describe('Mês da fatura (dia 1)'),
   totalComprovantes: z.number().int().describe('Quantos comprovantes a conta tem (a lista vem em GET /:id)'),
+  membroId: z.uuid().nullable().describe('Preenchido na conta da equipe (criada pelos dias de pagamento da pessoa)'),
+  membroNome: z.string().nullable(),
   criadoEm: instante,
   atualizadoEm: instante,
 });

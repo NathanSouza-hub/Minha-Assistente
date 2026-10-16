@@ -13,6 +13,8 @@ const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.
 const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
 const paginaPagamento = () =>
   import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
+const paginaMembro = () =>
+  import('@/paginas/equipe/PaginaMembro').then((m) => ({ Component: m.PaginaMembro }))
 const paginaCartao = () =>
   import('@/paginas/cartoes/PaginaCartao').then((m) => ({ Component: m.PaginaCartao }))
 const paginaCompra = () =>
@@ -74,6 +76,8 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },
+          { path: 'equipe/novo', lazy: paginaMembro },
+          { path: 'equipe/:id', lazy: paginaMembro },
           { path: 'cartoes/novo', lazy: paginaCartao },
           { path: 'cartoes/:id', lazy: paginaCartao },
           { path: 'cartoes/:id/compras/nova', lazy: paginaCompra },

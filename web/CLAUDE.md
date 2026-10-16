@@ -96,6 +96,13 @@ npm run lint                                  # oxlint
   cartões, pagamentos, relatório e painel (`consultas/cartoes.ts`). As regras de competência e
   parcelas estão em `src/lib/fatura.ts` (cópia de `src/lib/fatura.js` do back-end, usada pelo mock
   e pelo resumo "10× de" do formulário).
+- **Salários equipe** (aba `?aba=equipe` de Contas, `paginas/equipe/`): pagamentos da equipe no mês
+  (filtrados de `/pagamentos` por `membroId`) e a lista de pessoas (`/equipe/novo`, `/equipe/:id`, com
+  os dias de pagamento num `useFieldArray`). As contas são criadas pelo back-end; a conta da equipe
+  pode ter `valorCentavos: null` ("A definir"): some com `?? 0`, o item mostra "Pagar…" pedindo o
+  valor (`usePagarPagamento` aceita `valorCentavos`) e `/pagamentos/:id` abre
+  `FormularioContaEquipe` (valor, data, observações e a chave PIX). O mock cria as contas em
+  `garantirContasEquipe` (`mocks/equipe.ts`), chamado ao listar contas e no relatório.
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

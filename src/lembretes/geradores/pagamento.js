@@ -33,7 +33,7 @@ async function mensagem(conexao, lembrete) {
   const hoje = instante(lembrete.agendadoPara).toISODate() === vencimento;
   return {
     titulo: hoje ? 'Conta vence hoje' : 'Conta vence amanhã',
-    corpo: juntar(p.descricao, formatarCentavos(p.valorCentavos)),
+    corpo: juntar(p.descricao, p.valorCentavos === null ? 'valor a definir' : formatarCentavos(p.valorCentavos)),
     url: '/pagamentos',
   };
 }

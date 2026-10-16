@@ -11,7 +11,7 @@ import { tarefasDoDia } from './rotinas'
 import { autenticado } from './util'
 
 const DIAS_A_VENCER = 7
-const total = (lista: Pagamento[]) => lista.reduce((soma, p) => soma + p.valorCentavos, 0)
+const total = (lista: Pagamento[]) => lista.reduce((soma, p) => soma + (p.valorCentavos ?? 0), 0)
 
 export const handlersHoje = [
   http.get(

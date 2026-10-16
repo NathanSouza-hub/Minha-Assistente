@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
+import { ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -9,17 +9,19 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
 import { chaveCategoria } from '@/lib/compras'
-import { intervaloDoMes, mesDe, nomeDoMes, somarMeses } from '@/lib/datas'
-import { formatarCentavos } from '@/lib/dinheiro'
+import { intervaloDoMes, mesDe, nomeDoMes } from '@/lib/datas'
 import type { CategoriaPagamento, StatusPagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
+import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
 import { ItemPagamento } from './ItemPagamento'
+import { NavegadorMes, ResumoContas } from './ResumoContas'
 
 type FiltroStatus = 'todos' | StatusPagamento
 
-/** Valor de ?aba= da aba Cartões (as outras abas são ids de categoria). */
+/** Valores de ?aba= das abas fixas (as outras abas são ids de categoria). */
+const ABA_EQUIPE = 'equipe'
 const ABA_CARTOES = 'cartoes'
 
 /** "Contas residenciais" (ou "residências"...): a categoria das contas de casa, pelo nome. */
@@ -60,7 +62,12 @@ function Abas({
   aoMudar: (aba: string) => void
 }) {
   const [criando, setCriando] = useState(false)
-  const abas = [{ id: '', nome: 'Todas' }, ...categorias, { id: ABA_CARTOES, nome: 'Cartões' }]
+  const abas = [
+    { id: '', nome: 'Todas' },
+    ...categorias,
+    { id: ABA_EQUIPE, nome: 'Salários equipe' },
+    { id: ABA_CARTOES, nome: 'Cartões' },
+  ]
 
   return (
     <div className="flex flex-col gap-3">
@@ -111,6 +118,20 @@ export function Pagamentos() {
   const filtros = useFiltros()
   const { data: categorias = [] } = useCategorias()
 
+  if (filtros.aba === ABA_EQUIPE) {
+    return (
+      <Pagina titulo="Contas">
+        <div className="flex flex-col gap-5">
+          <Abas
+            categorias={categorias}
+            ativa={ABA_EQUIPE}
+            aoMudar={(nova) => filtros.mudar(nova === ABA_CARTOES ? { aba: nova, mes: '' } : { aba: nova })}
+          />
+          <AbaEquipe mes={filtros.mes} aoMudarMes={(mes) => filtros.mudar({ mes })} />
+        </div>
+      </Pagina>
+    )
+  }
   if (filtros.aba === ABA_CARTOES) {
     return (
       <Pagina titulo="Contas">
@@ -146,9 +167,6 @@ function ListaDeContas({
   const imoveisEmAbas = Boolean(categoriaAtiva && ehResidencial(categoriaAtiva.nome) && imoveis.length > 0)
   const imovelAtivo = imoveis.find((i) => i.id === imovelId)
 
-  const aPagar = pagamentos.filter((p) => p.status === 'pendente')
-  const vencidos = aPagar.filter((p) => p.vencido).length
-  const soma = (lista: typeof pagamentos) => lista.reduce((total, p) => total + p.valorCentavos, 0)
   const temFiltro = status !== 'todos' || (Boolean(imovelId) && !imoveisEmAbas)
   const novo = `/pagamentos/novo?mes=${mes}${categoriaId ? `&aba=${categoriaId}` : ''}${
     imoveisEmAbas && imovelAtivo ? `&imovel=${imovelAtivo.id}` : ''
@@ -199,17 +217,7 @@ function ListaDeContas({
           </div>
         )}
 
-        <nav aria-label="Mês" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
-          <Button variant="ghost" size="icon" onClick={() => mudar({ mes: somarMeses(mes, -1) })} aria-label="Mês anterior">
-            <ChevronLeft className="size-7" aria-hidden />
-          </Button>
-          <h2 className="text-xl font-bold" aria-live="polite">
-            {nomeDoMes(mes)}
-          </h2>
-          <Button variant="ghost" size="icon" onClick={() => mudar({ mes: somarMeses(mes, 1) })} aria-label="Próximo mês">
-            <ChevronRight className="size-7" aria-hidden />
-          </Button>
-        </nav>
+        <NavegadorMes mes={mes} aoMudar={(novo) => mudar({ mes: novo })} />
 
         <Opcoes<FiltroStatus>
           rotulo="Mostrar"
@@ -245,25 +253,7 @@ function ListaDeContas({
           </details>
         )}
 
-        {pagamentos.length > 0 && (
-          <dl className="grid grid-cols-2 gap-3">
-            <div className="min-w-0 rounded-xl border bg-card p-4">
-              <dt className="text-base text-muted-foreground">A pagar</dt>
-              <dd className="text-xl font-bold tabular-nums sm:text-2xl">{formatarCentavos(soma(aPagar))}</dd>
-              {vencidos > 0 && (
-                <dd className="font-semibold text-atraso">
-                  {vencidos === 1 ? '1 conta vencida' : `${vencidos} contas vencidas`}
-                </dd>
-              )}
-            </div>
-            <div className="min-w-0 rounded-xl border bg-card p-4">
-              <dt className="text-base text-muted-foreground">Pago</dt>
-              <dd className="text-xl font-bold tabular-nums sm:text-2xl">
-                {formatarCentavos(soma(pagamentos.filter((p) => p.status === 'pago')))}
-              </dd>
-            </div>
-          </dl>
-        )}
+        {pagamentos.length > 0 && <ResumoContas pagamentos={pagamentos} />}
 
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando contas">

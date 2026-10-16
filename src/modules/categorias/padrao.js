@@ -1,7 +1,6 @@
 // Categorias com que toda conta nova começa. Depois o usuário cria, renomeia e apaga as suas.
+// Salários e honorários ficam na aba "Salários equipe" (módulo equipe), não em categorias.
 const CATEGORIAS_PADRAO = [
-  'Salários',
-  'Honorários médicos',
   'Consultas',
   'Exames',
   'Parcelamentos',

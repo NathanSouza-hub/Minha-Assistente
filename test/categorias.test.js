@@ -28,7 +28,7 @@ const listar = async (sessao) =>
 test('cadastro cria as 7 categorias padrão, separadas por usuário', async () => {
   const daAna = await listar(ana);
   const daBia = await listar(bia);
-  const padrao = ['Salários', 'Honorários médicos', 'Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'];
+  const padrao = ['Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'];
   assert.deepEqual(daAna.map((c) => c.nome), padrao);
   assert.deepEqual(daBia.map((c) => c.nome), padrao);
   assert.notEqual(daAna[0].id, daBia[0].id);
@@ -41,14 +41,14 @@ test('criar, renomear, reordenar e apagar categoria', async () => {
     .send({ nome: '  Plano de saúde ' })
     .expect(201);
   assert.equal(criada.body.nome, 'Plano de saúde');
-  assert.equal(criada.body.ordem, 8, 'vai para o fim da lista');
+  assert.equal(criada.body.ordem, 6, 'vai para o fim da lista');
 
   const renomeada = await request(app)
     .put(`/categorias-pagamento/${criada.body.id}`)
     .set(ana.auth)
     .send({ nome: 'Saúde' })
     .expect(200);
-  assert.deepEqual(renomeada.body, { id: criada.body.id, nome: 'Saúde', ordem: 8 });
+  assert.deepEqual(renomeada.body, { id: criada.body.id, nome: 'Saúde', ordem: 6 });
 
   const reordenada = await request(app)
     .put(`/categorias-pagamento/${criada.body.id}`)
@@ -61,7 +61,7 @@ test('criar, renomear, reordenar e apagar categoria', async () => {
   await request(app).put(`/categorias-pagamento/${criada.body.id}`).set(ana.auth).send({}).expect(400);
 
   await request(app).delete(`/categorias-pagamento/${criada.body.id}`).set(ana.auth).expect(204);
-  assert.equal((await listar(ana)).length, 7);
+  assert.equal((await listar(ana)).length, 5);
 });
 
 test('nome repetido sem diferenciar maiúsculas responde 409', async () => {
@@ -72,11 +72,11 @@ test('nome repetido sem diferenciar maiúsculas responde 409', async () => {
     .expect(409);
   assert.equal(res.body.erro.codigo, 'CATEGORIA_DUPLICADA');
 
-  const [salarios] = await listar(ana);
+  const [primeira] = await listar(ana);
   await request(app)
-    .put(`/categorias-pagamento/${salarios.id}`)
+    .put(`/categorias-pagamento/${primeira.id}`)
     .set(ana.auth)
-    .send({ nome: 'consultas' })
+    .send({ nome: 'exames' })
     .expect(409);
 
   // Outro usuário pode usar o mesmo nome.
@@ -85,13 +85,13 @@ test('nome repetido sem diferenciar maiúsculas responde 409', async () => {
 });
 
 test('apagar categoria com contas responde 409', async () => {
-  const [salarios] = await listar(ana);
+  const [primeira] = await listar(ana);
   await request(app)
     .post('/pagamentos')
     .set(ana.auth)
-    .send({ descricao: 'Salário', categoriaId: salarios.id, valorCentavos: 150000, vencimento: '2026-10-05' })
+    .send({ descricao: 'Salário', categoriaId: primeira.id, valorCentavos: 150000, vencimento: '2026-10-05' })
     .expect(201);
-  const res = await request(app).delete(`/categorias-pagamento/${salarios.id}`).set(ana.auth).expect(409);
+  const res = await request(app).delete(`/categorias-pagamento/${primeira.id}`).set(ana.auth).expect(409);
   assert.equal(res.body.erro.codigo, 'REFERENCIA_INVALIDA');
 });
 

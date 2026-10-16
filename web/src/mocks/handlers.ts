@@ -2,6 +2,7 @@
 // Siga o contrato do back-end à risca: trocar pelo servidor real não pode exigir mudar telas.
 import { handlersAuth } from './auth'
 import { handlersCartoes } from './cartoes'
+import { handlersEquipe } from './equipe'
 import { handlersCompras } from './compras'
 import { handlersEventos } from './eventos'
 import { handlersHoje } from './hoje'
@@ -17,6 +18,7 @@ export const handlers = [
   ...handlersAuth,
   ...handlersPagamentos,
   ...handlersCartoes,
+  ...handlersEquipe,
   ...handlersEventos,
   ...handlersMedicamentos,
   ...handlersRotinas,

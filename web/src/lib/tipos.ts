@@ -27,8 +27,8 @@ export type Pagamento = {
   categoriaNome: string | null
   imovelId: string | null
   imovelNome: string | null
-  /** Em parcelas, é o valor de cada parcela. */
-  valorCentavos: number
+  /** Em parcelas, é o valor de cada parcela. Nulo = conta da equipe com valor a definir. */
+  valorCentavos: number | null
   vencimento: string
   status: StatusPagamento
   dataPagamento: string | null
@@ -47,6 +47,9 @@ export type Pagamento = {
   competencia: string | null
   /** Quantos comprovantes a conta tem (a lista vem em GET /pagamentos/:id). */
   totalComprovantes: number
+  /** Conta da equipe (criada pelos dias de pagamento da pessoa): edita só valor, data e observações. */
+  membroId: string | null
+  membroNome: string | null
   criadoEm: string
   atualizadoEm: string
 }
@@ -54,12 +57,13 @@ export type Pagamento = {
 /** GET /pagamentos/:id: a conta com a lista de comprovantes. */
 export type PagamentoDetalhe = Pagamento & { comprovantes: Comprovante[] }
 
-/** Corpo de PUT /pagamentos/:id (todos os campos gravados). */
+/** Corpo de PUT /pagamentos/:id (todos os campos gravados). Na conta da equipe a categoria é
+ * nula e o valor pode ficar nulo (a definir). */
 export type PagamentoEdicao = {
   descricao: string
-  categoriaId: string
+  categoriaId: string | null
   imovelId: string | null
-  valorCentavos: number
+  valorCentavos: number | null
   vencimento: string
   status: StatusPagamento
   dataPagamento: string | null
@@ -77,6 +81,22 @@ export type FiltrosPagamento = {
   categoriaId?: string
   imovelId?: string
 }
+
+export type FormaPagamento = 'mensal' | 'plantao' | 'honorario'
+
+export type DiaPagamento = { dia: number; valorPrevistoCentavos: number | null }
+
+/** Corpo de POST e PUT /equipe. */
+export type MembroEquipeCorpo = {
+  nome: string
+  funcao: string | null
+  formaPagamento: FormaPagamento
+  chavePix: string | null
+  ativo: boolean
+  dias: DiaPagamento[]
+}
+
+export type MembroEquipe = MembroEquipeCorpo & { id: string }
 
 export type CorCartao = 'azul' | 'roxo' | 'verde' | 'laranja' | 'vermelho' | 'grafite'
 export type SituacaoFatura = 'aberta' | 'fechada' | 'paga'

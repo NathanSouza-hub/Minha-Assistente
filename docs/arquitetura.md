@@ -36,6 +36,7 @@ GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
 GET/POST /categorias-pagamento | PUT/DELETE /categorias-pagamento/:id
 GET/POST /cartoes | GET/PUT/DELETE /cartoes/:id | GET /cartoes/:id/faturas/:AAAA-MM   (acrescentadas)
 POST /cartoes/:id/compras | GET/PUT/DELETE /cartoes/:id/compras/:compraId            (acrescentadas)
+GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                          (acrescentadas)
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
@@ -218,6 +219,32 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     também `comprovantes[]`. Apagar contas (excluir, fatura que zera, cartão excluído) apaga os
     arquivos depois que a transação confirma (`comprovantes.aoApagarContas`).
 
+23. **Equipe e salários** (migration 19; substitui as categorias "Salários" e "Honorários médicos",
+    que deixaram de ser padrão — o cadastro cria só 5):
+    - `membro_equipe` (nome único por usuário sem diferenciar maiúsculas → `409 MEMBRO_DUPLICADO`,
+      funcao?, forma_pagamento `mensal|plantao|honorario`, chave_pix?, ativo) e
+      `membro_equipe_dia` (dia 1–31, valor_previsto_centavos?, `desde`). `POST/PUT /equipe`
+      recebem `dias: [{ dia, valorPrevistoCentavos? }]` (1 a 10, sem repetir).
+    - **Contas automáticas** (`src/modules/equipe/contas.js`, `garantirContas`): para cada pessoa
+      ativa e cada dia, a conta do mês atual e do seguinte em `pagamento` (`membro_id`, descrição =
+      nome, valor = previsto ou **nulo = a definir**). Só a partir de `desde` (cadastro novo não
+      cria conta vencida); dia 31 em mês curto vira o último dia. Idempotente
+      (`unique (membro_id, vencimento)` + `ON CONFLICT`); roda ao listar `/pagamentos` (e, por ela,
+      `/hoje`), no relatório e ao salvar a pessoa.
+    - Mudar dias/valores ou desativar apaga as contas pendentes de hoje em diante e recria as que
+      couberem; vencidas e pagas ficam. Reativar volta a criar só a partir de hoje. Excluir a pessoa
+      só se nunca recebeu (senão `409 REFERENCIA_INVALIDA`: desative).
+    - Em `/pagamentos` a conta vem com `membroId`/`membroNome` e pode ter `valorCentavos: null`.
+      `PUT` nela grava só valor, vencimento, status/dataPagamento e observações (categoria e
+      descrição ficam). Nas outras contas o `PUT` continua exigindo categoria e valor (`400`).
+      `PATCH /pagar` aceita `valorCentavos` na conta da equipe (obrigatório se estava a definir).
+      Apagar a conta, ou mudar a data dela, registra o dia em `membro_equipe_dispensa` para não ser
+      criado de novo. Totais (Hoje, relatório) ignoram valor nulo; no relatório por categoria a
+      equipe soma em `{ id: null, nome: "Salários equipe" }`. Lembrete sem valor diz "valor a definir".
+    - No front é a aba "Salários equipe" de Contas (`/pagamentos?aba=equipe`); a conta da equipe abre
+      um formulário próprio em `/pagamentos/:id` (com a chave PIX para copiar); pessoas em
+      `/equipe/novo` e `/equipe/:id`.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -241,7 +268,10 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
 | cartao_compra | cartao_id, descricao, categoria_id?, valor_total_centavos, parcelas, data_compra, observacoes | parcelas 1–48; idx (cartao_id, data_compra) |
-| pagamento | descricao, categoria_id? (nulo só na fatura), cartao_id?, competencia?, imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
+| membro_equipe | id, usuario_id, nome, funcao?, forma_pagamento, chave_pix?, ativo | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
+| membro_equipe_dia | membro_id, dia, valor_previsto_centavos?, desde | unique (membro_id, dia); dia 1–31 |
+| membro_equipe_dispensa | membro_id, vencimento | pk (membro_id, vencimento) |
+| pagamento | descricao, categoria_id? (nulo na fatura e na equipe), cartao_id?, competencia?, membro_id?, valor_centavos? (nulo só na equipe pendente), imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
 | evento | titulo, tipo, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
 | rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |
 | rotina_conclusao | rotina_id, data, concluida_em | unique (rotina_id, data) |

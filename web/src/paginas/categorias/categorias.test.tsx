@@ -3,6 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
+import { banco, MARIA_ID } from '@/mocks/banco'
 import { entrarComoMaria, renderizarApp } from '@/test/renderizarApp'
 
 const servidor = setupServer(...handlers)
@@ -30,15 +31,7 @@ describe('tela de categorias', () => {
     const conteudo = await screen.findByRole('main')
     await usuario.click(await within(conteudo).findByRole('link', { name: 'Categorias' }))
     await screen.findByRole('list', { name: 'Suas categorias' })
-    expect(nomes()).toEqual([
-      'Salários',
-      'Honorários médicos',
-      'Consultas',
-      'Exames',
-      'Parcelamentos',
-      'Contas residenciais',
-      'Outros',
-    ])
+    expect(nomes()).toEqual(['Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'])
   })
 
   test('cria, renomeia e muda a ordem', async () => {
@@ -60,11 +53,12 @@ describe('tela de categorias', () => {
     await usuario.click(screen.getByRole('button', { name: 'Subir Saúde' }))
     await waitFor(() => expect(nomes().at(-2)).toBe('Saúde'))
     expect(nomes().at(-1)).toBe('Outros')
-    expect(screen.getByRole('button', { name: 'Subir Salários' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Subir Consultas' })).toBeDisabled()
   })
 
   test('não exclui categoria com contas e exclui a vazia', async () => {
     const usuario = userEvent.setup()
+    banco.categorias.push({ id: crypto.randomUUID(), usuarioId: MARIA_ID, nome: 'Vazia', ordem: 9 })
     renderizarApp('/categorias')
     await screen.findByRole('list', { name: 'Suas categorias' })
 
@@ -75,8 +69,8 @@ describe('tela de categorias', () => {
     ).toBeInTheDocument()
     expect(nomes()).toContain('Exames')
 
-    await usuario.click(screen.getByRole('button', { name: 'Excluir Honorários médicos' }))
+    await usuario.click(screen.getByRole('button', { name: 'Excluir Vazia' }))
     await usuario.click(await screen.findByRole('button', { name: 'Excluir categoria' }))
-    await waitFor(() => expect(nomes()).not.toContain('Honorários médicos'))
+    await waitFor(() => expect(nomes()).not.toContain('Vazia'))
   })
 })

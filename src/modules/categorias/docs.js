@@ -16,7 +16,7 @@ module.exports = {
     '/categorias-pagamento': {
       get: {
         tags: TAG,
-        summary: 'Categorias de pagamento do usuário (as 6 padrão nascem no cadastro)',
+        summary: 'Categorias de pagamento do usuário (as 4 padrão nascem no cadastro)',
         responses: {
           200: respostaJson('Categorias em ordem de exibição', z.array(categoria)),
           ...respostasErro(ERRO_AUTH),

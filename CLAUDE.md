@@ -81,7 +81,8 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`,
 `/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
 `/cartoes` (faturas viram contas em `pagamento`; regras em `src/lib/fatura.js`, decisão 19 de
-`docs/arquitetura.md`), `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
+`docs/arquitetura.md`), `/equipe` (os dias de pagamento viram contas em `pagamento`, criadas por
+`garantirContas` ao listar; conta da equipe pode ter valor nulo = a definir; decisão 23), `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
 temporária definida em `test/setup.js`), `/compras`, `/notificacoes` e os lembretes
 (`src/lembretes/`). Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
 em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes.

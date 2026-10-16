@@ -19,7 +19,7 @@ const relatorioGastos = z.object({
   totalPrevistoCentavos: z.number().int(),
   itens: z.array(
     z.object({
-      id: z.uuid().nullable().describe('null = pagamentos sem imóvel ou faturas de cartão (por categoria)'),
+      id: z.uuid().nullable().describe('null = pagamentos sem imóvel, ou equipe e faturas de cartão (por categoria)'),
       nome: z.string(),
       pagoCentavos: z.number().int(),
       previstoCentavos: z.number().int(),

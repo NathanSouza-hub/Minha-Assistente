@@ -68,7 +68,7 @@ export function valoresIniciais(
   }
   return {
     descricao: pagamento.descricao,
-    valor: centavosParaTexto(pagamento.valorCentavos),
+    valor: pagamento.valorCentavos === null ? '' : centavosParaTexto(pagamento.valorCentavos),
     vencimento: pagamento.vencimento,
     categoriaId: pagamento.categoriaId ?? '',
     imovelId: pagamento.imovelId ?? '',

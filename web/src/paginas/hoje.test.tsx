@@ -49,7 +49,7 @@ describe('painel Hoje', () => {
 
     const semana = await secao('Contas dos próximos 7 dias')
     expect(within(semana).getByText('Conta de luz')).toBeInTheDocument()
-    expect(within(semana).getByText('Salário da Joana')).toBeInTheDocument()
+    expect(within(semana).getByText('Joana')).toBeInTheDocument()
     expect(within(semana).getByText('R$ 2.038,90 no total')).toBeInTheDocument()
   })
 

@@ -4,6 +4,7 @@ const db = require('../../config/db');
 const { hoje } = require('../../lib/tempo');
 const { AppError, naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
 const comprovantes = require('./comprovantes');
+const { garantirContas, dispensar } = require('../equipe/contas');
 
 const COLUNAS = [
   'p.id',
@@ -25,6 +26,8 @@ const COLUNAS = [
   'p.cartaoId',
   'k.nome as cartaoNome',
   'p.competencia',
+  'p.membroId',
+  'e.nome as membroNome',
   'p.criadoEm',
   'p.atualizadoEm',
 ];
@@ -35,11 +38,12 @@ const VENCIDO = "(p.status = 'pendente' AND p.vencimento < current_date) AS venc
 const TOTAL_COMPROVANTES =
   '(SELECT count(*) FROM pagamento_comprovante pc WHERE pc.pagamento_id = p.id)::int AS total_comprovantes';
 
-// Fatura de cartão não tem categoria: os dois joins são left.
+// Fatura de cartão e conta da equipe não têm categoria: os joins são left.
 const consulta = (conexao, usuarioId) =>
   conexao('pagamento as p')
     .leftJoin('categoriaPagamento as c', 'c.id', 'p.categoriaId')
     .leftJoin('cartao as k', 'k.id', 'p.cartaoId')
+    .leftJoin('membroEquipe as e', 'e.id', 'p.membroId')
     .leftJoin('imovel as i', 'i.id', 'p.imovelId')
     .where('p.usuarioId', usuarioId)
     .select(COLUNAS)
@@ -57,7 +61,9 @@ async function buscar(usuarioId, id, conexao = db) {
   return pagamento;
 }
 
-function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId }) {
+// Antes de listar, garante as contas da equipe do mês atual e do seguinte.
+async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId }) {
+  await garantirContas(db, usuarioId);
   const q = consulta(db, usuarioId).orderBy(ORDEM);
   if (inicio) q.where('p.vencimento', '>=', inicio);
   if (fim) q.where('p.vencimento', '<=', fim);
@@ -161,10 +167,31 @@ const cancelarLembretesPendentes = (conexao, id) =>
 const faturaAutomatica = () =>
   new AppError(409, 'FATURA_AUTOMATICA', 'O valor da fatura vem das compras do cartão.');
 
+// Conta da equipe: só valor (pode ficar a definir), data, situação e observações. A descrição é o
+// nome da pessoa. Mudar a data dispensa a original, para o dia não ser criado de novo.
+async function atualizarDaEquipe(trx, usuarioId, atual, dados) {
+  if (dados.status === 'pago' && dados.valorCentavos === null) {
+    throw requisicaoInvalida('valorCentavos: Informe o valor pago.');
+  }
+  if (dados.vencimento !== atual.vencimento) await dispensar(trx, atual.membroId, atual.vencimento);
+  await trx('pagamento').where({ id: atual.id, usuarioId }).update({
+    valorCentavos: dados.valorCentavos,
+    vencimento: dados.vencimento,
+    status: dados.status,
+    dataPagamento: dados.dataPagamento,
+    observacoes: dados.observacoes,
+  });
+  await cancelarLembretesPendentes(trx, atual.id);
+  return buscar(usuarioId, atual.id, trx);
+}
+
 async function atualizar(usuarioId, id, dados) {
   return db.transaction(async (trx) => {
     const atual = await buscar(usuarioId, id, trx);
     if (atual.cartaoId) throw faturaAutomatica();
+    if (atual.membroId) return atualizarDaEquipe(trx, usuarioId, atual, dados);
+    if (!dados.categoriaId) throw requisicaoInvalida('categoriaId: Escolha a categoria.');
+    if (dados.valorCentavos === null) throw requisicaoInvalida('valorCentavos: Informe o valor.');
     await validarReferencias(trx, usuarioId, dados);
     if (atual.parcelamentoGrupoId && dados.recorrencia !== 'nenhuma') {
       throw requisicaoInvalida('recorrencia: parcela não pode ser recorrente.');
@@ -176,16 +203,20 @@ async function atualizar(usuarioId, id, dados) {
   });
 }
 
-async function pagar(usuarioId, id, { dataPagamento }) {
+const jaPago = () => new AppError(409, 'JA_PAGO', 'Este pagamento já está pago.');
+
+// Conta da equipe pode receber o valor na hora de pagar (obrigatório se estava a definir).
+async function pagar(usuarioId, id, { dataPagamento, valorCentavos }) {
   return db.transaction(async (trx) => {
+    const atual = await buscar(usuarioId, id, trx);
+    if (atual.status === 'pago') throw jaPago();
+    const valor = atual.membroId ? (valorCentavos ?? atual.valorCentavos) : atual.valorCentavos;
+    if (valor === null) throw requisicaoInvalida('valorCentavos: Informe o valor pago.');
     // Só atualiza se ainda estiver pendente: dois cliques simultâneos não pagam duas vezes.
     const alterados = await trx('pagamento')
       .where({ id, usuarioId, status: 'pendente' })
-      .update({ status: 'pago', dataPagamento: dataPagamento ?? hoje() });
-    if (!alterados) {
-      await buscar(usuarioId, id, trx); // 404 se não existir
-      throw new AppError(409, 'JA_PAGO', 'Este pagamento já está pago.');
-    }
+      .update({ status: 'pago', dataPagamento: dataPagamento ?? hoje(), valorCentavos: valor });
+    if (!alterados) throw jaPago();
     await cancelarLembretesPendentes(trx, id);
     await garantirProxima(trx, usuarioId, id);
     return buscar(usuarioId, id, trx);
@@ -197,6 +228,8 @@ async function remover(usuarioId, id) {
     const atual = await buscar(usuarioId, id, trx);
     if (atual.cartaoId) throw faturaAutomatica();
     await comprovantes.aoApagarContas(trx, [id]);
+    // Conta da equipe apagada não é criada de novo naquele dia.
+    if (atual.membroId) await dispensar(trx, atual.membroId, atual.vencimento);
     await trx('pagamento').where({ id, usuarioId }).del();
     await cancelarLembretesPendentes(trx, id);
   });

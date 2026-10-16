@@ -8,7 +8,8 @@ const pagamentos = require('../pagamentos/service');
 const { DIAS_A_VENCER } = require('./schema');
 
 const somarDias = (dataISO, dias) => DateTime.fromISO(dataISO).plus({ days: dias }).toISODate();
-const total = (lista) => lista.reduce((soma, p) => soma + p.valorCentavos, 0);
+// Conta da equipe com valor a definir não soma.
+const total = (lista) => lista.reduce((soma, p) => soma + (p.valorCentavos ?? 0), 0);
 
 async function painel(usuarioId, { data = hoje() } = {}) {
   const [doDiaEventos, doDiaRemedios, doDiaRotina, vencidos, aVencer] = await Promise.all([

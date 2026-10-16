@@ -33,6 +33,7 @@ import type { PagamentoDetalhe } from '@/lib/tipos'
 import { TAMANHO_MAXIMO_MB } from '@/lib/arquivos'
 import { ListaArquivos, type TextosArquivos } from '@/components/ListaArquivos'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
+import { FormularioContaEquipe } from '@/paginas/equipe/FormularioContaEquipe'
 import {
   camposDaApi,
   esquemaPagamento,
@@ -83,6 +84,8 @@ export function PaginaPagamento() {
       />
     )
   }
+  // Conta da equipe: formulário próprio (valor a definir, data, observações e a chave PIX).
+  if (consulta.data?.membroId) return <FormularioContaEquipe key={consulta.data.id} pagamento={consulta.data} />
   // key: ao trocar de pagamento, o formulário recomeça com os dados certos.
   return <FormularioPagamento key={id ?? 'novo'} pagamento={consulta.data} />
 }
@@ -387,7 +390,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
                 descricao={
                   ehParcela
                     ? 'Só esta parcela será excluída. As outras continuam.'
-                    : `${pagamento.descricao} de ${formatarCentavos(pagamento.valorCentavos)} será apagado e não dá para desfazer.`
+                    : `${pagamento.descricao} de ${formatarCentavos(pagamento.valorCentavos ?? 0)} será apagado e não dá para desfazer.`
                 }
                 confirmar="Excluir pagamento"
                 aoConfirmar={remover}
@@ -411,7 +414,7 @@ const TEXTOS_COMPROVANTES: TextosArquivos = {
 }
 
 /** Foto ou PDF do pagamento. Aberto por "Anexar comprovante" (#comprovantes), a tela rola até aqui. */
-function Comprovantes({ pagamento }: { pagamento: PagamentoDetalhe }) {
+export function Comprovantes({ pagamento }: { pagamento: PagamentoDetalhe }) {
   const enviar = useEnviarComprovante(pagamento.id)
   const baixar = useBaixarComprovante(pagamento.id)
   const excluir = useExcluirComprovante(pagamento.id)

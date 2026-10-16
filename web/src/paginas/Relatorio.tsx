@@ -136,7 +136,7 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
         {/* Lista semântica: cada grupo diz os dois valores em texto; a barra só reforça. */}
         <ul className="flex flex-col gap-5">
           {itens.map((item) => (
-            <li key={item.id ?? 'sem-imovel'} className="flex flex-col gap-2">
+            <li key={item.id ?? item.nome} className="flex flex-col gap-2">
               <span className="text-lg font-bold">{item.nome}</span>
               <Barra rotulo="Pago" centavos={item.pagoCentavos} maximo={maximo} cor="bg-serie-pago" />
               <Barra rotulo="Previsto" centavos={item.previstoCentavos} maximo={maximo} cor="bg-serie-previsto" />

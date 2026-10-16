@@ -5,6 +5,7 @@ import { deDataISO, hojeISO } from '@/lib/datas'
 import type { Pagamento, PagamentoCriacao, PagamentoEdicao, Comprovante } from '@/lib/tipos'
 import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock, type ComprovanteMock } from './banco'
 import { detectarTipo, lerUpload, nomeSeguro, respostaArquivo, tipoNaoAceito } from './arquivos'
+import { garantirContasEquipe } from './equipe'
 import { autenticado, erro, naoEncontrado } from './util'
 
 const idDe = (params: Record<string, unknown>) => String(params.id)
@@ -60,6 +61,7 @@ function paraResposta(p: PagamentoMock): Pagamento {
     ...resto,
     categoriaNome: banco.categorias.find((c) => c.id === p.categoriaId)?.nome ?? null,
     cartaoNome: banco.cartoes.find((c) => c.id === p.cartaoId)?.nome ?? null,
+    membroNome: banco.membros.find((m) => m.id === p.membroId)?.nome ?? null,
     imovelNome: banco.imoveis.find((i) => i.id === p.imovelId)?.nome ?? null,
     vencido: p.status === 'pendente' && p.vencimento < hojeISO(),
     totalComprovantes: banco.comprovantes.filter((c) => c.pagamentoId === p.id).length,
@@ -117,13 +119,14 @@ function garantirProxima(p: PagamentoMock) {
 function validar(d: PagamentoEdicao, usuarioId: string) {
   const problemas: string[] = []
   if (!d.descricao?.trim()) problemas.push('descricao: Informe a descrição.')
-  if (!Number.isInteger(d.valorCentavos) || d.valorCentavos <= 0)
+  if (!Number.isInteger(d.valorCentavos) || d.valorCentavos! <= 0)
     problemas.push('valorCentavos: O valor precisa ser maior que zero.')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.vencimento ?? '')) problemas.push('vencimento: Data inválida.')
   if (d.status === 'pago' && !d.dataPagamento) problemas.push('dataPagamento: Informe a data do pagamento.')
   if (d.status === 'pendente' && d.dataPagamento)
     problemas.push('dataPagamento: Pagamento pendente não tem data de pagamento.')
   if (problemas.length) return erro(400, 'VALIDACAO', problemas.join('; '))
+  if (!d.categoriaId) return erro(400, 'VALIDACAO', 'categoriaId: Escolha a categoria.')
   if (!banco.categorias.some((c) => c.id === d.categoriaId && c.usuarioId === usuarioId))
     return erro(400, 'VALIDACAO', 'categoriaId: categoria não encontrada.')
   if (d.imovelId && !banco.imoveis.some((i) => i.id === d.imovelId && i.usuarioId === usuarioId))
@@ -163,6 +166,8 @@ type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imo
 
 /** Mesmo que listar() no back-end: filtros pelo vencimento, em ordem de vencimento. */
 export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
+  // Como no back-end: antes de listar, garante as contas da equipe.
+  garantirContasEquipe(usuarioId)
   return banco.pagamentos
     .filter((p) => p.usuarioId === usuarioId)
     .filter((p) => !f.inicio || p.vencimento >= f.inicio)
@@ -351,6 +356,25 @@ export const handlersPagamentos = [
       const p = doUsuario(u.id, idDe(params))
       if (!p) return naoEncontrado('Pagamento')
       if (p.cartaoId) return faturaAutomatica()
+      if (p.membroId) {
+        // Conta da equipe: só valor (pode ficar a definir), data, situação e observações.
+        const d = comPadroes((await request.json()) as PagamentoEdicao)
+        const valor = d.valorCentavos ?? null
+        if (valor !== null && (!Number.isInteger(valor) || valor <= 0))
+          return erro(400, 'VALIDACAO', 'valorCentavos: O valor precisa ser maior que zero.')
+        if (d.status === 'pago' && valor === null)
+          return erro(400, 'VALIDACAO', 'valorCentavos: Informe o valor pago.')
+        if (d.vencimento !== p.vencimento) banco.dispensas.push({ membroId: p.membroId, vencimento: p.vencimento })
+        Object.assign(p, {
+          valorCentavos: valor,
+          vencimento: d.vencimento,
+          status: d.status,
+          dataPagamento: d.dataPagamento,
+          observacoes: d.observacoes,
+          atualizadoEm: agoraISO(),
+        })
+        return HttpResponse.json(paraResposta(p))
+      }
       const dados = comPadroes((await request.json()) as PagamentoEdicao)
       const invalido = validar(dados, u.id)
       if (invalido) return invalido
@@ -368,9 +392,13 @@ export const handlersPagamentos = [
       const p = doUsuario(u.id, idDe(params))
       if (!p) return naoEncontrado('Pagamento')
       if (p.status === 'pago') return erro(409, 'JA_PAGO', 'Este pagamento já está pago.')
-      const corpo = (await request.json().catch(() => ({}))) as { dataPagamento?: string }
+      const corpo = (await request.json().catch(() => ({}))) as { dataPagamento?: string; valorCentavos?: number }
+      // Conta da equipe pode receber o valor na hora de pagar (obrigatório se estava a definir).
+      const valor = p.membroId ? (corpo.valorCentavos ?? p.valorCentavos) : p.valorCentavos
+      if (valor === null) return erro(400, 'VALIDACAO', 'valorCentavos: Informe o valor pago.')
       Object.assign(p, {
         status: 'pago',
+        valorCentavos: valor,
         dataPagamento: corpo.dataPagamento ?? hojeISO(),
         atualizadoEm: agoraISO(),
       })
@@ -385,6 +413,9 @@ export const handlersPagamentos = [
       const indice = banco.pagamentos.findIndex((p) => p.id === idDe(params) && p.usuarioId === u.id)
       if (indice < 0) return naoEncontrado('Pagamento')
       if (banco.pagamentos[indice].cartaoId) return faturaAutomatica()
+      const { membroId, vencimento } = banco.pagamentos[indice]
+      // Conta da equipe apagada não é criada de novo naquele dia.
+      if (membroId) banco.dispensas.push({ membroId, vencimento })
       const [apagado] = banco.pagamentos.splice(indice, 1)
       banco.comprovantes = banco.comprovantes.filter((c) => c.pagamentoId !== apagado.id)
       // ON DELETE SET NULL de recorrencia_origem_id
@@ -451,6 +482,7 @@ export const handlersPagamentos = [
       const agruparPor = q.get('agruparPor') === 'categoria' ? 'categoria' : 'imovel'
       if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
       if (inicio > fim) return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
+      garantirContasEquipe(u.id)
 
       const noPeriodo = (d: string | null) => d !== null && d >= inicio && d <= fim
       const grupos = new Map<string | null, { pagoCentavos: number; previstoCentavos: number }>()
@@ -458,10 +490,14 @@ export const handlersPagamentos = [
         const pago = p.status === 'pago' && noPeriodo(p.dataPagamento)
         const previsto = p.status === 'pendente' && noPeriodo(p.vencimento)
         if (!pago && !previsto) continue
-        const chave = agruparPor === 'categoria' ? p.categoriaId : p.imovelId
+        // Sem categoria: equipe e faturas de cartão viram grupos próprios (id null, como no back-end).
+        const chave =
+          agruparPor === 'categoria'
+            ? (p.categoriaId ?? (p.membroId ? 'Salários equipe' : 'Cartão de crédito'))
+            : p.imovelId
         const g = grupos.get(chave) ?? { pagoCentavos: 0, previstoCentavos: 0 }
-        if (pago) g.pagoCentavos += p.valorCentavos
-        if (previsto) g.previstoCentavos += p.valorCentavos
+        if (pago) g.pagoCentavos += p.valorCentavos ?? 0
+        if (previsto) g.previstoCentavos += p.valorCentavos ?? 0
         grupos.set(chave, g)
       }
 
@@ -469,9 +505,9 @@ export const handlersPagamentos = [
       const itens = [...grupos.entries()]
         .map(([id, valores]) => {
           const ref = referencia.find((r) => r.id === id)
-          // Sem categoria = faturas de cartão, juntas no fim (como no back-end).
-          const semGrupo = agruparPor === 'categoria' ? 'Cartão de crédito' : 'Sem imóvel'
-          return { id, nome: ref?.nome ?? semGrupo, ordem: ref?.ordem ?? Infinity, ...valores }
+          if (ref) return { id, nome: ref.nome, ordem: ref.ordem, ...valores }
+          const nome = agruparPor === 'categoria' ? id! : 'Sem imóvel'
+          return { id: null, nome, ordem: Infinity, ...valores }
         })
         .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
         .map(({ ordem: _o, ...item }) => item)

@@ -13,6 +13,7 @@ const { rotasImoveis } = require('./modules/imoveis/routes');
 const { rotasCategorias } = require('./modules/categorias/routes');
 const { rotasPagamentos } = require('./modules/pagamentos/routes');
 const { rotasCartoes } = require('./modules/cartoes/routes');
+const { rotasEquipe } = require('./modules/equipe/routes');
 const { rotasRelatorios } = require('./modules/relatorios/routes');
 const { rotasEventos } = require('./modules/eventos/routes');
 const { rotasMedicamentos } = require('./modules/medicamentos/routes');
@@ -52,6 +53,7 @@ function criarApp() {
   app.use('/categorias-pagamento', autenticar, rotasCategorias());
   app.use('/pagamentos', autenticar, rotasPagamentos());
   app.use('/cartoes', autenticar, rotasCartoes());
+  app.use('/equipe', autenticar, rotasEquipe());
   app.use('/relatorios', autenticar, rotasRelatorios());
   app.use('/eventos', autenticar, rotasEventos());
   app.use('/medicamentos', autenticar, rotasMedicamentos());

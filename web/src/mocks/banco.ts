@@ -5,10 +5,12 @@ import type {
   CartaoCorpo,
   CategoriaPagamento,
   CompraCartaoCorpo,
+  DiaPagamento,
   EventoCorpo,
   HorarioRemedio,
   Imovel,
   ItemCompra,
+  MembroEquipeCorpo,
   Recorrencia,
   Rotina,
   StatusPagamento,
@@ -24,7 +26,7 @@ export type PagamentoMock = {
   descricao: string
   categoriaId: string | null
   imovelId: string | null
-  valorCentavos: number
+  valorCentavos: number | null
   vencimento: string
   status: StatusPagamento
   dataPagamento: string | null
@@ -36,8 +38,16 @@ export type PagamentoMock = {
   observacoes: string | null
   cartaoId: string | null
   competencia: string | null
+  membroId: string | null
   criadoEm: string
   atualizadoEm: string
+}
+
+export type MembroMock = Omit<MembroEquipeCorpo, 'dias'> & {
+  id: string
+  usuarioId: string
+  /** `desde`: contas deste dia só nascem a partir desta data. */
+  dias: (DiaPagamento & { desde: string })[]
 }
 
 export type CartaoMock = Required<CartaoCorpo> & { id: string; usuarioId: string }
@@ -89,8 +99,6 @@ export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
 
 // Mesmas categorias e ordem de src/modules/categorias/padrao.js: toda conta nova começa com elas.
 export const CATEGORIAS_PADRAO = [
-  'Salários',
-  'Honorários médicos',
   'Consultas',
   'Exames',
   'Parcelamentos',
@@ -124,6 +132,8 @@ export const banco = {
   pagamentos: [] as PagamentoMock[],
   cartoes: [] as CartaoMock[],
   comprasCartao: [] as CompraCartaoMock[],
+  membros: [] as MembroMock[],
+  dispensas: [] as { membroId: string; vencimento: string }[],
   eventos: [] as EventoMock[],
   medicamentos: [] as MedicamentoMock[],
   registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
@@ -156,6 +166,7 @@ export function novoPagamento(
     observacoes: null,
     cartaoId: null,
     competencia: null,
+    membroId: null,
     criadoEm: agora,
     atualizadoEm: agora,
     ...dados,
@@ -202,15 +213,6 @@ function semear() {
     }),
     novoPagamento({
       ...base,
-      descricao: 'Salário da Joana',
-      categoriaId: categoria('Salários'),
-      imovelId: serra.id,
-      valorCentavos: 180000,
-      vencimento: dia(5),
-      recorrencia: 'mensal',
-    }),
-    novoPagamento({
-      ...base,
       descricao: 'Consulta cardiologista',
       categoriaId: categoria('Consultas'),
       valorCentavos: 45000,
@@ -240,6 +242,18 @@ function semear() {
       }),
     ),
   )
+
+  // Joana recebe por mês num dia fixo (daqui a 5 dias); a conta dela nasce ao listar as contas.
+  banco.membros.push({
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    nome: 'Joana',
+    funcao: 'Cuidadora',
+    formaPagamento: 'mensal',
+    chavePix: 'joana@exemplo.com',
+    ativo: true,
+    dias: [{ dia: hoje.plus({ days: 5 }).day, valorPrevistoCentavos: 180000, desde: dia(0) }],
+  })
 }
 
 function semearAgenda() {
@@ -486,6 +500,8 @@ export function resetarBancoMock() {
   banco.pagamentos.length = 0
   banco.cartoes.length = 0
   banco.comprasCartao.length = 0
+  banco.membros.length = 0
+  banco.dispensas.length = 0
   banco.eventos.length = 0
   banco.medicamentos.length = 0
   banco.registrosRemedio = []

@@ -87,8 +87,9 @@ describe('abas de categoria', () => {
     await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Honorários médicos' }))
-    expect(await screen.findByText('Nenhuma conta de honorários médicos em outubro de 2026')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Consultas' }))
+    await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
+    expect(await screen.findByText('Nenhuma conta de consultas em novembro de 2026')).toBeInTheDocument()
   })
 
   test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {

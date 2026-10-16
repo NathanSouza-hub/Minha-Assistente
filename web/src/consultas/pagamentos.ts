@@ -25,7 +25,7 @@ export const chaves = {
   relatorio: ['relatorios', 'gastos'] as const,
 }
 
-// Categorias são de cada usuário (as 7 padrão nascem no cadastro); cada uma é uma aba de Contas.
+// Categorias são de cada usuário (as 5 padrão nascem no cadastro); cada uma é uma aba de Contas.
 export const useCategorias = () =>
   useQuery({
     queryKey: chaves.categorias,
@@ -165,11 +165,18 @@ export function useEditarPagamentoPorId() {
   })
 }
 
-/** Marca como pago com a data de hoje. Recorrente: o back-end cria a próxima ocorrência. */
+/**
+ * Marca como pago com a data de hoje. Recorrente: o back-end cria a próxima ocorrência. Na conta
+ * da equipe dá para mandar o valor pago (obrigatório quando estava a definir).
+ */
 export function usePagarPagamento() {
   const invalidar = useInvalidarPagamentos()
   return useMutation({
-    mutationFn: (id: string) => api<Pagamento>(`/pagamentos/${id}/pagar`, { method: 'PATCH' }),
+    mutationFn: ({ id, valorCentavos }: { id: string; valorCentavos?: number }) =>
+      api<Pagamento>(`/pagamentos/${id}/pagar`, {
+        method: 'PATCH',
+        corpo: valorCentavos ? { valorCentavos } : undefined,
+      }),
     onSettled: invalidar,
   })
 }

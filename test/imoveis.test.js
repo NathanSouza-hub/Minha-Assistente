@@ -31,7 +31,7 @@ test('GET /categorias-pagamento lista as 7 categorias em ordem', async () => {
   const res = await request(app).get('/categorias-pagamento').set(ana.auth).expect(200);
   assert.deepEqual(
     res.body.map((c) => c.nome),
-    ['Salários', 'Honorários médicos', 'Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'],
+    ['Consultas', 'Exames', 'Parcelamentos', 'Contas residenciais', 'Outros'],
   );
 });
 
