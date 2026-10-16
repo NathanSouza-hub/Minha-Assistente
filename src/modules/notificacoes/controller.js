@@ -18,4 +18,12 @@ async function testar(req, res) {
   res.status(204).end();
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar };
+async function lerResumo(req, res) {
+  res.json(await service.lerResumo(req.usuario.id));
+}
+
+async function salvarResumo(req, res) {
+  res.json(await service.salvarResumo(req.usuario.id, req.validado.body));
+}
+
+module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo };

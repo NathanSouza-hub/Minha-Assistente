@@ -130,6 +130,8 @@ export const banco = {
   anexosViagem: [] as AnexoViagemMock[],
   compras: [] as ItemCompraMock[],
   inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
+  // Resumo da manhã por usuário; sem entrada = o padrão do back-end (ligado às 07:00).
+  resumos: new Map<string, { ativo: boolean; hora: string }>(),
 }
 
 export function novoPagamento(
@@ -489,6 +491,7 @@ export function resetarBancoMock() {
   banco.anexosViagem.length = 0
   banco.compras.length = 0
   banco.inscricoesPush.length = 0
+  banco.resumos.clear()
   semear()
   semearAgenda()
   semearRemedios()

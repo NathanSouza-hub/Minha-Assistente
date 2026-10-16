@@ -52,5 +52,22 @@ module.exports = {
         },
       },
     },
+    '/notificacoes/resumo': {
+      get: {
+        tags: TAG,
+        summary: 'Preferência do resumo da manhã',
+        description: 'Vem ligado às 07:00. O resumo só é enviado em dia com algo (agendamento, remédio, compromisso ou conta).',
+        responses: { 200: respostaJson('Preferência', esquemas.resumo), ...respostasErro(ERRO_AUTH) },
+      },
+      put: {
+        tags: TAG,
+        summary: 'Liga, desliga ou muda a hora do resumo da manhã',
+        requestBody: corpoJson(esquemas.resumo),
+        responses: {
+          200: respostaJson('Preferência salva', esquemas.resumo),
+          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH }),
+        },
+      },
+    },
   },
 };

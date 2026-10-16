@@ -323,3 +323,6 @@ export type ItemCompra = {
 }
 
 export type ItemCompraCorpo = Pick<ItemCompra, 'nome' | 'categoria' | 'quantidade'>
+
+/** GET/PUT /notificacoes/resumo: o resumo da manhã (vem ligado às 07:00). */
+export type PreferenciaResumo = { ativo: boolean; hora: string }

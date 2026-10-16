@@ -29,6 +29,22 @@ async function cancelar(usuarioId, { endpoint }) {
   await db('pushInscricao').where({ usuarioId, endpoint }).del();
 }
 
+async function lerResumo(usuarioId) {
+  const { resumoAtivo, resumoHora } = await db('usuario').where({ id: usuarioId }).first('resumoAtivo', 'resumoHora');
+  return { ativo: resumoAtivo, hora: resumoHora };
+}
+
+// Os resumos já gerados no horário antigo são cancelados; o agendador gera os do horário novo.
+async function salvarResumo(usuarioId, { ativo, hora }) {
+  await db.transaction(async (trx) => {
+    await trx('usuario').where({ id: usuarioId }).update({ resumoAtivo: ativo, resumoHora: hora });
+    await trx('lembreteEnvio')
+      .where({ usuarioId, origemTipo: 'resumo', status: 'pendente' })
+      .update({ status: 'cancelado', erro: 'Resumo mudou de horário ou foi desligado.' });
+  });
+  return { ativo, hora };
+}
+
 async function testar(usuarioId) {
   exigirConfiguracao();
   const resultado = await app.enviar(db, usuarioId, {
@@ -40,4 +56,4 @@ async function testar(usuarioId) {
   if (!resultado.entregue) throw new AppError(409, 'SEM_INSCRICAO', resultado.motivo);
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar };
+module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo };

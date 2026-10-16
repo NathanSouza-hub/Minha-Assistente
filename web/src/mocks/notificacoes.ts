@@ -71,4 +71,22 @@ export const handlersNotificacoes = [
         : erro(409, 'SEM_INSCRICAO', 'Nenhum aparelho inscrito.'),
     ),
   ),
+
+  http.get(
+    `${API_URL}/notificacoes/resumo`,
+    autenticado((_ctx, u) => HttpResponse.json(banco.resumos.get(u.id) ?? { ativo: true, hora: '07:00' })),
+  ),
+
+  http.put(
+    `${API_URL}/notificacoes/resumo`,
+    autenticado(async ({ request }, u) => {
+      const { ativo, hora } = (await request.json()) as { ativo?: unknown; hora?: unknown }
+      if (typeof ativo !== 'boolean') return erro(400, 'VALIDACAO', 'ativo: Informe se o resumo fica ligado.')
+      if (typeof hora !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) {
+        return erro(400, 'VALIDACAO', 'hora: Hora inválida: use HH:MM, ex.: 08:00.')
+      }
+      banco.resumos.set(u.id, { ativo, hora })
+      return HttpResponse.json({ ativo, hora })
+    }),
+  ),
 ]

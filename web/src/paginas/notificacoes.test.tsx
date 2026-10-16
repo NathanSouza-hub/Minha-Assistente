@@ -171,3 +171,28 @@ describe('inscrição sempre em dia no servidor', () => {
     expect(banco.inscricoesPush).toEqual([])
   })
 })
+
+describe('resumo da manhã', () => {
+  test('vem ligado às 07:00; muda a hora ao sair do campo e desliga', async () => {
+    instalarPushFalso()
+    const usuario = userEvent.setup()
+    renderizarApp('/notificacoes')
+    const secao = await screen.findByRole('region', { name: 'Resumo da manhã' })
+    const interruptor = await within(secao).findByRole('switch', { name: 'Receber o resumo do dia' })
+    expect(interruptor).toBeChecked()
+    const horario = within(secao).getByLabelText('Horário')
+    expect(horario).toHaveValue('07:00')
+
+    await usuario.clear(horario)
+    await usuario.type(horario, '08:30')
+    expect(banco.resumos.get(MARIA_ID)).toBeUndefined() // ainda digitando: nada salvo
+    await usuario.tab()
+    expect(await screen.findByText('Resumo da manhã às 08:30.')).toBeInTheDocument()
+    expect(banco.resumos.get(MARIA_ID)).toEqual({ ativo: true, hora: '08:30' })
+
+    await usuario.click(interruptor)
+    expect(await screen.findByText('Resumo da manhã desligado.')).toBeInTheDocument()
+    expect(within(secao).queryByLabelText('Horário')).not.toBeInTheDocument()
+    expect(banco.resumos.get(MARIA_ID)).toEqual({ ativo: false, hora: '08:30' })
+  })
+})

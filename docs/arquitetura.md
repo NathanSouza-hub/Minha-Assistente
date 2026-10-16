@@ -45,6 +45,7 @@ GET/DELETE /viagens/:id/anexos/:anexoId                      (acrescentada)
 GET/POST /compras | PUT/DELETE /compras/:id | PATCH /compras/:id/comprado
 POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, Web Push)
 GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
+GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 ```
 
 ## Decisões acordadas
@@ -203,6 +204,13 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
     da conta são apagadas; o aparelho que trocou reenvia a dele ao receber o token novo. "Esqueci
     minha senha" (por e-mail) ainda não existe.
 
+21. **Resumo da manhã** (migration 17): um aviso por dia na hora escolhida (`usuario.resumo_ativo`,
+    `resumo_hora`; vem ligado às 07:00), gerador `resumo` (`origem_id` = o usuário). O texto sai
+    do mesmo `painel` de `/hoje` na hora de enviar: agendamentos (o 1º horário), remédios e
+    compromissos pendentes, contas que vencem no dia e vencidas. Dia sem nada não envia.
+    `GET/PUT /notificacoes/resumo` `{ ativo, hora }`; salvar cancela os resumos pendentes e o
+    agendador gera os do horário novo. Front: seção "Resumo da manhã" em Notificações.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -221,7 +229,7 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
-| usuario | id, nome, email (citext unique), senha_hash, versao_sessao | |
+| usuario | id, nome, email (citext unique), senha_hash, versao_sessao, resumo_ativo, resumo_hora | |
 | imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
@@ -241,7 +249,7 @@ GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 
 ## Lembretes
 
-1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina) para as
+1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina, resumo) para as
    próximas 24h e faz upsert em `lembrete_envio`, uma linha por canal ativo.
 2. Envia as linhas `pendente` com `agendado_para <= agora` via `canais[canal].enviar(lembrete)`.
 3. Novo canal (ex.: WhatsApp) = `src/lembretes/canais/whatsapp.js` + registro + migration do CHECK.

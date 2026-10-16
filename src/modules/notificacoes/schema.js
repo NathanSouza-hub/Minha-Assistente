@@ -1,5 +1,6 @@
 const { z } = require('../../lib/zod');
 const { endpointPermitido } = require('../../lib/push');
+const esquemas = require('../../lib/esquemas');
 
 // Chaves da inscrição do navegador (PushSubscription.toJSON().keys), em base64url. O tamanho é
 // conferido aqui: com uma chave malformada, todo envio para o usuário falharia depois.
@@ -35,4 +36,12 @@ const chavePublica = z.object({ chavePublica: z.string().describe('applicationSe
 
 const inscricaoSalva = z.object({ id: z.uuid(), endpoint: z.string() });
 
-module.exports = { inscricao, cancelamento, chavePublica, inscricaoSalva };
+// Resumo da manhã (usuario.resumo_ativo / resumo_hora).
+const resumo = z
+  .object({
+    ativo: z.boolean(),
+    hora: esquemas.hora.refine((v) => v !== null, 'Informe a hora do resumo.'),
+  })
+  .meta({ example: { ativo: true, hora: '07:00' } });
+
+module.exports = { inscricao, cancelamento, chavePublica, inscricaoSalva, resumo };

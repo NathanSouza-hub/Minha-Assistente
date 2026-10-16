@@ -4,8 +4,12 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { api, ApiError } from '@/lib/api'
 import { ativar, desativar, jaConvidou, lerEstado, marcarConvidado, type EstadoPush } from '@/lib/notificacoes'
+import type { PreferenciaResumo } from '@/lib/tipos'
 
-export const chavesNotificacoes = { estado: ['notificacoes', 'estado'] as const }
+export const chavesNotificacoes = {
+  estado: ['notificacoes', 'estado'] as const,
+  resumo: ['notificacoes', 'resumo'] as const,
+}
 
 /** Relido ao voltar para o app: a permissão pode ter mudado nas configurações do aparelho. */
 export const useEstadoNotificacoes = () =>
@@ -51,6 +55,24 @@ export function useDesativarNotificacoes() {
       cliente.setQueryData(chavesNotificacoes.estado, estado)
       toast.success('Notificações desligadas neste aparelho.')
     },
+  })
+}
+
+/** Resumo da manhã: preferência da conta (vale para todos os aparelhos). */
+export const useResumo = () =>
+  useQuery({ queryKey: chavesNotificacoes.resumo, queryFn: () => api<PreferenciaResumo>('/notificacoes/resumo') })
+
+export function useSalvarResumo() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (dados: PreferenciaResumo) =>
+      api<PreferenciaResumo>('/notificacoes/resumo', { method: 'PUT', corpo: dados }),
+    onSuccess: (salvo) => {
+      cliente.setQueryData(chavesNotificacoes.resumo, salvo)
+      toast.success(salvo.ativo ? `Resumo da manhã às ${salvo.hora}.` : 'Resumo da manhã desligado.')
+    },
+    // Volta a mostrar o que está salvo se o servidor recusou.
+    onError: () => cliente.invalidateQueries({ queryKey: chavesNotificacoes.resumo }),
   })
 }
 

@@ -7,6 +7,7 @@ const geradores = [
   require('./medicamento'),
   require('./rotina'),
   require('./pagamento'),
+  require('./resumo'),
 ];
 
 const porTipo = Object.fromEntries(geradores.map((g) => [g.tipo, g]));

@@ -1,12 +1,17 @@
-import type { ReactNode } from 'react'
-import { BellOff, BellRing, CalendarDays, ListChecks, Pill, Share, SquarePlus, Wallet } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { BellOff, BellRing, CalendarDays, ListChecks, Pill, Share, SquarePlus, Sun, Wallet } from 'lucide-react'
 import { Pagina } from '@/components/layout/Pagina'
+import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import {
   useAtivarNotificacoes,
   useDesativarNotificacoes,
   useEstadoNotificacoes,
+  useResumo,
+  useSalvarResumo,
   useTestarNotificacao,
 } from '@/consultas/notificacoes'
 
@@ -15,6 +20,7 @@ const O_QUE_AVISA = [
   { icone: Pill, texto: 'Remédios, na hora de cada dose' },
   { icone: ListChecks, texto: 'Compromissos que têm lembrete' },
   { icone: Wallet, texto: 'Contas a pagar, na véspera e no dia, às 9h' },
+  { icone: Sun, texto: 'O resumo do dia, de manhã, na hora que você escolher' },
 ]
 
 /** Mais → Notificações: liga, testa e desliga os lembretes neste aparelho. */
@@ -45,6 +51,8 @@ export function Notificacoes() {
           </Cartao>
         )}
 
+        <ResumoDaManha />
+
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-bold">O que é avisado</h2>
           <ul className="flex flex-col gap-3 rounded-xl border bg-card p-4">
@@ -58,6 +66,59 @@ export function Notificacoes() {
         </section>
       </div>
     </Pagina>
+  )
+}
+
+/** Liga/desliga e escolhe a hora do resumo (preferência da conta, não do aparelho). */
+function ResumoDaManha() {
+  const consulta = useResumo()
+  const salvar = useSalvarResumo()
+  // Hora sendo digitada; salva ao sair do campo (não a cada dígito).
+  const [editando, setEditando] = useState<string | null>(null)
+  if (consulta.isPending) return <Skeleton className="h-36 rounded-xl" />
+  if (!consulta.data) return null
+  const { ativo, hora } = consulta.data
+
+  function salvarHora() {
+    if (editando && editando !== hora && /^\d{2}:\d{2}$/.test(editando)) {
+      salvar.mutate({ ativo, hora: editando }, { onSettled: () => setEditando(null) })
+    } else {
+      setEditando(null)
+    }
+  }
+
+  return (
+    <section aria-labelledby="resumo-titulo" className="flex flex-col gap-3">
+      <h2 id="resumo-titulo" className="text-xl font-bold">
+        Resumo da manhã
+      </h2>
+      <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="resumo-ativo" className="text-lg">
+            Receber o resumo do dia
+          </Label>
+          <Switch
+            id="resumo-ativo"
+            checked={ativo}
+            disabled={salvar.isPending}
+            onCheckedChange={(ligar) => salvar.mutate({ ativo: ligar, hora })}
+          />
+        </div>
+        <p className="text-base text-muted-foreground">
+          Um aviso por dia com os agendamentos, remédios, compromissos e contas de hoje. Em dia sem nada, não avisa.
+        </p>
+        {ativo && (
+          <Campo
+            rotulo="Horário"
+            type="time"
+            value={editando ?? hora}
+            onChange={(e) => setEditando(e.target.value)}
+            onBlur={salvarHora}
+            className="sm:max-w-56"
+          />
+        )}
+      </div>
+    </section>
   )
 }
 

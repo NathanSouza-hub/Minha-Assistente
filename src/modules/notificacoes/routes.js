@@ -9,6 +9,8 @@ function rotasNotificacoes() {
   rotas.post('/inscricoes', validar({ body: esquemas.inscricao }), controller.inscrever);
   rotas.delete('/inscricoes', validar({ body: esquemas.cancelamento }), controller.cancelar);
   rotas.post('/teste', controller.testar);
+  rotas.get('/resumo', controller.lerResumo);
+  rotas.put('/resumo', validar({ body: esquemas.resumo }), controller.salvarResumo);
   return rotas;
 }
 
