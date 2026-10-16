@@ -1,6 +1,7 @@
 // Consultas e mutações de viagens e anexos.
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { api, baixarArquivo } from '@/lib/api'
+import { salvarNoAparelho } from '@/lib/arquivos'
 import type { AnexoViagem, Viagem, ViagemCorpo } from '@/lib/tipos'
 
 export const chavesViagens = {
@@ -89,16 +90,6 @@ export function useExcluirAnexo(viagemId: string) {
 /** Baixa o anexo e entrega ao navegador com o nome original. */
 export const useBaixarAnexo = (viagemId: string) =>
   useMutation({
-    mutationFn: async (anexo: AnexoViagem) => {
-      const arquivo = await baixarArquivo(`/viagens/${viagemId}/anexos/${anexo.id}`)
-      const url = URL.createObjectURL(arquivo)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = anexo.nomeOriginal
-      document.body.append(link)
-      link.click()
-      link.remove()
-      // Revogar logo cancela o download em alguns navegadores.
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    },
+    mutationFn: async (anexo: AnexoViagem) =>
+      salvarNoAparelho(await baixarArquivo(`/viagens/${viagemId}/anexos/${anexo.id}`), anexo.nomeOriginal),
   })

@@ -61,6 +61,11 @@ npm run lint                                  # oxlint
   manda o token) e entregue com `nomeOriginal`. Nos testes, `src/test/setup.ts` troca o `FormData`
   do jsdom pelo do Node (o `fetch` do Node não envia o do jsdom), os arquivos são `File` de
   `'node:buffer'` e o mock lê o multipart à mão (`request.formData()` falha nesse ambiente).
+- **Arquivos** (anexos de viagem, comprovantes de conta): `components/ListaArquivos.tsx` (enviar
+  vários, baixar, excluir; textos por `TextosArquivos`) e `lib/arquivos.ts` (limites, tipos,
+  `salvarNoAparelho`). No mock, o upload é lido por `mocks/arquivos.ts`. Comprovantes só existem
+  em conta já salva (`/pagamentos/:id#comprovantes` rola até a seção); a conta paga hoje sem
+  comprovante mostra "Anexar comprovante" na lista.
 - **Compras**: tudo numa tela (`/compras`); a edição (`/compras/:id`) pega o item da lista (não
   existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), na mesma
   ordem do português que a API usa (collation ICU `pt-BR-x-icu` no back-end).

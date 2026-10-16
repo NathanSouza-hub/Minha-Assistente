@@ -107,8 +107,32 @@ const pagamento = z.object({
   cartaoId: z.uuid().nullable().describe('Preenchido na fatura de cartão (não editável aqui, só paga)'),
   cartaoNome: z.string().nullable(),
   competencia: z.iso.date().nullable().describe('Mês da fatura (dia 1)'),
+  totalComprovantes: z.number().int().describe('Quantos comprovantes a conta tem (a lista vem em GET /:id)'),
   criadoEm: instante,
   atualizadoEm: instante,
 });
 
-module.exports = { criacao, edicao, pagar, filtros, pagamento, STATUS, RECORRENCIAS };
+const paramsComprovante = z.object({ id, comprovanteId: id });
+
+const comprovante = z.object({
+  id: z.uuid(),
+  nomeOriginal: z.string(),
+  mimeType: z.string(),
+  tamanhoBytes: z.number().int(),
+  criadoEm: instante,
+});
+
+const pagamentoDetalhe = pagamento.extend({ comprovantes: z.array(comprovante) });
+
+module.exports = {
+  criacao,
+  edicao,
+  pagar,
+  filtros,
+  pagamento,
+  pagamentoDetalhe,
+  paramsComprovante,
+  comprovante,
+  STATUS,
+  RECORRENCIAS,
+};

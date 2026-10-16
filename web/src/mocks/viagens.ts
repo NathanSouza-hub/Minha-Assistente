@@ -6,8 +6,8 @@ import { API_URL } from '@/lib/api'
 import type { AnexoViagem, Viagem, ViagemCorpo } from '@/lib/tipos'
 import { agoraISO, banco, type AnexoViagemMock, type ViagemMock } from './banco'
 import { autenticado, erro, naoEncontrado } from './util'
+import { detectarTipo, lerMultipart, nomeSeguro, TAMANHO_MAXIMO } from './arquivos'
 
-const TAMANHO_MAXIMO = 10 * 1024 * 1024
 const MAXIMO_ANEXOS = 20
 
 const publicoAnexo = ({ id, nomeOriginal, mimeType, tamanhoBytes, criadoEm }: AnexoViagemMock): AnexoViagem => ({
@@ -52,69 +52,6 @@ const gravaveis = (c: ViagemCorpo) => ({
   transporte: c.transporte?.trim() || null,
   observacoes: c.observacoes?.trim() || null,
 })
-
-// ---- Upload ----
-
-const texto = (b: Uint8Array, inicio: number, fim: number) => String.fromCharCode(...b.subarray(inicio, fim))
-const MARCAS_HEIC = ['heic', 'heix', 'mif1', 'msf1']
-const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-const TIPOS = [
-  { mime: 'application/pdf', extensao: '.pdf', confere: (b: Uint8Array) => texto(b, 0, 5) === '%PDF-' },
-  { mime: 'image/jpeg', extensao: '.jpg', confere: (b: Uint8Array) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
-  { mime: 'image/png', extensao: '.png', confere: (b: Uint8Array) => PNG.every((x, i) => b[i] === x) },
-  {
-    mime: 'image/webp',
-    extensao: '.webp',
-    confere: (b: Uint8Array) => texto(b, 0, 4) === 'RIFF' && texto(b, 8, 12) === 'WEBP',
-  },
-  {
-    mime: 'image/heic',
-    extensao: '.heic',
-    confere: (b: Uint8Array) => texto(b, 4, 8) === 'ftyp' && MARCAS_HEIC.includes(texto(b, 8, 12)),
-  },
-]
-
-/** Tipo real pelo conteúdo (o Content-Type do navegador é ignorado, como no back-end). */
-const detectarTipo = (b: Uint8Array) => (b.length < 12 ? undefined : TIPOS.find((t) => t.confere(b)))
-
-type Parte = { campo: string; nomeArquivo: string | null; bytes: Uint8Array<ArrayBuffer> }
-
-/**
- * Lê o corpo multipart à mão. `request.formData()` falha nos testes (jsdom + undici), e este
- * caminho funciona igual no navegador.
- */
-async function lerMultipart(request: Request): Promise<Parte[]> {
-  const fronteira = request.headers.get('content-type')?.match(/boundary=(?:"([^"]+)"|([^;]+))/)
-  if (!fronteira) return []
-  const separador = `--${fronteira[1] ?? fronteira[2]}`
-  const bytes = new Uint8Array(await request.arrayBuffer())
-  // latin1: um caractere por byte, então as posições no texto são as mesmas dos bytes.
-  const corpo = new TextDecoder('latin1').decode(bytes)
-  const partes: Parte[] = []
-  let inicio = corpo.indexOf(separador)
-  while (inicio >= 0) {
-    const proximo = corpo.indexOf(separador, inicio + separador.length)
-    if (proximo < 0) break
-    const fimCabecalho = corpo.indexOf('\r\n\r\n', inicio)
-    if (fimCabecalho > 0 && fimCabecalho < proximo) {
-      const cabecalho = new TextDecoder().decode(bytes.subarray(inicio + separador.length, fimCabecalho))
-      partes.push({
-        campo: cabecalho.match(/name="([^"]*)"/)?.[1] ?? '',
-        nomeArquivo: cabecalho.match(/filename="([^"]*)"/)?.[1] ?? null,
-        bytes: bytes.slice(fimCabecalho + 4, proximo - 2),
-      })
-    }
-    inicio = proximo
-  }
-  return partes
-}
-
-/** Nome exibido no download: sem pastas, sem caracteres de controle, com tamanho limitado. */
-function nomeSeguro(original: string, extensao: string) {
-  // oxlint-disable-next-line no-control-regex -- remover caracteres de controle é o objetivo
-  const nome = (original.split(/[\\/]/).pop() ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200)
-  return nome || `anexo${extensao}`
-}
 
 export const handlersViagens = [
   http.get(

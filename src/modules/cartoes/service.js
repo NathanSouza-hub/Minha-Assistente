@@ -1,5 +1,6 @@
 const { DateTime } = require('luxon');
 const db = require('../../config/db');
+const comprovantes = require('../pagamentos/comprovantes');
 const { hoje } = require('../../lib/tempo');
 const { AppError, naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
 const {
@@ -95,6 +96,7 @@ async function sincronizar(trx, usuarioId, cartao) {
       continue;
     }
     if (total === 0) {
+      await comprovantes.aoApagarContas(trx, [conta.id]);
       await trx('pagamento').where({ id: conta.id }).del();
       await cancelarLembretesPendentes(trx, conta.id);
       continue;
@@ -209,6 +211,7 @@ async function remover(usuarioId, id) {
     if (await trx('pagamento').where({ cartaoId: id, status: 'pago' }).first('id')) {
       throw new AppError(409, 'REFERENCIA_INVALIDA', 'O cartão tem faturas pagas no histórico.');
     }
+    await comprovantes.aoApagarContas(trx, await trx('pagamento').where({ cartaoId: id }).pluck('id'));
     const pendentes = await trx('pagamento').where({ cartaoId: id }).del().returning('id');
     for (const { id: contaId } of pendentes) await cancelarLembretesPendentes(trx, contaId);
     await trx('cartao').where({ id, usuarioId }).del();

@@ -1,8 +1,10 @@
+import { File as ArquivoNode } from 'node:buffer'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
+import { banco } from '@/mocks/banco'
 import { entrarComoMaria, renderizarApp } from '@/test/renderizarApp'
 
 const servidor = setupServer(...handlers)
@@ -262,5 +264,44 @@ describe('contas residenciais', () => {
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
     expect(await screen.findByLabelText('Imóvel (opcional)')).toHaveDisplayValue('Casa da Serra')
     expect(screen.getByLabelText('Categoria')).toHaveDisplayValue('Contas residenciais')
+  })
+})
+
+describe('comprovantes', () => {
+  // Veja src/test/setup.ts: o fetch do Node só envia File do próprio Node.
+  const pdf = (nome: string) =>
+    new ArquivoNode(['%PDF-1.4\n% teste\n%%EOF\n'], nome, { type: 'application/pdf' }) as unknown as File
+
+  test('paga hoje, a conta convida a anexar o comprovante; anexa, aparece na lista e exclui; anexa, aparece na lista e exclui', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    await usuario.click(await screen.findByRole('button', { name: 'Marcar Condomínio como pago' }))
+    await usuario.click(await screen.findByRole('link', { name: 'Anexar comprovante de Condomínio' }))
+
+    const secao = await screen.findByRole('region', { name: 'Comprovantes' })
+    await usuario.upload(within(secao).getByLabelText('Anexar comprovante'), pdf('boleto-condomínio.pdf'))
+    expect(await screen.findByText('Comprovante adicionado.')).toBeInTheDocument()
+    const lista = within(secao).getByRole('list', { name: '1 comprovante' })
+    expect(within(lista).getByText('boleto-condomínio.pdf')).toBeInTheDocument()
+    expect(banco.comprovantes).toHaveLength(1)
+
+    // Na lista de contas, o clipe mostra que tem comprovante.
+    await usuario.click(within(screen.getByRole('main')).getByRole('link', { name: 'Contas' }))
+    const condominio = await item('Condomínio')
+    expect(within(condominio).getByText('Com comprovante')).toBeInTheDocument()
+    expect(within(condominio).queryByRole('link', { name: /Anexar comprovante/ })).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('link', { name: /^Condomínio/ }))
+    const outraVez = await screen.findByRole('region', { name: 'Comprovantes' })
+    await usuario.click(within(outraVez).getByRole('button', { name: 'Excluir boleto-condomínio.pdf' }))
+    await usuario.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir comprovante' }))
+    expect(await screen.findByText('boleto-condomínio.pdf excluído.')).toBeInTheDocument()
+    expect(banco.comprovantes).toHaveLength(0)
+  })
+
+  test('conta nova ainda não tem comprovantes (só depois de salva)', async () => {
+    renderizarApp('/pagamentos/novo')
+    await screen.findByLabelText('Descrição')
+    expect(screen.queryByRole('region', { name: 'Comprovantes' })).not.toBeInTheDocument()
   })
 })

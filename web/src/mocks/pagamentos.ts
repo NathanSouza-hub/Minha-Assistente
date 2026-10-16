@@ -2,8 +2,9 @@
 import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import { deDataISO, hojeISO } from '@/lib/datas'
-import type { Pagamento, PagamentoCriacao, PagamentoEdicao } from '@/lib/tipos'
-import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock } from './banco'
+import type { Pagamento, PagamentoCriacao, PagamentoEdicao, Comprovante } from '@/lib/tipos'
+import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock, type ComprovanteMock } from './banco'
+import { detectarTipo, lerUpload, nomeSeguro, respostaArquivo, tipoNaoAceito } from './arquivos'
 import { autenticado, erro, naoEncontrado } from './util'
 
 const idDe = (params: Record<string, unknown>) => String(params.id)
@@ -61,8 +62,19 @@ function paraResposta(p: PagamentoMock): Pagamento {
     cartaoNome: banco.cartoes.find((c) => c.id === p.cartaoId)?.nome ?? null,
     imovelNome: banco.imoveis.find((i) => i.id === p.imovelId)?.nome ?? null,
     vencido: p.status === 'pendente' && p.vencimento < hojeISO(),
+    totalComprovantes: banco.comprovantes.filter((c) => c.pagamentoId === p.id).length,
   }
 }
+
+const MAXIMO_COMPROVANTES = 5
+
+const publicoComprovante = ({ id, nomeOriginal, mimeType, tamanhoBytes, criadoEm }: ComprovanteMock): Comprovante => ({
+  id,
+  nomeOriginal,
+  mimeType,
+  tamanhoBytes,
+  criadoEm,
+})
 
 const ordenar = (a: PagamentoMock, b: PagamentoMock) =>
   a.vencimento.localeCompare(b.vencimento) ||
@@ -289,7 +301,9 @@ export const handlersPagamentos = [
     `${API_URL}/pagamentos/:id`,
     autenticado(({ params }, u) => {
       const p = doUsuario(u.id, idDe(params))
-      return p ? HttpResponse.json(paraResposta(p)) : naoEncontrado('Pagamento')
+      if (!p) return naoEncontrado('Pagamento')
+      const comprovantes = banco.comprovantes.filter((c) => c.pagamentoId === p.id).map(publicoComprovante)
+      return HttpResponse.json({ ...paraResposta(p), comprovantes })
     }),
   ),
 
@@ -372,10 +386,58 @@ export const handlersPagamentos = [
       if (indice < 0) return naoEncontrado('Pagamento')
       if (banco.pagamentos[indice].cartaoId) return faturaAutomatica()
       const [apagado] = banco.pagamentos.splice(indice, 1)
+      banco.comprovantes = banco.comprovantes.filter((c) => c.pagamentoId !== apagado.id)
       // ON DELETE SET NULL de recorrencia_origem_id
       banco.pagamentos.forEach((p) => {
         if (p.recorrenciaOrigemId === apagado.id) p.recorrenciaOrigemId = null
       })
+      return new HttpResponse(null, { status: 204 })
+    }),
+  ),
+
+  http.post(
+    `${API_URL}/pagamentos/:id/comprovantes`,
+    autenticado(async ({ request, params }, u) => {
+      // Como o multer: tamanho e campo errado vêm antes de tudo.
+      const upload = await lerUpload(request)
+      if ('problema' in upload) return upload.problema
+      const p = doUsuario(u.id, idDe(params))
+      if (!p) return naoEncontrado('Pagamento')
+      if (!upload.arquivo) return erro(400, 'VALIDACAO', 'arquivo: envie o arquivo no campo "arquivo".')
+      const tipo = detectarTipo(upload.arquivo.bytes)
+      if (!tipo) return tipoNaoAceito()
+      if (banco.comprovantes.filter((c) => c.pagamentoId === p.id).length >= MAXIMO_COMPROVANTES)
+        return erro(409, 'LIMITE_ANEXOS', `Cada conta pode ter no máximo ${MAXIMO_COMPROVANTES} comprovantes.`)
+      const comprovante: ComprovanteMock = {
+        id: crypto.randomUUID(),
+        pagamentoId: p.id,
+        nomeOriginal: nomeSeguro(upload.arquivo.nomeArquivo ?? '', tipo.extensao),
+        mimeType: tipo.mime,
+        tamanhoBytes: upload.arquivo.bytes.byteLength,
+        bytes: upload.arquivo.bytes,
+        criadoEm: agoraISO(),
+      }
+      banco.comprovantes.push(comprovante)
+      return HttpResponse.json(publicoComprovante(comprovante), { status: 201 })
+    }),
+  ),
+
+  http.get(
+    `${API_URL}/pagamentos/:id/comprovantes/:comprovanteId`,
+    autenticado(({ params }, u) => {
+      const p = doUsuario(u.id, idDe(params))
+      const c = p && banco.comprovantes.find((x) => x.id === params.comprovanteId && x.pagamentoId === p.id)
+      return c ? respostaArquivo(c) : naoEncontrado('Comprovante')
+    }),
+  ),
+
+  http.delete(
+    `${API_URL}/pagamentos/:id/comprovantes/:comprovanteId`,
+    autenticado(({ params }, u) => {
+      const p = doUsuario(u.id, idDe(params))
+      const indice = p ? banco.comprovantes.findIndex((x) => x.id === params.comprovanteId && x.pagamentoId === p.id) : -1
+      if (indice < 0) return naoEncontrado('Comprovante')
+      banco.comprovantes.splice(indice, 1)
       return new HttpResponse(null, { status: 204 })
     }),
   ),

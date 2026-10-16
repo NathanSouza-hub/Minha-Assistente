@@ -1,11 +1,10 @@
 // Textos das viagens: período, situação (próxima, em viagem, passada) e anexos.
 import { deDataISO, diasAte, hojeISO } from '@/lib/datas'
 
-/** Mesmos limites do back-end (middlewares/upload.js e modules/viagens/service.js). */
-export const TAMANHO_MAXIMO_MB = 10
+export { formatarTamanho } from '@/lib/arquivos'
+
+/** Mesmo limite do back-end (modules/viagens/service.js). */
 export const MAXIMO_ANEXOS = 20
-/** Tipos que o back-end aceita (detectados pelo conteúdo); `.heic` porque nem todo celular informa o tipo. */
-export const TIPOS_ACEITOS = 'application/pdf,image/jpeg,image/png,image/webp,image/heic,.heic'
 
 const diaEMes = (data: string) => deDataISO(data).toFormat("d 'de' LLLL")
 
@@ -52,13 +51,6 @@ export function situacaoViagem(
     return { fase: 'agora', texto: `Em viagem, volta em ${dias} dias` }
   }
   return { fase: 'passada', texto: null }
-}
-
-/** 2048 → "2 KB"; 1572864 → "1,5 MB". */
-export function formatarTamanho(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
-  const mb = bytes / (1024 * 1024)
-  return `${mb.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`
 }
 
 export const contarAnexos = (n: number) => (n === 1 ? '1 anexo' : `${n} anexos`)

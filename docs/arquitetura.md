@@ -31,6 +31,7 @@ POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me | P
 GET  /hoje
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
+POST /pagamentos/:id/comprovantes | GET/DELETE /pagamentos/:id/comprovantes/:comprovanteId  (decisão 22)
 GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
 GET/POST /categorias-pagamento | PUT/DELETE /categorias-pagamento/:id
 GET/POST /cartoes | GET/PUT/DELETE /cartoes/:id | GET /cartoes/:id/faturas/:AAAA-MM   (acrescentadas)
@@ -211,6 +212,12 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     `GET/PUT /notificacoes/resumo` `{ ativo, hora }`; salvar cancela os resumos pendentes e o
     agendador gera os do horário novo. Front: seção "Resumo da manhã" em Notificações.
 
+22. **Comprovantes de conta** (migration 18): foto ou PDF anexado a qualquer conta (inclusive fatura
+    de cartão), até 5 por conta, com as regras dos anexos de viagem (`src/lib/anexos.js`: tipo pelo
+    conteúdo, 10 MB, nome seguro). Toda conta traz `totalComprovantes`; `GET /pagamentos/:id` traz
+    também `comprovantes[]`. Apagar contas (excluir, fatura que zera, cartão excluído) apaga os
+    arquivos depois que a transação confirma (`comprovantes.aoApagarContas`).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -242,6 +249,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | medicamento_horario | medicamento_id, periodo, hora?, dia_semana? | semanal ⇒ dia_semana |
 | medicamento_registro | medicamento_horario_id, data, tomado_em | unique (horario, data) |
 | viagem | destino, ida, volta?, hospedagem, transporte, observacoes | volta≥ida; idx ida |
+| pagamento_comprovante | pagamento_id, nome_original, caminho, mime_type, tamanho_bytes | cascade com o pagamento |
 | viagem_anexo | viagem_id, nome_original, caminho, mime_type, tamanho_bytes | |
 | compra_item | nome, categoria?, quantidade?, comprado, comprado_em? | idx comprado |
 | lembrete_envio | origem_tipo, origem_id, ocorrencia, canal, agendado_para, enviado_em?, status, tentativas, erro? | unique (origem_tipo, origem_id, ocorrencia, agendado_para, canal); idx (status, agendado_para) |

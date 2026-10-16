@@ -1,14 +1,17 @@
 // Consultas e mutações de pagamentos, imóveis, categorias e relatório de gastos.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, baixarArquivo } from '@/lib/api'
+import { salvarNoAparelho } from '@/lib/arquivos'
 import { invalidarPainel } from './hoje'
 import type {
   AgruparGastosPor,
   CategoriaPagamento,
+  Comprovante,
   FiltrosPagamento,
   Imovel,
   Pagamento,
   PagamentoCriacao,
+  PagamentoDetalhe,
   PagamentoEdicao,
   RelatorioGastos,
 } from '@/lib/tipos'
@@ -22,7 +25,7 @@ export const chaves = {
   relatorio: ['relatorios', 'gastos'] as const,
 }
 
-// Categorias são de cada usuário (as 6 padrão nascem no cadastro); cada uma é uma aba de Contas.
+// Categorias são de cada usuário (as 7 padrão nascem no cadastro); cada uma é uma aba de Contas.
 export const useCategorias = () =>
   useQuery({
     queryKey: chaves.categorias,
@@ -43,8 +46,54 @@ export const usePagamentos = (filtros: FiltrosPagamento) =>
 export const usePagamento = (id: string | undefined) =>
   useQuery({
     queryKey: chaves.pagamento(id ?? ''),
-    queryFn: () => api<Pagamento>(`/pagamentos/${id}`),
+    queryFn: () => api<PagamentoDetalhe>(`/pagamentos/${id}`),
     enabled: Boolean(id),
+  })
+
+/** Muda os comprovantes no detalhe em cache e recarrega as listas (que mostram a contagem). */
+function useMudarComprovantes(pagamentoId: string) {
+  const cliente = useQueryClient()
+  return (mudar: (lista: Comprovante[]) => Comprovante[]) => {
+    cliente.setQueryData<PagamentoDetalhe>(chaves.pagamento(pagamentoId), (p) => {
+      if (!p) return p
+      const comprovantes = mudar(p.comprovantes)
+      return { ...p, comprovantes, totalComprovantes: comprovantes.length }
+    })
+    return cliente.invalidateQueries({ queryKey: ['pagamentos', 'lista'] })
+  }
+}
+
+export function useEnviarComprovante(pagamentoId: string) {
+  const mudar = useMudarComprovantes(pagamentoId)
+  return useMutation({
+    mutationFn: (arquivo: File) => {
+      const formulario = new FormData()
+      formulario.append('arquivo', arquivo)
+      return api<Comprovante>(`/pagamentos/${pagamentoId}/comprovantes`, { method: 'POST', corpo: formulario })
+    },
+    // A tela avisa com o nome do arquivo (podem ser vários de uma vez).
+    meta: { semAviso: true },
+    onSuccess: (comprovante) => mudar((lista) => [...lista, comprovante]),
+  })
+}
+
+export function useExcluirComprovante(pagamentoId: string) {
+  const mudar = useMudarComprovantes(pagamentoId)
+  return useMutation({
+    mutationFn: (comprovanteId: string) =>
+      api<void>(`/pagamentos/${pagamentoId}/comprovantes/${comprovanteId}`, { method: 'DELETE' }),
+    onSuccess: (_r, comprovanteId) => mudar((lista) => lista.filter((c) => c.id !== comprovanteId)),
+  })
+}
+
+/** Baixa o comprovante e entrega ao navegador com o nome original. */
+export const useBaixarComprovante = (pagamentoId: string) =>
+  useMutation({
+    mutationFn: async (comprovante: Comprovante) =>
+      salvarNoAparelho(
+        await baixarArquivo(`/pagamentos/${pagamentoId}/comprovantes/${comprovante.id}`),
+        comprovante.nomeOriginal,
+      ),
   })
 
 export const useRelatorioGastos = (periodo: { inicio: string; fim: string; agruparPor: AgruparGastosPor }) =>

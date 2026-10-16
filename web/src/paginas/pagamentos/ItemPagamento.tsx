@@ -1,9 +1,9 @@
-import { CircleAlert, CircleCheck, Repeat } from 'lucide-react'
+import { CircleAlert, CircleCheck, Paperclip, Repeat } from 'lucide-react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useEditarPagamentoPorId, usePagarPagamento } from '@/consultas/pagamentos'
-import { dataCurta, descreverVencimento } from '@/lib/datas'
+import { dataCurta, descreverVencimento, hojeISO } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,9 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
   const pagar = usePagarPagamento()
   const desfazer = useEditarPagamentoPorId()
   const detalhes = [p.categoriaNome ?? p.cartaoNome, p.imovelNome].filter(Boolean).join(', ')
+  // Paga hoje e sem comprovante: convida a guardar o comprovante (a fatura abre em Cartões).
+  const pedirComprovante =
+    p.status === 'pago' && p.dataPagamento === hojeISO() && p.totalComprovantes === 0 && !p.cartaoId
   // A fatura do cartão abre na aba Cartões, no mês dela.
   const endereco = p.cartaoId
     ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}`
@@ -69,6 +72,12 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
               {p.parcelaAtual}/{p.parcelaTotal}
             </span>
           )}
+          {p.totalComprovantes > 0 && (
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Paperclip className="size-5" aria-hidden />
+              {p.totalComprovantes === 1 ? 'Com comprovante' : `${p.totalComprovantes} comprovantes`}
+            </span>
+          )}
           {p.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <Repeat className="size-5" aria-hidden />
@@ -77,6 +86,14 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
           )}
         </span>
       </Link>
+      {pedirComprovante && (
+        <Button asChild variant="outline" className="w-full sm:w-auto sm:self-start">
+          <Link to={`/pagamentos/${p.id}#comprovantes`} aria-label={`Anexar comprovante de ${p.descricao}`}>
+            <Paperclip aria-hidden />
+            Anexar comprovante
+          </Link>
+        </Button>
+      )}
       {p.status === 'pendente' && (
         <Button
           variant={p.vencido ? 'default' : 'outline'}

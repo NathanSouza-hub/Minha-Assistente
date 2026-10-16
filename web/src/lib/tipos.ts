@@ -45,9 +45,14 @@ export type Pagamento = {
   cartaoNome: string | null
   /** Mês da fatura, dia 1 ("2026-11-01"). */
   competencia: string | null
+  /** Quantos comprovantes a conta tem (a lista vem em GET /pagamentos/:id). */
+  totalComprovantes: number
   criadoEm: string
   atualizadoEm: string
 }
+
+/** GET /pagamentos/:id: a conta com a lista de comprovantes. */
+export type PagamentoDetalhe = Pagamento & { comprovantes: Comprovante[] }
 
 /** Corpo de PUT /pagamentos/:id (todos os campos gravados). */
 export type PagamentoEdicao = {
@@ -284,7 +289,8 @@ export type PainelHoje = {
 
 // ---- Viagens (etapa 9 do back-end) ----
 
-export type AnexoViagem = {
+/** Arquivo enviado (anexo de viagem, comprovante de conta). */
+export type ArquivoEnviado = {
   id: string
   nomeOriginal: string
   /** Detectado pelo conteúdo no servidor: PDF, JPG, PNG, WEBP ou HEIC. */
@@ -292,6 +298,9 @@ export type AnexoViagem = {
   tamanhoBytes: number
   criadoEm: string
 }
+
+export type AnexoViagem = ArquivoEnviado
+export type Comprovante = ArquivoEnviado
 
 export type Viagem = {
   id: string

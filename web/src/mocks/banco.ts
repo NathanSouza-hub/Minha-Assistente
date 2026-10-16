@@ -69,6 +69,9 @@ export type RotinaMock = Omit<Rotina, 'criadoEm' | 'atualizadoEm'> & {
 }
 
 export type ViagemMock = Omit<Viagem, 'anexos'> & { usuarioId: string }
+/** Comprovante de conta (como o anexo de viagem). */
+export type ComprovanteMock = Omit<AnexoViagemMock, 'viagemId'> & { pagamentoId: string }
+
 export type AnexoViagemMock = {
   id: string
   viagemId: string
@@ -128,6 +131,7 @@ export const banco = {
   conclusoesRotina: [] as { rotinaId: string; data: string; concluidaEm: string }[],
   viagens: [] as ViagemMock[],
   anexosViagem: [] as AnexoViagemMock[],
+  comprovantes: [] as ComprovanteMock[],
   compras: [] as ItemCompraMock[],
   inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
   // Resumo da manhã por usuário; sem entrada = o padrão do back-end (ligado às 07:00).
@@ -489,6 +493,7 @@ export function resetarBancoMock() {
   banco.conclusoesRotina = []
   banco.viagens.length = 0
   banco.anexosViagem.length = 0
+  banco.comprovantes.length = 0
   banco.compras.length = 0
   banco.inscricoesPush.length = 0
   banco.resumos.clear()

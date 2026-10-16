@@ -1,8 +1,7 @@
-const path = require('node:path');
 const db = require('../../config/db');
 const armazenamento = require('../../lib/armazenamento');
-const { detectarTipo, DESCRICAO_TIPOS_ACEITOS } = require('../../lib/tipoArquivo');
-const { AppError, naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
+const { conferirArquivo } = require('../../lib/anexos');
+const { AppError, naoEncontrado } = require('../../lib/erros');
 
 const MAXIMO_ANEXOS = 20;
 
@@ -78,20 +77,9 @@ async function remover(usuarioId, id) {
   await Promise.all(arquivos.map((caminho) => armazenamento.remover(caminho)));
 }
 
-// Nome exibido no download: sem pastas, sem caracteres de controle, com tamanho limitado.
-function nomeSeguro(original, extensao) {
-  const nome = path.basename(original ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 200);
-  return nome || `anexo${extensao}`;
-}
-
 async function adicionarAnexo(usuarioId, viagemId, arquivo) {
   await buscar(usuarioId, viagemId);
-  if (!arquivo) throw requisicaoInvalida('arquivo: envie o arquivo no campo "arquivo".');
-
-  const tipo = detectarTipo(arquivo.buffer);
-  if (!tipo) {
-    throw new AppError(415, 'TIPO_NAO_SUPORTADO', `Tipo de arquivo não aceito. Envie ${DESCRICAO_TIPOS_ACEITOS}.`);
-  }
+  const { tipo, nomeOriginal } = conferirArquivo(arquivo);
 
   const [{ total }] = await db('viagemAnexo').where({ viagemId }).count('* as total');
   if (total >= MAXIMO_ANEXOS) {
@@ -103,7 +91,7 @@ async function adicionarAnexo(usuarioId, viagemId, arquivo) {
     const [anexo] = await db('viagemAnexo')
       .insert({
         viagemId,
-        nomeOriginal: nomeSeguro(arquivo.originalname, tipo.extensao),
+        nomeOriginal,
         caminho,
         mimeType: tipo.mime,
         tamanhoBytes: arquivo.size,

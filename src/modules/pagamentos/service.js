@@ -3,6 +3,7 @@ const { DateTime } = require('luxon');
 const db = require('../../config/db');
 const { hoje } = require('../../lib/tempo');
 const { AppError, naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
+const comprovantes = require('./comprovantes');
 
 const COLUNAS = [
   'p.id',
@@ -30,6 +31,9 @@ const COLUNAS = [
 
 // current_date usa o fuso da sessão (America/Sao_Paulo).
 const VENCIDO = "(p.status = 'pendente' AND p.vencimento < current_date) AS vencido";
+// A lista mostra um clipe nas contas com comprovante; a lista dos arquivos vem em GET /:id.
+const TOTAL_COMPROVANTES =
+  '(SELECT count(*) FROM pagamento_comprovante pc WHERE pc.pagamento_id = p.id)::int AS total_comprovantes';
 
 // Fatura de cartão não tem categoria: os dois joins são left.
 const consulta = (conexao, usuarioId) =>
@@ -39,7 +43,8 @@ const consulta = (conexao, usuarioId) =>
     .leftJoin('imovel as i', 'i.id', 'p.imovelId')
     .where('p.usuarioId', usuarioId)
     .select(COLUNAS)
-    .select(conexao.raw(VENCIDO));
+    .select(conexao.raw(VENCIDO))
+    .select(conexao.raw(TOTAL_COMPROVANTES));
 
 const ORDEM = [{ column: 'p.vencimento' }, { column: 'p.parcelaAtual' }, { column: 'p.criadoEm' }];
 
@@ -191,6 +196,7 @@ async function remover(usuarioId, id) {
   await db.transaction(async (trx) => {
     const atual = await buscar(usuarioId, id, trx);
     if (atual.cartaoId) throw faturaAutomatica();
+    await comprovantes.aoApagarContas(trx, [id]);
     await trx('pagamento').where({ id, usuarioId }).del();
     await cancelarLembretesPendentes(trx, id);
   });
