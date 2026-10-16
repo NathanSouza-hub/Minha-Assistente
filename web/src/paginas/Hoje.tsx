@@ -35,12 +35,12 @@ function CabecalhoHoje() {
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
-/** "2 compromissos, 3 remédios e 1 tarefa para hoje." */
+/** "2 agendamentos, 3 remédios e 1 compromisso para hoje." */
 function frase(r: PainelHoje['resumo']) {
   const partes = [
-    r.eventos && plural(r.eventos, 'compromisso', 'compromissos'),
+    r.eventos && plural(r.eventos, 'agendamento', 'agendamentos'),
     r.remediosPendentes && plural(r.remediosPendentes, 'remédio para tomar', 'remédios para tomar'),
-    r.tarefasPendentes && plural(r.tarefasPendentes, 'tarefa', 'tarefas'),
+    r.tarefasPendentes && plural(r.tarefasPendentes, 'compromisso', 'compromissos'),
   ].filter(Boolean) as string[]
   if (partes.length === 0) return null
   const lista = partes.length === 1 ? partes[0] : `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}`
@@ -133,11 +133,11 @@ function Painel({ painel }: { painel: PainelHoje }) {
         titulo="Dia livre"
         acao={
           <Button asChild>
-            <Link to="/agenda/novo">Marcar compromisso</Link>
+            <Link to="/agenda/novo">Novo agendamento</Link>
           </Button>
         }
       >
-        Nada marcado, nenhum remédio, tarefa ou conta para hoje.
+        Nada agendado, nenhum remédio, compromisso ou conta para hoje.
       </EstadoVazio>
     )
   }
@@ -166,7 +166,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
         </Secao>
       )}
 
-      <Secao id="hoje-agenda" titulo="Compromissos" link={{ para: '/agenda', rotulo: 'Ver agenda' }}>
+      <Secao id="hoje-agenda" titulo="Agendamentos" link={{ para: '/agenda', rotulo: 'Ver agenda' }}>
         {eventos.length ? (
           <ul className="flex flex-col gap-3">
             {eventos.map((e) => (
@@ -200,13 +200,13 @@ function Painel({ painel }: { painel: PainelHoje }) {
       {rotina.length > 0 && (
         <Secao
           id="hoje-rotina"
-          titulo="Rotina"
+          titulo="Compromissos"
           detalhe={
             feitas === rotina.length
-              ? 'Rotina completa.'
-              : `${feitas} de ${rotina.length} ${rotina.length === 1 ? 'feita' : 'feitas'}`
+              ? 'Todos feitos.'
+              : `${feitas} de ${rotina.length} ${rotina.length === 1 ? 'feito' : 'feitos'}`
           }
-          link={{ para: '/rotina', rotulo: 'Ver rotina' }}
+          link={{ para: '/rotina', rotulo: 'Ver compromissos' }}
         >
           <ul className="flex flex-col gap-3">
             {rotina.map((t) => (

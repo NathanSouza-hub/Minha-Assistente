@@ -35,7 +35,7 @@ export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; d
           </span>
           <span className="text-base text-muted-foreground">
             {t.concluida && t.concluidaEm
-              ? `Feita às ${horaDe(t.concluidaEm)}`
+              ? `Feito às ${horaDe(t.concluidaEm)}`
               : t.hora
                 ? `Às ${t.hora}`
                 : 'Qualquer hora'}

@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Check, Trash2 } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
@@ -21,7 +21,7 @@ import { DIAS, FIM_DE_SEMANA, ORDEM_EXIBICAO, TODOS, UTEIS } from './dias'
 
 const esquema = z
   .object({
-    titulo: z.string().trim().min(1, 'Informe a tarefa.').max(200, 'Texto longo demais.'),
+    titulo: z.string().trim().min(1, 'Informe o compromisso.').max(200, 'Texto longo demais.'),
     hora: z.string().refine((v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v), 'Hora inválida.'),
     diasSemana: z.array(z.number()).min(1, 'Escolha pelo menos um dia.'),
     lembrete: z.boolean(),
@@ -34,10 +34,10 @@ const esquema = z
   })
 type Dados = z.infer<typeof esquema>
 
-const iniciais = (r?: Rotina): Dados =>
+const iniciais = (r?: Rotina, tituloSugerido = ''): Dados =>
   r
     ? { titulo: r.titulo, hora: r.hora ?? '', diasSemana: r.diasSemana, lembrete: r.lembrete, ativo: r.ativo }
-    : { titulo: '', hora: '', diasSemana: TODOS, lembrete: false, ativo: true }
+    : { titulo: tituloSugerido, hora: '', diasSemana: TODOS, lembrete: false, ativo: true }
 
 const paraCorpo = (d: Dados): RotinaCorpo => ({
   titulo: d.titulo.trim(),
@@ -55,17 +55,17 @@ export function PaginaRotina() {
 
   if (id && consulta.isPending) {
     return (
-      <Pagina titulo="Editar tarefa">
+      <Pagina titulo="Editar compromisso">
         <Skeleton className="h-60 rounded-xl" />
       </Pagina>
     )
   }
   if (id && !rotina) {
     return (
-      <Pagina titulo="Tarefa não encontrada">
-        <p className="mb-4 text-lg">Esta tarefa não existe mais ou foi excluída.</p>
+      <Pagina titulo="Compromisso não encontrado">
+        <p className="mb-4 text-lg">Este compromisso não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
-          <Link to="/rotina?visao=todas">Voltar para a rotina</Link>
+          <Link to="/rotina?visao=todas">Voltar para os compromissos</Link>
         </Button>
       </Pagina>
     )
@@ -79,6 +79,8 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
   const salvar = useSalvarRotina()
   const convidar = useConvidarNotificacoes()
   const excluir = useExcluirRotina()
+  // Vindo de uma sugestão (/rotina/nova?titulo=...), o nome já vem preenchido.
+  const [params] = useSearchParams()
   const {
     register,
     control,
@@ -86,7 +88,10 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     setError,
     setFocus,
     formState: { errors, isSubmitting },
-  } = useForm<Dados>({ resolver: zodResolver(esquema), defaultValues: iniciais(rotina) })
+  } = useForm<Dados>({
+    resolver: zodResolver(esquema),
+    defaultValues: iniciais(rotina, params.get('titulo') ?? ''),
+  })
   const hora = useWatch({ control, name: 'hora' })
 
   useEffect(() => {
@@ -97,7 +102,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     try {
       const corpo = paraCorpo(dados)
       await salvar.mutateAsync({ id: rotina?.id, dados: corpo })
-      toast.success(editando ? 'Tarefa salva.' : 'Tarefa criada.')
+      toast.success(editando ? 'Compromisso salvo.' : 'Compromisso criado.')
       navegar(editando ? '/rotina?visao=todas' : '/rotina')
       if (corpo.lembrete) void convidar()
     } catch (erro) {
@@ -105,7 +110,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     }
   }
 
-  const titulo = editando ? 'Editar tarefa' : 'Nova tarefa'
+  const titulo = editando ? 'Editar compromisso' : 'Novo compromisso'
   const voltar = editando ? '/rotina?visao=todas' : '/rotina'
 
   return (
@@ -118,7 +123,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeft className="size-5" aria-hidden />
-            Rotina
+            Compromissos
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
         </div>
@@ -126,8 +131,8 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     >
       <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
         <Campo
-          rotulo="Tarefa"
-          placeholder="Ex.: Ler e-mails"
+          rotulo="Compromisso"
+          placeholder="Ex.: Leitura de e-mails"
           erro={errors.titulo?.message}
           {...register('titulo')}
         />
@@ -143,7 +148,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
         <Campo
           rotulo="Hora (opcional)"
           type="time"
-          dica="Em branco, a tarefa vale para qualquer hora do dia."
+          dica="Em branco, vale para qualquer hora do dia."
           erro={errors.hora?.message}
           {...register('hora')}
           className="sm:max-w-56"
@@ -175,14 +180,14 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
               <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="ativa" className="text-lg">
-                    Na rotina
+                    Ativo
                   </Label>
                   <Switch id="ativa" checked={field.value} onCheckedChange={field.onChange} />
                 </div>
                 <p className="text-base text-muted-foreground">
                   {field.value
-                    ? 'Aparece nas tarefas do dia.'
-                    : 'Pausada: some das tarefas do dia, mas fica guardada.'}
+                    ? 'Aparece nos compromissos do dia.'
+                    : 'Pausado: some dos compromissos do dia, mas fica guardado.'}
                 </p>
               </div>
             )}
@@ -197,26 +202,26 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
 
         <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
           <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
-            {isSubmitting ? 'Salvando…' : editando ? 'Salvar alterações' : 'Criar tarefa'}
+            {isSubmitting ? 'Salvando…' : editando ? 'Salvar alterações' : 'Criar compromisso'}
           </Button>
           {rotina && (
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
                   <Trash2 aria-hidden />
-                  Excluir tarefa
+                  Excluir compromisso
                 </Button>
               }
               titulo={`Excluir "${rotina.titulo}"?`}
-              descricao="O histórico dos dias em que ela foi feita também será apagado. Para parar por um tempo, desligue “Na rotina”."
-              confirmar="Excluir tarefa"
+              descricao="O histórico dos dias em que ele foi feito também será apagado. Para parar por um tempo, desligue “Ativo”."
+              confirmar="Excluir compromisso"
               aoConfirmar={() => {
                 // Esta tela lê a tarefa da lista: quando ela sai do cache, a tela vira "não
                 // encontrada" e desmonta. Por isso volta para a lista antes, e o aviso fica preso
                 // à promessa (que resolve mesmo com a tela já desmontada).
                 const exclusao = excluir.mutateAsync(rotina.id)
                 navegar('/rotina?visao=todas')
-                exclusao.then(() => toast.success('Tarefa excluída.')).catch(() => {})
+                exclusao.then(() => toast.success('Compromisso excluído.')).catch(() => {})
               }}
             />
           )}

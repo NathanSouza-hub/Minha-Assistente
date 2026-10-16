@@ -93,6 +93,8 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
       : hojeISO()
   // Aberto de uma aba de categoria: já vem com ela (e volta para ela ao salvar).
   const aba = params.get('aba') ?? ''
+  // Aberto da sub-aba de um imóvel (Contas residenciais): já vem com ele.
+  const imovel = params.get('imovel') ?? ''
 
   const { data: categorias = [] } = useCategorias()
   const [criandoCategoria, setCriandoCategoria] = useState(false)
@@ -112,7 +114,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     formState: { errors, isSubmitting },
   } = useForm<DadosPagamento>({
     resolver: zodResolver(esquemaPagamento),
-    defaultValues: valoresIniciais(pagamento, vencimentoPadrao, aba),
+    defaultValues: valoresIniciais(pagamento, vencimentoPadrao, aba, imovel),
   })
 
   const [repeticao, jaPago, valor, parcelas] = useWatch({
@@ -127,17 +129,12 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
     if (!editando) setFocus('descricao')
   }, [editando, setFocus])
 
-  // A categoria criada no "+ Nova categoria…" só é escolhida depois que a <option> dela aparece:
-  // antes disso o <select> descarta o valor e fica na primeira opção.
-  const [categoriaCriada, setCategoriaCriada] = useState<string | null>(null)
-  useEffect(() => {
-    if (!categoriaCriada || !categorias.some((c) => c.id === categoriaCriada)) return
-    setValue('categoriaId', categoriaCriada, { shouldValidate: true })
-    setCategoriaCriada(null)
-  }, [categoriaCriada, categorias, setValue])
+  // Controlado: a categoria criada no "+ Nova categoria…" é escolhida antes de a <option> dela
+  // aparecer; sem `value`, o <select> descartaria o valor e ficaria na primeira opção.
+  const categoriaId = useWatch({ control, name: 'categoriaId' })
 
   const enderecoDaLista = (vencimento: string) =>
-    `/pagamentos?mes=${mesDe(vencimento)}${aba ? `&aba=${aba}` : ''}`
+    `/pagamentos?mes=${mesDe(vencimento)}${aba ? `&aba=${aba}` : ''}${imovel ? `&imovel=${imovel}` : ''}`
   const voltarParaLista = (vencimento: string) => navegar(enderecoDaLista(vencimento))
   const campoCategoria = register('categoriaId')
 
@@ -224,6 +221,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
               rotulo="Categoria"
               erro={errors.categoriaId?.message}
               {...campoCategoria}
+              value={categoriaId}
               onChange={(e) => {
                 if (e.target.value !== NOVA_CATEGORIA) return campoCategoria.onChange(e)
                 setValue('categoriaId', '')
@@ -246,7 +244,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: Pagamento }) {
                   rotulo="Nome da nova categoria"
                   autoFocus
                   aoSalvar={(nova) => {
-                    setCategoriaCriada(nova.id)
+                    setValue('categoriaId', nova.id, { shouldValidate: true })
                     setCriandoCategoria(false)
                   }}
                   aoCancelar={() => setCriandoCategoria(false)}

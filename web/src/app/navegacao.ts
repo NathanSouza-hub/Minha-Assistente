@@ -2,11 +2,14 @@ import {
   Bell,
   CalendarDays,
   ChartColumn,
+  Dumbbell,
+  HeartPulse,
   House,
   LayoutGrid,
   ListChecks,
   Pill,
   Plane,
+  Radio,
   ShoppingCart,
   Sun,
   Tags,
@@ -27,9 +30,14 @@ export const navegacaoPrincipal: ItemNavegacao[] = [
 export const itemMais: ItemNavegacao = { rota: '/mais', rotulo: 'Mais', icone: LayoutGrid }
 
 /** Áreas que ficam em "Mais" no celular e direto na barra lateral do computador. */
+// Na ordem da lista da Débora. Rádio, Atividade física e Fisioterapia são a agenda só daquele tipo
+// (paginas/agenda/AgendaDoTipo.tsx; rotas em AREAS_DO_TIPO de paginas/agenda/textos.ts).
 export const navegacaoSecundaria: ItemNavegacao[] = [
-  { rota: '/rotina', rotulo: 'Rotina', icone: ListChecks },
+  { rota: '/rotina', rotulo: 'Compromissos', icone: ListChecks },
+  { rota: '/radio', rotulo: 'Programa de rádio', icone: Radio },
   { rota: '/viagens', rotulo: 'Viagens', icone: Plane },
+  { rota: '/atividade-fisica', rotulo: 'Atividade física', icone: Dumbbell },
+  { rota: '/fisioterapia', rotulo: 'Fisioterapia', icone: HeartPulse },
   { rota: '/compras', rotulo: 'Compras', icone: ShoppingCart },
 ]
 

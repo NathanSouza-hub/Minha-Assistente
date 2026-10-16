@@ -30,13 +30,13 @@ afterAll(() => servidor.close())
 describe('tarefas do dia', () => {
   test('lista as tarefas ativas do dia da semana, com o progresso', async () => {
     renderizarApp('/rotina')
-    expect(await screen.findByText('1 de 4 tarefas feitas')).toBeInTheDocument()
-    const lista = screen.getByRole('list', { name: 'Tarefas do dia' })
+    expect(await screen.findByText('1 de 4 compromissos feitos')).toBeInTheDocument()
+    const lista = screen.getByRole('list', { name: 'Compromissos do dia' })
     expect(within(lista).getByRole('checkbox', { name: /Ler e-mails/ })).toHaveAttribute(
       'aria-checked',
       'true',
     )
-    expect(within(lista).getByText('Feita às 08:40')).toBeInTheDocument()
+    expect(within(lista).getByText('Feito às 08:40')).toBeInTheDocument()
     expect(within(lista).getByText('Qualquer hora')).toBeInTheDocument()
     // Pausada e de domingo não aparecem
     expect(screen.queryByText('Revisar contas do mês')).not.toBeInTheDocument()
@@ -48,10 +48,10 @@ describe('tarefas do dia', () => {
     renderizarApp('/rotina')
     const whatsapp = await screen.findByRole('checkbox', { name: /Ler mensagens do WhatsApp/ })
     await usuario.click(whatsapp)
-    expect(await screen.findByText('2 de 4 tarefas feitas')).toBeInTheDocument()
+    expect(await screen.findByText('2 de 4 compromissos feitos')).toBeInTheDocument()
     expect(whatsapp).toHaveAttribute('aria-checked', 'true')
     await usuario.click(whatsapp)
-    expect(await screen.findByText('1 de 4 tarefas feitas')).toBeInTheDocument()
+    expect(await screen.findByText('1 de 4 compromissos feitos')).toBeInTheDocument()
   })
 
   test('erro do servidor desfaz a marcação', async () => {
@@ -96,16 +96,16 @@ describe('cadastro de tarefa', () => {
     const enviados = espiar('POST')
     const usuario = userEvent.setup()
     renderizarApp('/rotina/nova')
-    await usuario.type(await screen.findByLabelText('Tarefa'), 'Caminhar')
+    await usuario.type(await screen.findByLabelText('Compromisso'), 'Caminhar')
     await usuario.click(screen.getByRole('button', { name: 'Segunda a sexta' }))
     await usuario.click(screen.getByRole('button', { name: 'Sábado' }))
     await usuario.click(screen.getByLabelText('Lembrar na hora'))
-    await usuario.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+    await usuario.click(screen.getByRole('button', { name: 'Criar compromisso' }))
     expect(await screen.findByText('Para receber lembrete, informe a hora.')).toBeInTheDocument()
 
     await usuario.type(screen.getByLabelText('Hora (opcional)'), '07:00')
-    await usuario.click(screen.getByRole('button', { name: 'Criar tarefa' }))
-    expect(await screen.findByText('Tarefa criada.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Criar compromisso' }))
+    expect(await screen.findByText('Compromisso criado.')).toBeInTheDocument()
     expect(enviados[0]).toEqual({
       titulo: 'Caminhar',
       hora: '07:00',
@@ -120,12 +120,12 @@ describe('cadastro de tarefa', () => {
   test('nenhum dia escolhido é barrado', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/rotina/nova')
-    await usuario.type(await screen.findByLabelText('Tarefa'), 'Teste')
+    await usuario.type(await screen.findByLabelText('Compromisso'), 'Teste')
     // Padrão é todos os dias: desliga um a um
     for (const dia of ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']) {
       await usuario.click(screen.getByRole('button', { name: dia }))
     }
-    await usuario.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+    await usuario.click(screen.getByRole('button', { name: 'Criar compromisso' }))
     expect(await screen.findByText('Escolha pelo menos um dia.')).toBeInTheDocument()
   })
 
@@ -133,18 +133,18 @@ describe('cadastro de tarefa', () => {
     const usuario = userEvent.setup()
     renderizarApp('/rotina?visao=todas')
     await usuario.click(await screen.findByRole('link', { name: /Regar as plantas/ }))
-    await usuario.click(await screen.findByLabelText('Na rotina'))
+    await usuario.click(await screen.findByLabelText('Ativo'))
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
     expect(
-      within(await screen.findByRole('link', { name: /Regar as plantas/ })).getByText('Pausada'),
+      within(await screen.findByRole('link', { name: /Regar as plantas/ })).getByText('Pausado'),
     ).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('link', { name: /Regar as plantas/ }))
-    await usuario.click(await screen.findByRole('button', { name: 'Excluir tarefa' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Excluir compromisso' }))
     await usuario.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir tarefa' }),
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Excluir compromisso' }),
     )
-    expect(await screen.findByText('Tarefa excluída.')).toBeInTheDocument()
+    expect(await screen.findByText('Compromisso excluído.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Regar as plantas/ })).not.toBeInTheDocument()
   })
 })
@@ -157,4 +157,27 @@ test('descreve os dias em português', () => {
   expect(descreverDias([0])).toBe('Todo domingo')
   expect(descreverDias([5, 1, 3])).toBe('Segunda, quarta e sexta')
   expect(descreverDias([0, 1])).toBe('Segunda e domingo')
+})
+
+describe('sugestões', () => {
+  test('oferece os compromissos comuns que faltam e some com o que foi criado', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/rotina')
+    const sugestoes = await screen.findByRole('region', { name: 'Sugestões para adicionar' })
+    expect(within(sugestoes).getAllByRole('link').map((l) => l.textContent)).toEqual([
+      'Leitura de e-mails',
+      'Leitura do WhatsApp',
+      'Enviar mensagens',
+      'Verificar pagamentos bancários',
+    ])
+
+    await usuario.click(within(sugestoes).getByRole('link', { name: 'Leitura de e-mails' }))
+    expect(await screen.findByLabelText('Compromisso')).toHaveValue('Leitura de e-mails')
+    await usuario.click(screen.getByRole('button', { name: 'Criar compromisso' }))
+
+    expect(await screen.findByRole('checkbox', { name: /Leitura de e-mails/ })).toBeInTheDocument()
+    const depois = screen.getByRole('region', { name: 'Sugestões para adicionar' })
+    expect(within(depois).queryByRole('link', { name: 'Leitura de e-mails' })).not.toBeInTheDocument()
+    expect(within(depois).getAllByRole('link')).toHaveLength(3)
+  })
 })

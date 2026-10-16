@@ -1,4 +1,4 @@
-// Formulário de compromisso: data + horas separadas (como a pessoa pensa) ↔ ISO com fuso (API).
+// Formulário de agendamento: data + horas separadas (como a pessoa pensa) ↔ ISO com fuso (API).
 // Regras espelhando src/modules/eventos/schema.js do back-end.
 import { z } from 'zod'
 import { combinarDataHora, hojeISO, separarDataHora, somarDias } from '@/lib/datas'
@@ -57,11 +57,11 @@ export const camposDaApi = {
 export const terminaNoDiaSeguinte = (d: Pick<DadosEvento, 'horaInicio' | 'horaFim'>) =>
   Boolean(d.horaFim && d.horaInicio && d.horaFim < d.horaInicio)
 
-export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO()): DadosEvento {
+export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO(), tipoPadrao = ''): DadosEvento {
   if (!evento) {
     return {
       titulo: '',
-      tipo: '',
+      tipo: tipoPadrao,
       modalidade: '',
       data: dataPadrao,
       horaInicio: '',

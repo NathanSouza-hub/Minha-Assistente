@@ -42,7 +42,14 @@ npm run lint                                  # oxlint
   horário e o histórico de "tomei" se perde (o formulário guarda o `id` em cada linha do
   `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
   na hora e volta atrás se o servidor recusar.
-- **Rotina**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista (`useRotinas`).
+- **Vocabulário da Débora** (a dona do app): itens da Agenda são "agendamentos" ("Novo agendamento",
+  "Agendar") e a Rotina aparece como **"Compromissos"** (rota `/rotina`, API `/rotinas`, código
+  continua `rotina`). Não use "compromisso" para evento da agenda.
+- **Rotina/Compromissos**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista
+  (`useRotinas`). As sugestões (`paginas/rotina/sugestoes.ts`) abrem `/rotina/nova?titulo=...`.
+- **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
+  daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
+  `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
 - **Painel Hoje** (`GET /hoje`, `consultas/hoje.ts`) reaproveita os itens das áreas (`ItemEvento`,
   `ItemDose`, `ItemTarefa`, `ItemPagamento`). As marcações otimistas de dose e tarefa mudam as duas
   caches (a da área e a do painel, via `ajustarPainel`) e toda mutação de compromisso, remédio,
@@ -74,7 +81,9 @@ npm run lint                                  # oxlint
   "+ Nova categoria…" (formulário de conta) usam `paginas/categorias/FormCategoria.tsx`, que não é um
   `<form>` (aparece dentro do formulário de conta): envia pelo botão ou Enter. A conta nova aberta
   numa aba vem com a categoria dela e volta para a aba. Categorias também se gerenciam em Mais →
-  Categorias (renomear, subir/descer, excluir).
+  Categorias (renomear, subir/descer, excluir). Na aba cujo nome contém "residen" (Contas
+  residenciais), os imóveis viram sub-abas (`?imovel=`) e a conta nova já vem com o imóvel; nas
+  outras, o imóvel é um filtro recolhido.
 - **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
   de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
   `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem

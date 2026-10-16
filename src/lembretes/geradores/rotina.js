@@ -29,7 +29,7 @@ async function mensagem(conexao, lembrete) {
     .where('t.id', lembrete.origemId)
     .first('t.titulo', 't.hora', 't.ativo', 't.lembrete', 'c.concluidaEm');
   if (!tarefa || !tarefa.ativo || !tarefa.lembrete || tarefa.concluidaEm) return null;
-  return { titulo: tarefa.titulo, corpo: `Tarefa da rotina, às ${tarefa.hora}.`, url: '/rotina' };
+  return { titulo: tarefa.titulo, corpo: `Compromisso do dia, às ${tarefa.hora}.`, url: '/rotina' };
 }
 
 module.exports = { tipo, gerar, mensagem };

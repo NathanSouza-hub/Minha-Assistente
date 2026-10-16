@@ -86,7 +86,7 @@ export function useConvidarNotificacoes() {
       marcarConvidado()
       toast('Quer receber os lembretes neste aparelho?', {
         id: 'convite-notificacoes',
-        description: 'Avisamos na hora dos compromissos, remédios, tarefas e contas.',
+        description: 'Avisamos na hora dos agendamentos, remédios, compromissos e contas.',
         duration: 20_000,
         // O clique aqui é o "toque da pessoa" que o navegador exige para pedir a permissão.
         action: { label: 'Ativar', onClick: () => void ativarPeloAviso() },

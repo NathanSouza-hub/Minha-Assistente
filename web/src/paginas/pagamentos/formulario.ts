@@ -50,6 +50,7 @@ export function valoresIniciais(
   pagamento?: Pagamento,
   vencimentoPadrao = hojeISO(),
   categoriaPadrao = '',
+  imovelPadrao = '',
 ): DadosPagamento {
   if (!pagamento) {
     return {
@@ -57,7 +58,7 @@ export function valoresIniciais(
       valor: '',
       vencimento: vencimentoPadrao,
       categoriaId: categoriaPadrao,
-      imovelId: '',
+      imovelId: imovelPadrao,
       repeticao: 'nenhuma',
       totalParcelas: '2',
       jaPago: false,

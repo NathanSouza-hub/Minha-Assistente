@@ -237,3 +237,30 @@ describe('relatório de gastos', () => {
     expect(screen.getByRole('heading', { name: 'Por categoria' })).toBeInTheDocument()
   })
 })
+
+describe('contas residenciais', () => {
+  test('os imóveis viram sub-abas e a conta nova já vem com o imóvel escolhido', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    await item('Condomínio')
+    // Fora da aba residencial, nada de sub-abas de imóvel
+    expect(screen.queryByRole('group', { name: 'Imóveis' })).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Contas residenciais' }))
+    const imoveis = await screen.findByRole('group', { name: 'Imóveis' })
+    expect(within(imoveis).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Todos os imóveis',
+      'Apartamento cobertura',
+      'Casa da Serra',
+    ])
+    expect(await item('Conta de luz')).toBeInTheDocument()
+
+    await usuario.click(within(imoveis).getByRole('button', { name: 'Casa da Serra' }))
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
+    expect(await item('Conta de luz')).toBeInTheDocument()
+
+    await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
+    expect(await screen.findByLabelText('Imóvel (opcional)')).toHaveDisplayValue('Casa da Serra')
+    expect(screen.getByLabelText('Categoria')).toHaveDisplayValue('Contas residenciais')
+  })
+})

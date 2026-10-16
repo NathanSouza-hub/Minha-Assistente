@@ -1,4 +1,4 @@
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useMemo } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Bell, Check, Repeat, Trash2 } from 'lucide-react'
@@ -16,7 +16,7 @@ import { useEvento, useExcluirEvento, useSalvarEvento } from '@/consultas/evento
 import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import { diaDe, hojeISO } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
-import type { Evento } from '@/lib/tipos'
+import type { Evento, ModalidadeEvento, TipoEvento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import {
   camposDaApi,
@@ -27,7 +27,7 @@ import {
   type DadosEvento,
 } from './formulario'
 import { ATALHOS, MAXIMO_LEMBRETES, rotuloDoLembrete, type Lembrete } from './lembretes'
-import { MODALIDADES, ONLINE, RECORRENCIAS, TIPOS } from './textos'
+import { AREAS_DO_TIPO, MODALIDADES, MODALIDADES_DO_TIPO, ONLINE, RECORRENCIAS, TIPOS } from './textos'
 
 /** /agenda/novo e /agenda/:id */
 export function PaginaEvento() {
@@ -36,7 +36,7 @@ export function PaginaEvento() {
 
   if (id && consulta.isPending) {
     return (
-      <Pagina titulo="Editar compromisso">
+      <Pagina titulo="Editar agendamento">
         <div role="status" aria-label="Carregando" className="flex flex-col gap-4">
           {[1, 2, 3, 4].map((n) => (
             <Skeleton key={n} className="h-20" />
@@ -47,8 +47,8 @@ export function PaginaEvento() {
   }
   if (id && consulta.isError) {
     return (
-      <Pagina titulo="Compromisso não encontrado">
-        <p className="mb-4 text-lg">Este compromisso não existe mais ou foi excluído.</p>
+      <Pagina titulo="Agendamento não encontrado">
+        <p className="mb-4 text-lg">Este agendamento não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/agenda">Voltar para a agenda</Link>
         </Button>
@@ -58,7 +58,7 @@ export function PaginaEvento() {
   return <FormularioEvento key={id ?? 'novo'} evento={consulta.data} />
 }
 
-function voltarPara(dia: string) {
+function voltarParaAgenda(dia: string) {
   return dia === hojeISO() ? '/agenda' : `/agenda?data=${dia}`
 }
 
@@ -67,6 +67,10 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   const [params] = useSearchParams()
   const editando = Boolean(evento)
   const dataPadrao = /^\d{4}-\d{2}-\d{2}$/.test(params.get('data') ?? '') ? params.get('data')! : hojeISO()
+  const tipoPadrao = params.get('tipo') ?? ''
+  // Aberto de uma área de tipo (ex.: Programa de rádio): salvar e "voltar" levam para ela.
+  const area = AREAS_DO_TIPO.find((a) => a.rota === params.get('voltar'))
+  const voltarPara = (dia: string) => area?.rota ?? voltarParaAgenda(dia)
   const salvar = useSalvarEvento()
   const convidar = useConvidarNotificacoes()
   const excluir = useExcluirEvento()
@@ -77,28 +81,42 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
     handleSubmit,
     setError,
     setFocus,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<DadosEvento>({
     resolver: zodResolver(esquemaEvento),
-    defaultValues: valoresIniciais(evento, dataPadrao),
+    defaultValues: valoresIniciais(evento, dataPadrao, tipoPadrao in TIPOS ? tipoPadrao : ''),
   })
 
-  const [modalidade, recorrencia, horaInicio, horaFim, data] = useWatch({
+  const [tipo, modalidade, recorrencia, horaInicio, horaFim, data] = useWatch({
     control,
-    name: ['modalidade', 'recorrencia', 'horaInicio', 'horaFim', 'data'],
+    name: ['tipo', 'modalidade', 'recorrencia', 'horaInicio', 'horaFim', 'data'],
   })
   const online = ONLINE.includes(modalidade as never)
   const recorrente = recorrencia !== 'nenhuma'
+  // Só as modalidades do tipo; a que já estava salva continua aparecendo para não sumir na edição.
+  const modalidades = useMemo(() => {
+    const doTipo = MODALIDADES_DO_TIPO[tipo as TipoEvento] ?? []
+    const salva = evento?.tipo === tipo ? evento.modalidade : null
+    return salva && !doTipo.includes(salva) ? [...doTipo, salva] : doTipo
+  }, [tipo, evento])
 
   useEffect(() => {
     if (!editando) setFocus('titulo')
   }, [editando, setFocus])
 
+  // Trocou o tipo: a modalidade escolhida pode não valer mais para ele.
+  useEffect(() => {
+    const atual = getValues('modalidade')
+    if (atual && !modalidades.includes(atual as ModalidadeEvento)) setValue('modalidade', '')
+  }, [modalidades, getValues, setValue])
+
   async function enviar(dados: DadosEvento) {
     try {
       const corpo = paraCorpo(dados)
       await salvar.mutateAsync({ id: evento?.id, dados: corpo })
-      toast.success(editando ? 'Compromisso salvo.' : 'Compromisso marcado.')
+      toast.success(editando ? 'Agendamento salvo.' : 'Agendamento marcado.')
       navegar(voltarPara(dados.data))
       if (corpo.lembretesMinutosAntes.length > 0) void convidar()
     } catch (erro) {
@@ -110,14 +128,14 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
     if (!evento) return
     excluir.mutate(evento.id, {
       onSuccess: () => {
-        toast.success(evento.recorrente ? 'Compromisso e repetições excluídos.' : 'Compromisso excluído.')
+        toast.success(evento.recorrente ? 'Agendamento e repetições excluídos.' : 'Agendamento excluído.')
         navegar(voltarPara(hojeISO()))
       },
     })
   }
 
   const idObs = useId()
-  const titulo = editando ? 'Editar compromisso' : 'Novo compromisso'
+  const titulo = editando ? 'Editar agendamento' : 'Novo agendamento'
 
   return (
     <Pagina
@@ -129,7 +147,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeft className="size-5" aria-hidden />
-            Agenda
+            {area ? TIPOS[area.tipo] : 'Agenda'}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
         </div>
@@ -140,7 +158,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
           <p className="flex items-start gap-3 rounded-lg bg-secondary px-4 py-3 text-secondary-foreground">
             <Repeat className="mt-0.5 size-5 shrink-0" aria-hidden />
             <span>
-              Este compromisso se repete (
+              Este agendamento se repete (
               {RECORRENCIAS[evento.recorrencia as keyof typeof RECORRENCIAS].toLowerCase()}). As mudanças
               valem para <strong>todas as datas</strong>.
             </span>
@@ -165,14 +183,16 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
               </option>
             ))}
           </Selecao>
-          <Selecao rotulo="Como vai ser? (opcional)" {...register('modalidade')}>
-            <option value="">Não informar</option>
-            {Object.entries(MODALIDADES).map(([valor, rotulo]) => (
-              <option key={valor} value={valor}>
-                {rotulo}
-              </option>
-            ))}
-          </Selecao>
+          {modalidades.length > 0 && (
+            <Selecao rotulo="Como vai ser? (opcional)" {...register('modalidade')}>
+              <option value="">Não informar</option>
+              {modalidades.map((valor) => (
+                <option key={valor} value={valor}>
+                  {MODALIDADES[valor]}
+                </option>
+              ))}
+            </Selecao>
+          )}
         </div>
 
         <div className="grid gap-6 sm:grid-cols-3">
@@ -258,23 +278,23 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
 
         <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-between">
           <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
-            {isSubmitting ? 'Salvando…' : editando ? 'Salvar alterações' : 'Marcar compromisso'}
+            {isSubmitting ? 'Salvando…' : editando ? 'Salvar alterações' : 'Agendar'}
           </Button>
           {evento && (
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
                   <Trash2 aria-hidden />
-                  Excluir compromisso
+                  Excluir agendamento
                 </Button>
               }
-              titulo="Excluir este compromisso?"
+              titulo="Excluir este agendamento?"
               descricao={
                 evento.recorrente
                   ? 'Ele se repete: todas as datas serão excluídas, inclusive as futuras.'
                   : `${evento.titulo} será apagado e não dá para desfazer.`
               }
-              confirmar={evento.recorrente ? 'Excluir todas as datas' : 'Excluir compromisso'}
+              confirmar={evento.recorrente ? 'Excluir todas as datas' : 'Excluir agendamento'}
               aoConfirmar={remover}
             />
           )}

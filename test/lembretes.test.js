@@ -232,7 +232,7 @@ test('rotina: só tarefas com lembrete, nos dias delas; tarefa feita não é lem
   await enviarPendentes(em('2026-12-07T10:00'), opcoes());
   assert.deepEqual(
     enviadosDe(emails.id, semLembrete.id, feita.id).map((e) => [e.titulo, e.corpo]),
-    [['Ler e-mails', 'Tarefa da rotina, às 08:30.']],
+    [['Ler e-mails', 'Compromisso do dia, às 08:30.']],
   );
 });
 

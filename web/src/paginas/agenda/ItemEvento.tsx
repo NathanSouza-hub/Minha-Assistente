@@ -6,7 +6,8 @@ import type { Evento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { MODALIDADES, ONLINE, RECORRENCIAS, TIPOS } from './textos'
 
-export function ItemEvento({ evento: e }: { evento: Evento }) {
+/** `voltar`: rota para onde o formulário volta ao salvar (ex.: a área "Programa de rádio"). */
+export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: string }) {
   const fimOuInicio = deDataHoraISO(e.fim ?? e.inicio)
   const passou = fimOuInicio < agora()
   const acontecendo = !passou && deDataHoraISO(e.inicio) <= agora()
@@ -22,7 +23,7 @@ export function ItemEvento({ evento: e }: { evento: Evento }) {
       )}
     >
       <Link
-        to={`/agenda/${e.id}`}
+        to={`/agenda/${e.id}${voltar ? `?voltar=${encodeURIComponent(voltar)}` : ''}`}
         className="-m-1 grid grid-cols-[5.5rem_1fr] gap-3 rounded-lg p-1 hover:bg-muted/60"
       >
         <span className={cn('flex flex-col', passou && 'text-muted-foreground')}>

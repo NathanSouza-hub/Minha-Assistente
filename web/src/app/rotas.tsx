@@ -3,6 +3,7 @@ import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
 import { Mais } from '@/paginas/Mais'
 import { NaoEncontrada } from '@/paginas/NaoEncontrada'
+import type { TipoEvento } from '@/lib/tipos'
 
 // Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
 // para o app abrir rápido no celular.
@@ -19,6 +20,11 @@ const paginaCompra = () =>
 const agenda = () => import('@/paginas/agenda/Agenda').then((m) => ({ Component: m.Agenda }))
 const paginaEvento = () =>
   import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
+// Programa de rádio, Atividade física e Fisioterapia: a agenda só daquele tipo.
+const agendaDoTipo = (tipo: TipoEvento, rota: string) => () =>
+  import('@/paginas/agenda/AgendaDoTipo').then(({ AgendaDoTipo }) => ({
+    Component: () => <AgendaDoTipo tipo={tipo} rota={rota} />,
+  }))
 const remedios = () => import('@/paginas/remedios/Remedios').then((m) => ({ Component: m.Remedios }))
 const paginaRemedio = () =>
   import('@/paginas/remedios/PaginaRemedio').then((m) => ({ Component: m.PaginaRemedio }))
@@ -61,6 +67,9 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'agenda', lazy: agenda },
           { path: 'agenda/novo', lazy: paginaEvento },
           { path: 'agenda/:id', lazy: paginaEvento },
+          { path: 'radio', lazy: agendaDoTipo('programa_radio', '/radio') },
+          { path: 'atividade-fisica', lazy: agendaDoTipo('atividade_fisica', '/atividade-fisica') },
+          { path: 'fisioterapia', lazy: agendaDoTipo('fisioterapia', '/fisioterapia') },
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },

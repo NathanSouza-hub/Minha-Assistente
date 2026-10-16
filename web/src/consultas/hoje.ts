@@ -1,4 +1,4 @@
-// Painel Hoje: junta compromissos, remédios, rotina e contas do dia numa busca só.
+// Painel Hoje: junta agendamentos, remédios, compromissos (rotina) e contas do dia numa busca só.
 import { useQuery, type QueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { PainelHoje } from '@/lib/tipos'
@@ -19,6 +19,6 @@ export function ajustarPainel(cliente: QueryClient, data: string, mudar: (p: Pai
   cliente.setQueryData<PainelHoje>(chavesHoje.dia(data), (painel) => painel && mudar(painel))
 }
 
-/** Recarrega o painel: qualquer mudança em compromissos, remédios, rotina ou contas afeta o resumo. */
+/** Recarrega o painel: qualquer mudança em agendamentos, remédios, compromissos ou contas afeta o resumo. */
 export const invalidarPainel = (cliente: QueryClient) =>
   cliente.invalidateQueries({ queryKey: chavesHoje.todos })

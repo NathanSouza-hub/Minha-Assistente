@@ -6,10 +6,11 @@ import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEventos } from '@/consultas/eventos'
-import { deDataISO, diaDe, diasDaSemana, hojeISO, inicioDaSemana, rotuloDoDia, somarDias } from '@/lib/datas'
+import { deDataISO, diasDaSemana, hojeISO, inicioDaSemana, rotuloDoDia, somarDias } from '@/lib/datas'
 import type { Evento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { ItemEvento } from './ItemEvento'
+import { porDia } from './porDia'
 
 type Visao = 'dia' | 'semana' | 'lista'
 
@@ -43,16 +44,6 @@ function periodo(visao: Visao, data: string) {
     return { inicio: segunda, fim: somarDias(segunda, 6) }
   }
   return { inicio: hojeISO(), fim: somarDias(hojeISO(), DIAS_DA_LISTA) }
-}
-
-/** Agrupa ocorrências pelo dia em que começam (ou pelo 1º dia do período, se começaram antes). */
-function porDia(eventos: Evento[], primeiroDia: string) {
-  const grupos = new Map<string, Evento[]>()
-  for (const e of eventos) {
-    const dia = diaDe(e.inicio) < primeiroDia ? primeiroDia : diaDe(e.inicio)
-    grupos.set(dia, [...(grupos.get(dia) ?? []), e])
-  }
-  return grupos
 }
 
 function tituloSemana(segunda: string) {
@@ -152,12 +143,12 @@ export function Agenda() {
               titulo="Nada marcado para este dia"
               acao={
                 <Button asChild>
-                  <Link to={`/agenda/novo?data=${data}`}>Adicionar compromisso</Link>
+                  <Link to={`/agenda/novo?data=${data}`}>Novo agendamento</Link>
                 </Button>
               }
             />
           ) : (
-            <ListaEventos eventos={eventos} rotulo={`Compromissos de ${rotuloDoDia(data)}`} />
+            <ListaEventos eventos={eventos} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} />
           )
         ) : visao === 'semana' ? (
           <Semana eventos={eventos} segunda={inicio} />
@@ -169,17 +160,17 @@ export function Agenda() {
   )
 }
 
-function ListaEventos({ eventos, rotulo }: { eventos: Evento[]; rotulo: string }) {
+export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; rotulo: string; voltar?: string }) {
   return (
     <ul className="flex flex-col gap-3" aria-label={rotulo}>
       {eventos.map((e) => (
-        <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} />
+        <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />
       ))}
     </ul>
   )
 }
 
-function CabecalhoDia({ dia }: { dia: string }) {
+export function CabecalhoDia({ dia }: { dia: string }) {
   const hoje = dia === hojeISO()
   return (
     <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-primary')}>
@@ -200,7 +191,7 @@ function Semana({ eventos, segunda }: { eventos: Evento[]; segunda: string }) {
           <section key={dia} className="flex flex-col gap-3">
             <CabecalhoDia dia={dia} />
             {doDia.length ? (
-              <ListaEventos eventos={doDia} rotulo={`Compromissos de ${rotuloDoDia(dia)}`} />
+              <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
             ) : (
               <p className="text-base text-muted-foreground">Nada marcado.</p>
             )}
@@ -211,7 +202,7 @@ function Semana({ eventos, segunda }: { eventos: Evento[]; segunda: string }) {
   )
 }
 
-/** Próximos 30 dias, só os dias com compromisso. */
+/** Próximos 30 dias, só os dias com agendamento. */
 function Proximos({ eventos }: { eventos: Evento[] }) {
   if (eventos.length === 0) {
     return (
@@ -220,7 +211,7 @@ function Proximos({ eventos }: { eventos: Evento[] }) {
         titulo={`Nada marcado nos próximos ${DIAS_DA_LISTA} dias`}
         acao={
           <Button asChild>
-            <Link to="/agenda/novo">Adicionar compromisso</Link>
+            <Link to="/agenda/novo">Novo agendamento</Link>
           </Button>
         }
       />
@@ -231,7 +222,7 @@ function Proximos({ eventos }: { eventos: Evento[] }) {
       {[...porDia(eventos, hojeISO())].map(([dia, doDia]) => (
         <section key={dia} className="flex flex-col gap-3">
           <CabecalhoDia dia={dia} />
-          <ListaEventos eventos={doDia} rotulo={`Compromissos de ${rotuloDoDia(dia)}`} />
+          <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
         </section>
       ))}
     </div>

@@ -27,3 +27,21 @@ export const RECORRENCIAS: Record<Exclude<RecorrenciaEvento, 'nenhuma'>, string>
 
 /** Modalidades em que o evento acontece por um link (mostram o botão "Entrar"). */
 export const ONLINE: ModalidadeEvento[] = ['telemedicina', 'videoconferencia']
+
+/** Modalidades que fazem sentido em cada tipo (o formulário só oferece estas; sem nenhuma, esconde o campo). */
+export const MODALIDADES_DO_TIPO: Record<TipoEvento, ModalidadeEvento[]> = {
+  consulta: ['presencial', 'telemedicina'],
+  exame: ['presencial'],
+  fisioterapia: ['presencial', 'telemedicina'],
+  atividade_fisica: [],
+  reuniao_pessoal: ['presencial', 'videoconferencia'],
+  video: ['videoconferencia', 'podcast', 'gravacao'],
+  programa_radio: ['presencial', 'gravacao'],
+}
+
+/** Tipos com área própria no menu ("a agenda só daquele tipo"). As rotas são as de app/navegacao.ts. */
+export const AREAS_DO_TIPO: { rota: string; tipo: TipoEvento }[] = [
+  { rota: '/radio', tipo: 'programa_radio' },
+  { rota: '/atividade-fisica', tipo: 'atividade_fisica' },
+  { rota: '/fisioterapia', tipo: 'fisioterapia' },
+]

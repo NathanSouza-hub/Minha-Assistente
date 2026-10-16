@@ -27,7 +27,9 @@ afterEach(() => {
 afterAll(() => servidor.close())
 
 const cartao = async (titulo: string) =>
-  (await screen.findAllByRole('link', { name: new RegExp(titulo) }))[0].closest('li') as HTMLElement
+  (await within(await screen.findByRole('main')).findAllByRole('link', { name: new RegExp(titulo) }))[0].closest(
+    'li',
+  ) as HTMLElement
 
 /** Captura o corpo enviado ao back-end, mantendo a resposta do mock. */
 function espiarEnvio(metodo: 'post' | 'put', caminho: string) {
@@ -41,7 +43,7 @@ function espiarEnvio(metodo: 'post' | 'put', caminho: string) {
 }
 
 describe('visões da agenda', () => {
-  test('dia mostra os compromissos com hora, local e botão de entrar na telemedicina', async () => {
+  test('dia mostra os agendamentos com hora, local e botão de entrar na telemedicina', async () => {
     renderizarApp('/agenda')
     expect(await screen.findByRole('heading', { name: 'Hoje, 13 de outubro' })).toBeInTheDocument()
 
@@ -80,18 +82,18 @@ describe('visões da agenda', () => {
     expect(await screen.findAllByRole('link', { name: /Caminhada no parque/ })).toHaveLength(5)
   })
 
-  test('dia sem compromissos convida a adicionar', async () => {
+  test('dia sem agendamentos convida a adicionar', async () => {
     renderizarApp('/agenda?data=2026-10-12')
     expect(await screen.findByText('Nada marcado para este dia')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Adicionar compromisso' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Novo agendamento' })).toHaveAttribute(
       'href',
       '/agenda/novo?data=2026-10-12',
     )
   })
 })
 
-describe('formulário de compromisso', () => {
-  test('marca um compromisso com fuso, fim no dia seguinte e lembretes em minutos', async () => {
+describe('formulário de agendamento', () => {
+  test('marca um agendamento com fuso, fim no dia seguinte e lembretes em minutos', async () => {
     const enviados = espiarEnvio('post', '/eventos')
     const usuario = userEvent.setup()
     renderizarApp('/agenda/novo?data=2026-10-20')
@@ -103,9 +105,9 @@ describe('formulário de compromisso', () => {
     expect(screen.getByText('Termina no dia seguinte.')).toBeInTheDocument()
     // Padrão: véspera às 18h + 2 horas antes. Liga também 30 minutos antes.
     await usuario.click(screen.getByRole('button', { name: '30 minutos antes' }))
-    await usuario.click(screen.getByRole('button', { name: 'Marcar compromisso' }))
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
 
-    expect(await screen.findByText('Compromisso marcado.')).toBeInTheDocument()
+    expect(await screen.findByText('Agendamento marcado.')).toBeInTheDocument()
     expect(enviados[0]).toMatchObject({
       titulo: 'Plantão de leitura',
       tipo: 'reuniao_pessoal',
@@ -116,7 +118,7 @@ describe('formulário de compromisso', () => {
       recorrencia: 'nenhuma',
       recorrenciaFim: null,
     })
-    // Volta para o dia do compromisso
+    // Volta para o dia do agendamento
     expect(await screen.findByRole('heading', { name: 'Terça, 20 de outubro' })).toBeInTheDocument()
   })
 
@@ -129,7 +131,7 @@ describe('formulário de compromisso', () => {
     expect(screen.queryByLabelText('Local (opcional)')).not.toBeInTheDocument()
     await usuario.type(screen.getByLabelText('Link da chamada'), 'meet.google.com/abc')
     await usuario.type(screen.getByLabelText('Começa às'), '10:00')
-    await usuario.click(screen.getByRole('button', { name: 'Marcar compromisso' }))
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
     expect(await screen.findByText('Cole o endereço completo, começando com https://')).toBeInTheDocument()
   })
 
@@ -170,7 +172,7 @@ describe('formulário de compromisso', () => {
     const enviados = espiarEnvio('put', '/eventos/')
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
-    await usuario.click(await screen.findByRole('link', { name: /Fisioterapia/ }))
+    await usuario.click((await cartao('Fisioterapia')).querySelector('a')!)
 
     expect(await screen.findByText(/As mudanças valem para/)).toHaveTextContent('todas as datas')
     // A série começou há uma semana (06/10), não na ocorrência clicada (13/10)
@@ -180,23 +182,23 @@ describe('formulário de compromisso', () => {
     await usuario.type(titulo, 'Fisioterapia do joelho')
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
-    expect(await screen.findByText('Compromisso salvo.')).toBeInTheDocument()
+    expect(await screen.findByText('Agendamento salvo.')).toBeInTheDocument()
     expect(enviados[0]).toMatchObject({ titulo: 'Fisioterapia do joelho', inicio: '2026-10-06T09:00:00-03:00' })
   })
 
   test('excluir série confirma que todas as datas somem', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
-    await usuario.click(await screen.findByRole('link', { name: /Fisioterapia/ }))
-    await usuario.click(await screen.findByRole('button', { name: 'Excluir compromisso' }))
+    await usuario.click((await cartao('Fisioterapia')).querySelector('a')!)
+    await usuario.click(await screen.findByRole('button', { name: 'Excluir agendamento' }))
     const dialogo = await screen.findByRole('alertdialog')
     expect(dialogo).toHaveTextContent('todas as datas serão excluídas')
     await usuario.click(within(dialogo).getByRole('button', { name: 'Excluir todas as datas' }))
-    expect(await screen.findByText('Compromisso e repetições excluídos.')).toBeInTheDocument()
+    expect(await screen.findByText('Agendamento e repetições excluídos.')).toBeInTheDocument()
     // A tela do item apagado não pode buscar de novo e mostrar "não encontrado".
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()
     await cartao('Consulta com cardiologista')
-    expect(screen.queryByRole('link', { name: /Fisioterapia/ })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('main')).queryByRole('link', { name: /Fisioterapia/ })).not.toBeInTheDocument()
   })
 })

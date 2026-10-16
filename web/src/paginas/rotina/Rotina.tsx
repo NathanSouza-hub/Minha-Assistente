@@ -12,6 +12,7 @@ import { hojeISO } from '@/lib/datas'
 import { cn } from '@/lib/utils'
 import { descreverDias } from './dias'
 import { ItemTarefa } from './ItemTarefa'
+import { sugestoesFaltando } from './sugestoes'
 
 type Visao = 'dia' | 'todas'
 
@@ -33,12 +34,12 @@ export function Rotina() {
 
   return (
     <Pagina
-      titulo="Rotina"
+      titulo="Compromissos"
       acoes={
         <Button asChild size="lg">
           <Link to="/rotina/nova">
             <Plus aria-hidden />
-            Nova
+            Novo
           </Link>
         </Button>
       }
@@ -51,8 +52,8 @@ export function Rotina() {
           valor={visao}
           aoMudar={(v) => mudar('visao', v, 'dia')}
           opcoes={[
-            { valor: 'dia', rotulo: 'Tarefas do dia' },
-            { valor: 'todas', rotulo: 'Todas as tarefas' },
+            { valor: 'dia', rotulo: 'Do dia' },
+            { valor: 'todas', rotulo: 'Todos' },
           ]}
         />
         {visao === 'dia' ? (
@@ -60,8 +61,36 @@ export function Rotina() {
         ) : (
           <TodasAsTarefas />
         )}
+        <Sugestoes />
       </div>
     </Pagina>
+  )
+}
+
+/** Atalhos para cadastrar os compromissos comuns que ainda faltam (abrem o formulário preenchido). */
+function Sugestoes() {
+  const { data: rotinas } = useRotinas()
+  if (!rotinas) return null
+  const faltando = sugestoesFaltando(rotinas)
+  if (faltando.length === 0) return null
+  return (
+    <section aria-labelledby="sugestoes" className="flex flex-col gap-3">
+      <h2 id="sugestoes" className="text-lg font-semibold">
+        Sugestões para adicionar
+      </h2>
+      <ul className="flex flex-wrap gap-2">
+        {faltando.map((s) => (
+          <li key={s}>
+            <Button asChild variant="outline">
+              <Link to={`/rotina/nova?titulo=${encodeURIComponent(s)}`}>
+                <Plus aria-hidden />
+                {s}
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
@@ -75,7 +104,7 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
     <>
       <NavegadorDia data={data} aoMudar={mudarData} />
       {consulta.isPending ? (
-        <div className="flex flex-col gap-3" role="status" aria-label="Carregando tarefas">
+        <div className="flex flex-col gap-3" role="status" aria-label="Carregando compromissos">
           {[1, 2, 3].map((n) => (
             <Skeleton key={n} className="h-20 rounded-xl" />
           ))}
@@ -83,7 +112,7 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
       ) : consulta.isError ? (
         <EstadoVazio
           icone={ListChecks}
-          titulo="Não foi possível carregar a rotina"
+          titulo="Não foi possível carregar os compromissos"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
           Verifique a internet e tente de novo.
@@ -91,25 +120,25 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
       ) : tarefas.length === 0 ? (
         <EstadoVazio
           icone={ListChecks}
-          titulo="Nenhuma tarefa para este dia"
+          titulo="Nenhum compromisso para este dia"
           acao={
             <Button asChild>
-              <Link to="/rotina/nova">Criar tarefa</Link>
+              <Link to="/rotina/nova">Criar compromisso</Link>
             </Button>
           }
         >
-          Tarefas da rotina são as que se repetem, como ler e-mails ou responder mensagens.
+          Compromissos são as tarefas que se repetem, como ler e-mails ou responder mensagens.
         </EstadoVazio>
       ) : (
         <>
           <Progresso
             feitos={feitas}
             total={tarefas.length}
-            texto={`${feitas} de ${tarefas.length} ${tarefas.length === 1 ? 'tarefa feita' : 'tarefas feitas'}`}
-            textoCompleto="Rotina do dia completa."
+            texto={`${feitas} de ${tarefas.length} ${tarefas.length === 1 ? 'compromisso feito' : 'compromissos feitos'}`}
+            textoCompleto="Todos os compromissos do dia feitos."
           />
           {futuro && <p className="text-base text-muted-foreground">Dá para marcar quando o dia chegar.</p>}
-          <ul className="flex flex-col gap-3" aria-label="Tarefas do dia">
+          <ul className="flex flex-col gap-3" aria-label="Compromissos do dia">
             {tarefas.map((t) => (
               <ItemTarefa key={t.rotinaId} tarefa={t} desabilitada={futuro} />
             ))}
@@ -128,17 +157,17 @@ function TodasAsTarefas() {
     return (
       <EstadoVazio
         icone={ListChecks}
-        titulo="Nenhuma tarefa cadastrada"
+        titulo="Nenhum compromisso cadastrado"
         acao={
           <Button asChild>
-            <Link to="/rotina/nova">Criar tarefa</Link>
+            <Link to="/rotina/nova">Criar compromisso</Link>
           </Button>
         }
       />
     )
   }
   return (
-    <ul className="divide-y rounded-xl border bg-card" aria-label="Todas as tarefas">
+    <ul className="divide-y rounded-xl border bg-card" aria-label="Todos os compromissos">
       {rotinas.map((r) => (
         <li key={r.id}>
           <Link to={`/rotina/${r.id}`} className="flex flex-col gap-0.5 p-4 hover:bg-muted/60">
@@ -147,7 +176,7 @@ function TodasAsTarefas() {
                 {r.titulo}
               </span>
               {!r.ativo && (
-                <span className="rounded-md bg-muted px-2 font-semibold text-muted-foreground">Pausada</span>
+                <span className="rounded-md bg-muted px-2 font-semibold text-muted-foreground">Pausado</span>
               )}
             </span>
             <span className="text-base text-muted-foreground">

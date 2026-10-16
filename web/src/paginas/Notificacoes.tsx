@@ -11,9 +11,9 @@ import {
 } from '@/consultas/notificacoes'
 
 const O_QUE_AVISA = [
-  { icone: CalendarDays, texto: 'Compromissos, com a antecedência que você escolher' },
+  { icone: CalendarDays, texto: 'Agendamentos, com a antecedência que você escolher' },
   { icone: Pill, texto: 'Remédios, na hora de cada dose' },
-  { icone: ListChecks, texto: 'Tarefas da rotina que têm lembrete' },
+  { icone: ListChecks, texto: 'Compromissos que têm lembrete' },
   { icone: Wallet, texto: 'Contas a pagar, na véspera e no dia, às 9h' },
 ]
 

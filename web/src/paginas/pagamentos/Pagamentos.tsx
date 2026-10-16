@@ -8,6 +8,7 @@ import { Selecao } from '@/components/Selecao'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
+import { chaveCategoria } from '@/lib/compras'
 import { intervaloDoMes, mesDe, nomeDoMes, somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { CategoriaPagamento, StatusPagamento } from '@/lib/tipos'
@@ -20,6 +21,9 @@ type FiltroStatus = 'todos' | StatusPagamento
 
 /** Valor de ?aba= da aba Cartões (as outras abas são ids de categoria). */
 const ABA_CARTOES = 'cartoes'
+
+/** "Contas residenciais" (ou "residências"...): a categoria das contas de casa, pelo nome. */
+const ehResidencial = (nome: string) => chaveCategoria(nome).includes('residen')
 
 /** Mês, aba e filtros moram na URL: recarregar ou voltar mantém o que a pessoa escolheu. */
 function useFiltros() {
@@ -138,13 +142,20 @@ function ListaDeContas({
     imovelId: imovelId || undefined,
   })
   const pagamentos = consulta.data ?? []
+  // Na aba de contas residenciais os imóveis viram sub-abas (no resto, um filtro recolhido).
+  const imoveisEmAbas = Boolean(categoriaAtiva && ehResidencial(categoriaAtiva.nome) && imoveis.length > 0)
+  const imovelAtivo = imoveis.find((i) => i.id === imovelId)
 
   const aPagar = pagamentos.filter((p) => p.status === 'pendente')
   const vencidos = aPagar.filter((p) => p.vencido).length
   const soma = (lista: typeof pagamentos) => lista.reduce((total, p) => total + p.valorCentavos, 0)
-  const temFiltro = status !== 'todos' || Boolean(imovelId)
-  const novo = `/pagamentos/novo?mes=${mes}${categoriaId ? `&aba=${categoriaId}` : ''}`
-  const ondeEstou = categoriaAtiva ? ` de ${categoriaAtiva.nome.toLowerCase()}` : ''
+  const temFiltro = status !== 'todos' || (Boolean(imovelId) && !imoveisEmAbas)
+  const novo = `/pagamentos/novo?mes=${mes}${categoriaId ? `&aba=${categoriaId}` : ''}${
+    imoveisEmAbas && imovelAtivo ? `&imovel=${imovelAtivo.id}` : ''
+  }`
+  const ondeEstou = categoriaAtiva
+    ? ` de ${categoriaAtiva.nome.toLowerCase()}${imoveisEmAbas && imovelAtivo ? ` (${imovelAtivo.nome})` : ''}`
+    : ''
 
   return (
     <Pagina
@@ -162,9 +173,31 @@ function ListaDeContas({
         <Abas
           categorias={categorias}
           ativa={categoriaId}
-          // A aba Cartões abre na fatura atual, não no mês que estava na lista.
-          aoMudar={(nova) => mudar(nova === ABA_CARTOES ? { aba: nova, mes: '' } : { aba: nova })}
+          // A aba Cartões abre na fatura atual, não no mês que estava na lista. O imóvel escolhido
+          // vale só para a aba em que foi escolhido.
+          aoMudar={(nova) => mudar(nova === ABA_CARTOES ? { aba: nova, mes: '', imovel: '' } : { aba: nova, imovel: '' })}
         />
+
+        {imoveisEmAbas && (
+          <div className="-mx-4 overflow-x-auto px-4 pb-1 md:-mx-8 md:px-8">
+            <div role="group" aria-label="Imóveis" className="flex w-max gap-2">
+              {[{ id: '', nome: 'Todos os imóveis' }, ...imoveis].map((i) => (
+                <button
+                  key={i.id}
+                  type="button"
+                  aria-pressed={imovelId === i.id}
+                  onClick={() => mudar({ imovel: i.id })}
+                  className={cn(
+                    'min-h-11 rounded-lg border px-3 font-semibold whitespace-nowrap',
+                    imovelId === i.id ? 'border-primary bg-secondary text-secondary-foreground' : 'bg-card hover:bg-muted',
+                  )}
+                >
+                  {i.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <nav aria-label="Mês" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
           <Button variant="ghost" size="icon" onClick={() => mudar({ mes: somarMeses(mes, -1) })} aria-label="Mês anterior">
@@ -191,7 +224,7 @@ function ListaDeContas({
           ]}
         />
 
-        {imoveis.length > 0 && (
+        {imoveis.length > 0 && !imoveisEmAbas && (
           <details className="group rounded-xl border bg-card" open={Boolean(imovelId) || undefined}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
               <SlidersHorizontal className="size-5 text-primary" aria-hidden />

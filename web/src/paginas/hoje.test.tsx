@@ -33,19 +33,19 @@ describe('painel Hoje', () => {
   test('junta o dia: resumo, vencidas em destaque, compromissos, remédios, rotina e contas da semana', async () => {
     renderizarApp('/')
     expect(
-      await screen.findByText('Para hoje: 2 compromissos, 3 remédios para tomar e 3 tarefas.'),
+      await screen.findByText('Para hoje: 2 agendamentos, 3 remédios para tomar e 3 compromissos.'),
     ).toBeInTheDocument()
 
     const vencidas = await secao('Conta vencida')
     expect(within(vencidas).getByText('R$ 1.250,00 em atraso')).toBeInTheDocument()
     expect(within(vencidas).getByText('Venceu há 3 dias')).toBeInTheDocument()
 
-    const agenda = await secao('Compromissos')
+    const agenda = await secao('Agendamentos')
     expect(within(agenda).getByText('Fisioterapia')).toBeInTheDocument()
     expect(within(agenda).getByRole('link', { name: /Entrar/ })).toBeInTheDocument()
 
     expect(within(await secao('Remédios')).getByText('1 de 4 tomados')).toBeInTheDocument()
-    expect(within(await secao('Rotina')).getByText('1 de 4 feitas')).toBeInTheDocument()
+    expect(within(await secao('Compromissos')).getByText('1 de 4 feitos')).toBeInTheDocument()
 
     const semana = await secao('Contas dos próximos 7 dias')
     expect(within(semana).getByText('Conta de luz')).toBeInTheDocument()
@@ -60,9 +60,9 @@ describe('painel Hoje', () => {
     expect(within(await secao('Remédios')).getByText('2 de 4 tomados')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('checkbox', { name: /Ler mensagens do WhatsApp/ }))
-    expect(within(await secao('Rotina')).getByText('2 de 4 feitas')).toBeInTheDocument()
+    expect(within(await secao('Compromissos')).getByText('2 de 4 feitos')).toBeInTheDocument()
     expect(
-      await screen.findByText('Para hoje: 2 compromissos, 2 remédios para tomar e 2 tarefas.'),
+      await screen.findByText('Para hoje: 2 agendamentos, 2 remédios para tomar e 2 compromissos.'),
     ).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Marcar Condomínio como pago' }))
@@ -88,5 +88,5 @@ test('conta nova, sem nada: "Dia livre"', async () => {
   salvarToken(token)
   renderizarApp('/')
   expect(await screen.findByText('Dia livre')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Marcar compromisso' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Novo agendamento' })).toBeInTheDocument()
 })
