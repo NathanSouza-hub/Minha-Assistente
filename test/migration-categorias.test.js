@@ -88,3 +88,36 @@ test('nome de categoria é único por usuário sem diferenciar maiúsculas', asy
   });
   await db('categoriaPagamento').insert({ usuarioId: bia, nome: 'Plano de saúde' });
 });
+
+test('"Salários" e "Honorários médicos" somem e as contas delas vão para "Outros"', async () => {
+  const REMOVER = '20261016000020_remover_salarios_honorarios.js';
+  const ana = await criarUsuario('ana-equipe@exemplo.com');
+  const bia = await criarUsuario('bia-equipe@exemplo.com');
+  await db.migrate.down({ name: REMOVER });
+  // Ana tem "Outros"; Bia apagou a dela e tem uma conta em "Honorários médicos".
+  const [salariosAna, outrosAna] = await db('categoriaPagamento')
+    .insert([
+      { usuarioId: ana, nome: 'Salários', ordem: 1 },
+      { usuarioId: ana, nome: 'Outros', ordem: 2 },
+      { usuarioId: ana, nome: 'Honorários médicos', ordem: 3 },
+    ])
+    .returning('id');
+  const [honorariosBia] = await db('categoriaPagamento')
+    .insert([
+      { usuarioId: bia, nome: 'Honorários médicos', ordem: 1 },
+      { usuarioId: bia, nome: 'Exames', ordem: 2 },
+    ])
+    .returning('id');
+  await db('pagamento').insert([
+    conta(ana, salariosAna.id, 'Salário antigo da Ana'),
+    conta(bia, honorariosBia.id, 'Honorário antigo da Bia'),
+  ]);
+
+  await db.migrate.up({ name: REMOVER });
+
+  const nomes = (usuarioId) => db('categoriaPagamento').where({ usuarioId }).orderBy('ordem').pluck('nome');
+  assert.deepEqual(await nomes(ana), ['Outros']);
+  assert.deepEqual(await nomes(bia), ['Exames', 'Outros']);
+  assert.equal((await categoriaDaConta('Salário antigo da Ana', ['c.id'])).id, outrosAna.id);
+  assert.deepEqual(await categoriaDaConta('Honorário antigo da Bia'), { nome: 'Outros', usuarioId: bia });
+});

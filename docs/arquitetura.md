@@ -220,7 +220,8 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     arquivos depois que a transação confirma (`comprovantes.aoApagarContas`).
 
 23. **Equipe e salários** (migration 19; substitui as categorias "Salários" e "Honorários médicos",
-    que deixaram de ser padrão — o cadastro cria só 5):
+    que deixaram de ser padrão — o cadastro cria só 5; a migration 20 apaga as duas de quem já
+    tinha conta e move as contas delas para "Outros"):
     - `membro_equipe` (nome único por usuário sem diferenciar maiúsculas → `409 MEMBRO_DUPLICADO`,
       funcao?, forma_pagamento `mensal|plantao|honorario`, chave_pix?, ativo) e
       `membro_equipe_dia` (dia 1–31, valor_previsto_centavos?, `desde`). `POST/PUT /equipe`
