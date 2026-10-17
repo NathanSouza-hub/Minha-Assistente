@@ -45,17 +45,23 @@ Tokens em `web/src/index.css`. Contraste medido sobre o creme `#F7F1E8`.
 | Terracota | `--terracota` | `#9A4527` | destaques em texto, botão de apoio, "hoje" | 5,8:1 |
 | Terracota viva | `--terracota-viva` | `#C2603A` | só decoração: fita marcadora, ilustrações | 3,7:1 |
 | Terracota clara | `--terracota-clara` | `#F6DDD0` | fundo de destaque, selo "hoje" | — |
+| Terracota da marca | `--terracota-marca` | `#EE9068` | só o marcador do símbolo, **sobre** o petróleo | 4,1:1 no petróleo |
+| Petróleo escuro | `--petroleo-escuro` | `#0A3642` | item ativo da barra lateral | — |
 | Atraso | `--atraso` | `#9E1F2C` | vencido/atrasado (vinho, distinto da terracota) | 7,0:1 |
 | Pago / feito | `--ok` | `#2F6B45` | pago, tomado, concluído | 5,7:1 |
 
 O açafrão `--hoje` atual sai: o papel de "hoje"/"item ativo" passa para a terracota.
 Atraso **sempre** vem com texto ou ícone ("Vencida há 3 dias"), nunca só a cor.
+Como Contas também é terracota, ali "hoje" se marca com selo e texto ("Vence hoje"), não só pela
+cor. Do mesmo jeito, "feito/tomado" é verde como Remédios: o sinal de feito vem do ícone (check),
+não da cor.
 
 ### Cor por área
 
 Cada área tem um par **tinta + fundo** (contraste ≥ 4,8:1 entre eles). Uso: o "selo" do ícone da
-área (quadradinho arredondado com fundo claro e ícone na tinta), a fita da área no cabeçalho,
-marcadores na lista do Hoje. Texto corrido continua no grafite.
+área (quadradinho arredondado com fundo claro e ícone na tinta), marcadores na lista do Hoje e
+a fita da área embaixo do cabeçalho — esta na cor de **fundo** (as tintas somem sobre o petróleo;
+os fundos dão 7,5–8:1 nele). Texto corrido continua no grafite.
 
 | Área | Tinta | Fundo |
 |---|---|---|
@@ -65,7 +71,7 @@ marcadores na lista do Hoje. Texto corrido continua no grafite.
 | Compromissos | `#8A5A00` | `#F6E7C6` |
 | Viagens | `#2D5C8A` | `#DCE6F2` |
 | Compras | `#7A3F6B` | `#F0DDEA` |
-| Programa de rádio | `#8B3A2E` | `#F4DCD6` |
+| Programa de rádio | `#4A4A8C` | `#E3E2F3` |
 | Atividade física | `#4F6B1F` | `#E6EDD3` |
 | Fisioterapia | `#3B5F73` | `#DDE8EE` |
 
@@ -92,12 +98,12 @@ espaçamento, não de outra fonte.
 
 - **Cabeçalho cheio**: cada tela começa com uma faixa petróleo (título em creme, subtítulo em
   petróleo claro, ação principal à direita), que se estende por trás da barra de status do
-  celular (`theme-color` = petróleo). Embaixo dela, uma fita fina na cor da área.
+  celular (`theme-color` = petróleo). Embaixo dela, uma fita fina na cor de fundo da área.
 - **Corpo creme**: o conteúdo fica direto no papel. Grupos com título de seção e linhas.
 - **Barra inferior** (celular): folha creme com sombra para cima, sem borda. Item ativo com o ícone
   preenchido na cor da área e a fita terracota em cima.
 - **Barra lateral** (desktop): petróleo, como a lombada da agenda, com os itens em creme; o ativo
-  tem fundo petróleo mais escuro e a fita terracota.
+  tem fundo `--petroleo-escuro` e a fita terracota.
 - **Botão principal**: petróleo sólido. **De apoio**: contorno petróleo sobre o papel.
   **Perigo**: vinho. Botões de criar ("Novo agendamento") são grandes e no cabeçalho ou fixos
   embaixo, ao alcance do polegar.
@@ -129,7 +135,8 @@ toque de terracota. Onde: telas vazias de cada área, login/cadastro, página n�
 ## Marca
 
 O nome do app ainda não foi decidido (ver pendências). Até lá: símbolo sem texto — um marcador de
-página terracota sobre um quadrado petróleo arredondado — usado no favicon, nos ícones do PWA
+página na `--terracota-marca` (a terracota viva some no petróleo em 16px) sobre um quadrado
+petróleo arredondado — usado no favicon, nos ícones do PWA
 (`web/public/`, incluindo o maskable com área segura) e na tela de entrar. O nome escrito continua
 "Minha Assistente" e fica num lugar só, para trocar fácil.
 
