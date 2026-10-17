@@ -107,7 +107,7 @@ describe('aba Cartões', () => {
     expect(within(screen.getByRole('button', { name: /Nubank/ })).getByText('R$ 333,34')).toBeInTheDocument()
   })
 
-  test('fatura fechada é paga; compra que mexeria nela é recusada; aparece em Todas', async () => {
+  test('fatura fechada é paga; compra que mexeria nela é recusada; aparece na Lista de despesas', async () => {
     const usuario = userEvent.setup()
     // Fecha dia 5: compra de 01/10 está na fatura de outubro, já fechada em 13/10.
     cartaoDaMaria({ nome: 'Visa', diaFechamento: 5, diaVencimento: 15 })
@@ -128,7 +128,7 @@ describe('aba Cartões', () => {
     )
 
     await usuario.click(screen.getByRole('link', { name: 'Visa' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Todas' }))
+    await usuario.click(screen.getByRole('link', { name: 'Lista de despesas' }))
     const fatura = (await screen.findByRole('link', { name: /^Fatura Visa/ })).closest('tr') as HTMLElement
     expect(within(fatura).getByText('Visa')).toBeInTheDocument()
     expect(within(fatura).getByText('em 13/10/2026')).toBeInTheDocument()

@@ -155,7 +155,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
           id="hoje-vencidas"
           titulo={pagamentos.vencidos.length === 1 ? 'Conta vencida' : 'Contas vencidas'}
           detalhe={`${formatarCentavos(pagamentos.totalVencidoCentavos)} em atraso`}
-          link={{ para: '/pagamentos?status=pendente', rotulo: 'Ver pagamentos' }}
+          link={{ para: '/despesas?status=pendente', rotulo: 'Ver despesas' }}
           destaque
         >
           <ul className="flex flex-col gap-3">
@@ -221,7 +221,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
           id="hoje-a-vencer"
           titulo="Contas dos próximos 7 dias"
           detalhe={`${formatarCentavos(pagamentos.totalAVencerCentavos)} no total`}
-          link={{ para: '/pagamentos', rotulo: 'Ver pagamentos' }}
+          link={{ para: '/despesas', rotulo: 'Ver despesas' }}
         >
           <ul className="flex flex-col gap-3">
             {pagamentos.aVencer.map((p) => (

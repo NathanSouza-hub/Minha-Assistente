@@ -24,12 +24,16 @@ afterEach(() => {
 })
 afterAll(() => servidor.close())
 
+// Linha da tabela da Lista de despesas.
 const item = async (descricao: string) =>
   (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('tr') as HTMLElement
+// Cartão de conta numa aba do Cadastro de despesas.
+const cartao = async (descricao: string) =>
+  (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('li') as HTMLElement
 
 describe('lista de pagamentos', () => {
   test('mostra o mês atual com totais, vencidos em destaque e parcelas', async () => {
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     expect(await screen.findByRole('heading', { name: 'Outubro de 2026' })).toBeInTheDocument()
 
     const condominio = await item('Condomínio')
@@ -45,7 +49,7 @@ describe('lista de pagamentos', () => {
 
   test('navega entre meses e filtra por status', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await item('Condomínio')
 
     await usuario.click(screen.getByRole('radio', { name: 'Pagos' }))
@@ -54,12 +58,12 @@ describe('lista de pagamentos', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
     expect(await screen.findByRole('heading', { name: 'Novembro de 2026' })).toBeInTheDocument()
-    expect(await screen.findByText('Nenhuma conta com esses filtros')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhuma despesa com esses filtros')).toBeInTheDocument()
   })
 
   test('marcar como pago avisa e, sendo recorrente, cria a conta do mês seguinte', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await usuario.click(await screen.findByRole('button', { name: 'Marcar Condomínio como pago' }))
 
     expect(await screen.findByText('Condomínio marcado como pago.')).toBeInTheDocument()
@@ -71,7 +75,7 @@ describe('lista de pagamentos', () => {
 
   test('"Desfazer" volta o pagamento para pendente', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await usuario.click(await screen.findByRole('button', { name: 'Marcar Conta de luz como pago' }))
     await usuario.click(await screen.findByRole('button', { name: 'Desfazer' }))
     expect(await screen.findByRole('button', { name: 'Marcar Conta de luz como pago' })).toBeInTheDocument()
@@ -82,8 +86,8 @@ describe('tabela de contas', () => {
   test('mostra as colunas e a conta da equipe "A definir", paga informando o valor', async () => {
     const usuario = userEvent.setup()
     banco.membros[0].dias[0].valorPrevistoCentavos = null
-    renderizarApp('/pagamentos')
-    const tabela = await screen.findByRole('table', { name: 'Contas do mês' })
+    renderizarApp('/despesas')
+    const tabela = await screen.findByRole('table', { name: 'Despesas do mês' })
     expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual([
       'Descrição',
       'Valor',
@@ -115,7 +119,7 @@ describe('tabela de contas', () => {
 
   test('desfaz o pagamento e exclui a conta pela própria linha', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     const consulta = await item('Consulta cardiologista')
     await usuario.click(within(consulta).getByRole('button', { name: 'Desfazer pagamento de Consulta cardiologista' }))
     expect(
@@ -130,16 +134,45 @@ describe('tabela de contas', () => {
   })
 })
 
+describe('navegação', () => {
+  test('"Despesas" na barra abre a Lista de despesas; o Cadastro de despesas fica em "Mais"', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/')
+    // A barra de baixo do celular (a lateral do computador também se chama "Principal").
+    const barra = (await screen.findAllByRole('navigation', { name: 'Principal' })).find((nav) =>
+      within(nav).queryByRole('link', { name: 'Mais' }),
+    )!
+    expect(within(barra).queryByRole('link', { name: 'Contas' })).not.toBeInTheDocument()
+    await usuario.click(within(barra).getByRole('link', { name: 'Despesas' }))
+    expect(await screen.findByRole('heading', { name: 'Lista de despesas' })).toBeInTheDocument()
+
+    await usuario.click(within(barra).getByRole('link', { name: 'Mais' }))
+    await usuario.click(within(await screen.findByRole('main')).getByRole('link', { name: 'Cadastro de despesas' }))
+    expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
+  })
+
+  test('conta aberta pela Lista de despesas volta para ela ao salvar', async () => {
+    const usuario = userEvent.setup()
+    const { roteador } = renderizarApp('/despesas')
+    await usuario.click(within(await item('Exame de sangue')).getByRole('link', { name: 'Editar Exame de sangue' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Salvar alterações' }))
+    expect(await screen.findByRole('heading', { name: 'Lista de despesas' })).toBeInTheDocument()
+    expect(roteador.state.location.pathname).toBe('/despesas')
+  })
+})
+
 describe('abas de categoria', () => {
-  test('cada categoria é uma aba que filtra a lista e fica na URL', async () => {
+  test('cada categoria é uma aba que filtra a lista e fica na URL; sem aba abre na primeira', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await item('Condomínio')
-    expect(screen.getByRole('button', { name: 'Todas', pressed: true })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
+    expect(await cartao('Consulta cardiologista')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Consultas', pressed: true })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Todas' })).not.toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Exames' }))
-    expect(await item('Exame de sangue')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
+    expect(await cartao('Exame de sangue')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Consulta cardiologista/ })).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Consultas' }))
@@ -150,7 +183,7 @@ describe('abas de categoria', () => {
   test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await item('Condomínio')
+    await cartao('Consulta cardiologista')
 
     await usuario.click(screen.getByRole('button', { name: 'Nova' }))
     await usuario.type(screen.getByLabelText('Nome da categoria'), 'exames{Enter}')
@@ -167,9 +200,9 @@ describe('abas de categoria', () => {
   test('conta nova aberta numa aba já vem com a categoria e volta para a aba', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await item('Condomínio')
+    await cartao('Consulta cardiologista')
     await usuario.click(screen.getByRole('button', { name: 'Exames' }))
-    await item('Exame de sangue')
+    await cartao('Exame de sangue')
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
 
     expect(await screen.findByLabelText('Categoria')).toHaveDisplayValue('Exames')
@@ -177,7 +210,7 @@ describe('abas de categoria', () => {
     await usuario.type(screen.getByLabelText('Valor'), '180')
     await usuario.click(screen.getByRole('button', { name: 'Criar pagamento' }))
 
-    expect(await item('Raio X')).toBeInTheDocument()
+    expect(await cartao('Raio X')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
   })
 })
@@ -223,7 +256,7 @@ describe('formulário de pagamento', () => {
 
   test('edita o valor de um pagamento', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await usuario.click(await screen.findByRole('link', { name: /^Exame de sangue/ }))
     const valor = await screen.findByLabelText('Valor')
     expect(valor).toHaveValue('180,00')
@@ -235,7 +268,7 @@ describe('formulário de pagamento', () => {
 
   test('exclui depois de confirmar', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await usuario.click(await screen.findByRole('link', { name: /^Exame de sangue/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Excluir pagamento' }))
     const dialogo = await screen.findByRole('alertdialog')
@@ -300,7 +333,7 @@ describe('contas residenciais', () => {
   test('os imóveis viram sub-abas e a conta nova já vem com o imóvel escolhido', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await item('Condomínio')
+    await cartao('Consulta cardiologista')
     // Fora da aba residencial, nada de sub-abas de imóvel
     expect(screen.queryByRole('group', { name: 'Imóveis' })).not.toBeInTheDocument()
 
@@ -311,11 +344,11 @@ describe('contas residenciais', () => {
       'Apartamento cobertura',
       'Casa da Serra',
     ])
-    expect(await item('Conta de luz')).toBeInTheDocument()
+    expect(await cartao('Conta de luz')).toBeInTheDocument()
 
     await usuario.click(within(imoveis).getByRole('button', { name: 'Casa da Serra' }))
     await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
-    expect(await item('Conta de luz')).toBeInTheDocument()
+    expect(await cartao('Conta de luz')).toBeInTheDocument()
 
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
     expect(await screen.findByLabelText('Imóvel (opcional)')).toHaveDisplayValue('Casa da Serra')
@@ -330,7 +363,7 @@ describe('comprovantes', () => {
 
   test('paga hoje, a conta convida a anexar o comprovante; anexa, aparece na lista e exclui; anexa, aparece na lista e exclui', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    renderizarApp('/despesas')
     await usuario.click(await screen.findByRole('button', { name: 'Marcar Condomínio como pago' }))
     await usuario.click(await screen.findByRole('link', { name: 'Anexar comprovante de Condomínio' }))
 
@@ -342,7 +375,7 @@ describe('comprovantes', () => {
     expect(banco.comprovantes).toHaveLength(1)
 
     // Na lista de contas, o clipe mostra que tem comprovante.
-    await usuario.click(within(screen.getByRole('main')).getByRole('link', { name: 'Contas' }))
+    await usuario.click(within(screen.getByRole('main')).getByRole('link', { name: 'Lista de despesas' }))
     const condominio = await item('Condomínio')
     expect(within(condominio).getByRole('img', { name: 'Com comprovante' })).toBeInTheDocument()
     expect(within(condominio).queryByRole('link', { name: /Anexar comprovante/ })).not.toBeInTheDocument()

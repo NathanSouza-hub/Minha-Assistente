@@ -111,7 +111,7 @@ function BarraInferior() {
                       <span aria-hidden className="absolute top-0 h-1 w-10 rounded-b-full bg-hoje" />
                     )}
                     <Icone className="size-7" strokeWidth={marcar(isActive) ? 2.4 : 1.8} aria-hidden />
-                    {item.rotulo}
+                    {item.rotuloCurto ?? item.rotulo}
                   </>
                 )}
               </NavLink>

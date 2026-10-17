@@ -81,17 +81,21 @@ npm run lint                                  # oxlint
   lembrete chama `convidar()` de `useConvidarNotificacoes` depois de salvar (uma vez por aparelho,
   nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. Nos testes,
   `src/test/pushFalso.ts` simula `Notification`, `PushManager` e o service worker.
-- **Contas** (`/pagamentos`, rótulo "Contas"): cada categoria do usuário é uma aba (`?aba=<id>`,
-  filtra por `categoriaId`; aba de categoria que não existe vira "Todas"). "+ Nova" (aba) e
+- **Lista de despesas** (`/despesas`, "Despesas" na barra do celular, `paginas/pagamentos/ListaDespesas.tsx`):
+  tudo do mês em tabela (`TabelaContas.tsx`: contas, faturas e equipe, com pagar/desfazer/editar/excluir
+  na linha), com mês, status e filtros recolhidos de categoria (`?categoria=`) e imóvel. No celular a
+  linha mostra só descrição, valor, vencimento e pagar (o resto a partir de `lg`). As contas abertas
+  dela levam `?voltar=despesas` (`filtros.ts`) e o formulário volta para ela. Pagar e desfazer ficam em
+  `marcarComoPago.ts` (também usado por `ItemPagamento`, no painel e na equipe).
+- **Cadastro de despesas** (`/pagamentos`, no "Mais" do celular): cada categoria do usuário é uma aba
+  (`?aba=<id>`, filtra por `categoriaId`; sem aba ou aba apagada abre na primeira categoria — não há
+  "Todas"), mais "Salários equipe" e "Cartões". "+ Nova" (aba) e
   "+ Nova categoria…" (formulário de conta) usam `paginas/categorias/FormCategoria.tsx`, que não é um
   `<form>` (aparece dentro do formulário de conta): envia pelo botão ou Enter. A conta nova aberta
-  numa aba vem com a categoria dela e volta para a aba. Categorias também se gerenciam em Mais →
-  Categorias (renomear, subir/descer, excluir). Na aba cujo nome contém "residen" (Contas
-  residenciais), os imóveis viram sub-abas (`?imovel=`) e a conta nova já vem com o imóvel; nas
-  outras, o imóvel é um filtro recolhido. "Todas" e as abas de categoria mostram as contas do mês em
-  tabela (`paginas/pagamentos/TabelaContas.tsx`: contas, faturas e equipe, com pagar/desfazer/editar/
-  excluir na linha); no celular só descrição, valor, vencimento e pagar (o resto a partir de `lg`).
-  Pagar e desfazer ficam em `marcarComoPago.ts` (também usado por `ItemPagamento`, no painel e na equipe).
+  numa aba vem com a categoria dela e volta para a aba (sem aba, para a aba da categoria da conta).
+  Categorias também se gerenciam em Mais → Categorias (renomear, subir/descer, excluir). Na aba cujo
+  nome contém "residen" (Contas residenciais), os imóveis viram sub-abas (`?imovel=`) e a conta nova
+  já vem com o imóvel; nas outras, o imóvel é um filtro recolhido.
 - **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
   de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
   `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem

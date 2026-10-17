@@ -11,6 +11,7 @@ const hoje = () => import('@/paginas/Hoje').then((m) => ({ Component: m.Hoje }))
 const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
 const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
 const pagamentos = () => import('@/paginas/pagamentos/Pagamentos').then((m) => ({ Component: m.Pagamentos }))
+const despesas = () => import('@/paginas/pagamentos/ListaDespesas').then((m) => ({ Component: m.ListaDespesas }))
 const paginaPagamento = () =>
   import('@/paginas/pagamentos/PaginaPagamento').then((m) => ({ Component: m.PaginaPagamento }))
 const paginaMembro = () =>
@@ -73,6 +74,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'radio', lazy: agendaDoTipo('programa_radio', '/radio') },
           { path: 'atividade-fisica', lazy: agendaDoTipo('atividade_fisica', '/atividade-fisica') },
           { path: 'fisioterapia', lazy: agendaDoTipo('fisioterapia', '/fisioterapia') },
+          { path: 'despesas', lazy: despesas },
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },
