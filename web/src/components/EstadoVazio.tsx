@@ -1,15 +1,27 @@
-import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 
-type Props = { icone: LucideIcon; titulo: string; children?: ReactNode; acao?: ReactNode }
+type Props = {
+  /** Ícone da área (Phosphor ou Lucide), mostrado num selo na cor da tela. */
+  icone: ComponentType<{ className?: string }>
+  /** Desenho de `components/ilustracoes/`; quando vem, ocupa o lugar do selo. */
+  ilustracao?: ReactNode
+  titulo: string
+  children?: ReactNode
+  acao?: ReactNode
+}
 
-export function EstadoVazio({ icone: Icone, titulo, children, acao }: Props) {
+/** Tela ou lista vazia: direto no papel, com o próximo passo à mão. */
+export function EstadoVazio({ icone: Icone, ilustracao, titulo, children, acao }: Props) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed bg-card p-6">
-      <Icone className="size-8 text-primary" aria-hidden />
+    <div className="flex flex-col items-center gap-3 px-2 py-8 text-center">
+      {ilustracao ?? (
+        <span className="selo-area mb-1 size-16 rounded-2xl" aria-hidden>
+          <Icone className="size-9" />
+        </span>
+      )}
       <h2 className="text-xl font-bold">{titulo}</h2>
       {children && <div className="max-w-prose text-muted-foreground">{children}</div>}
-      {acao}
+      {acao && <div className="mt-2">{acao}</div>}
     </div>
   )
 }

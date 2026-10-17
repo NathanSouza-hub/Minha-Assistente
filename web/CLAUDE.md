@@ -154,6 +154,17 @@ npm run lint                                  # oxlint
 ## Design
 
 Público com pouca intimidade com tecnologia, uso no celular com uma mão: base de 18px, fonte
-Atkinson Hyperlegible Next, áreas de toque ≥ 44px, linguagem simples. Paleta "agenda de capa
-dura" em `src/index.css`: papel `--papel`, tinta azul-petróleo `--primary`, açafrão `--hoje`
-(só para marcar o dia/item ativo — a "fita" marcadora) e `--atraso` para vencidos.
+Atkinson Hyperlegible Next, áreas de toque ≥ 44px, linguagem simples. A identidade visual
+(paleta, cor por área, tom dos textos, ícones, ilustrações) está em `../docs/identidade-visual.md`;
+os tokens em `src/index.css`. Na prática:
+- Cores: papel creme `bg-papel`, folha `bg-folha` (superfícies), `bg-areia`, petróleo `--primary`,
+  terracota `text-terracota`/`bg-hoje` (fita do dia/item ativo), `--atraso` (vinho) para vencidos,
+  `--ok` para pago/tomado. Sombra `shadow-folha` no lugar de borda cinza.
+- **`.capa`**: superfície petróleo (cabeçalho do `Pagina`, barra lateral, `LayoutVisitante`).
+  Dentro dela as cores se invertem (`text-primary`, `text-muted-foreground`, botão padrão), então o
+  conteúdo de `cabecalho`/`acoes` usa as classes de sempre.
+- **Cor por área**: `areaDaRota()` em `app/navegacao.ts` dá a área da tela; `Pagina` põe a classe
+  `area-<nome>`, e quem está dentro usa `text-area`, `bg-area`, `bg-area-fundo` ou `.selo-area`
+  (ícone num quadradinho na cor da área). Rota nova fora do menu: incluir em `outrasRotas`.
+- Ícones: Phosphor (`@phosphor-icons/react`, nomes com sufixo `Icon`; `weight="fill"` no ativo).
+  O Lucide sai aos poucos, tela a tela. Botão `variant="quente"` = terracota.

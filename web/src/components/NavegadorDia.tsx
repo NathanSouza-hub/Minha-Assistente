@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { hojeISO, rotuloDoDia, somarDias } from '@/lib/datas'
 
@@ -6,15 +6,15 @@ import { hojeISO, rotuloDoDia, somarDias } from '@/lib/datas'
 export function NavegadorDia({ data, aoMudar }: { data: string; aoMudar: (data: string) => void }) {
   return (
     <div className="flex flex-col gap-2">
-      <nav aria-label="Dia" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
+      <nav aria-label="Dia" className="flex items-center justify-between gap-2 rounded-xl bg-folha p-1 shadow-folha">
         <Button variant="ghost" size="icon" onClick={() => aoMudar(somarDias(data, -1))} aria-label="Dia anterior">
-          <ChevronLeft className="size-7" aria-hidden />
+          <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
         </Button>
         <h2 className="text-center text-lg font-bold min-[400px]:text-xl" aria-live="polite">
           {rotuloDoDia(data)}
         </h2>
         <Button variant="ghost" size="icon" onClick={() => aoMudar(somarDias(data, 1))} aria-label="Próximo dia">
-          <ChevronRight className="size-7" aria-hidden />
+          <CaretRightIcon className="size-7" weight="bold" aria-hidden />
         </Button>
       </nav>
       {data !== hojeISO() && (

@@ -1,5 +1,5 @@
 import { useId, useState, type ComponentProps } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -44,7 +44,7 @@ export function Campo({ rotulo, erro, dica, prefixo, type, className, ...props }
             aria-pressed={mostrarSenha}
             className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-lg text-muted-foreground hover:text-foreground"
           >
-            {mostrarSenha ? <EyeOff className="size-6" aria-hidden /> : <Eye className="size-6" aria-hidden />}
+            {mostrarSenha ? <EyeSlashIcon className="size-6" aria-hidden /> : <EyeIcon className="size-6" aria-hidden />}
           </button>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useId, type ComponentProps, type ReactNode } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { CaretDownIcon } from '@phosphor-icons/react'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
@@ -21,14 +21,14 @@ export function Selecao({ rotulo, erro, dica, className, children, ...props }: P
           aria-invalid={erro ? true : undefined}
           aria-describedby={descricoes}
           className={cn(
-            'h-12 w-full appearance-none rounded-lg border border-input bg-card pr-12 pl-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
+            'h-12 w-full appearance-none rounded-lg border-2 border-input bg-folha pr-12 pl-3 text-base outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
             className,
           )}
           {...props}
         >
           {children}
         </select>
-        <ChevronDown
+        <CaretDownIcon
           className="pointer-events-none absolute top-1/2 right-3 size-6 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />

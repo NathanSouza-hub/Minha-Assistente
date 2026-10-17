@@ -1,5 +1,5 @@
 import { useId, useState, type ChangeEvent } from 'react'
-import { Download, FileText, Image, Paperclip, Trash2 } from 'lucide-react'
+import { DownloadSimpleIcon, FilePdfIcon, ImageIcon, PaperclipIcon, TrashIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Confirmar } from '@/components/Confirmar'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -97,7 +97,7 @@ export function ListaArquivos({ titulo, descricao, arquivos, maximo, textos: t, 
       )}
 
       {enviando ? (
-        <p role="status" className="rounded-xl border border-dashed bg-card p-4 font-semibold">
+        <p role="status" className="rounded-xl bg-areia p-4 font-semibold">
           Enviando {enviando}…
         </p>
       ) : vagas > 0 ? (
@@ -110,7 +110,7 @@ export function ListaArquivos({ titulo, descricao, arquivos, maximo, textos: t, 
               'w-full cursor-pointer peer-focus-visible:ring-3 peer-focus-visible:ring-ring/50 sm:w-auto',
             )}
           >
-            <Paperclip aria-hidden />
+            <PaperclipIcon aria-hidden />
             {t.botao}
           </label>
         </div>
@@ -135,7 +135,7 @@ function ItemArquivo({
   excluir: Props['excluir']
 }) {
   const [baixando, setBaixando] = useState(false)
-  const Icone = a.mimeType === 'application/pdf' ? FileText : Image
+  const Icone = a.mimeType === 'application/pdf' ? FilePdfIcon : ImageIcon
 
   function aoBaixar() {
     setBaixando(true)
@@ -145,9 +145,9 @@ function ItemArquivo({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-3 rounded-xl bg-folha p-4 shadow-folha sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <Icone className="size-7 shrink-0 text-primary" aria-hidden />
+        <span className="selo-area size-11" aria-hidden><Icone className="size-6" /></span>
         <div className="min-w-0">
           <p className="font-semibold break-words">{a.nomeOriginal}</p>
           <p className="text-base text-muted-foreground">
@@ -163,13 +163,13 @@ function ItemArquivo({
           disabled={baixando}
           aria-label={`Baixar ${a.nomeOriginal}`}
         >
-          <Download aria-hidden />
+          <DownloadSimpleIcon aria-hidden />
           {baixando ? 'Baixando…' : 'Baixar'}
         </Button>
         <Confirmar
           gatilho={
             <Button variant="destructive" size="icon" aria-label={`Excluir ${a.nomeOriginal}`}>
-              <Trash2 aria-hidden />
+              <TrashIcon aria-hidden />
             </Button>
           }
           titulo={`Excluir ${a.nomeOriginal}?`}

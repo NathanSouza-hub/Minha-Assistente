@@ -1,4 +1,4 @@
-import { KeyRound, LogOut } from 'lucide-react'
+import { KeyIcon, SignOutIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useSessao } from '@/app/useSessao'
@@ -17,12 +17,12 @@ export function Conta({ className }: { className?: string }) {
       </div>
       <Button asChild variant="outline" className="w-full justify-start">
         <Link to="/conta/senha">
-          <KeyRound aria-hidden />
+          <KeyIcon aria-hidden />
           Trocar senha
         </Link>
       </Button>
       <Button variant="outline" onClick={sair} className="w-full justify-start">
-        <LogOut aria-hidden />
+        <SignOutIcon aria-hidden />
         Sair da conta
       </Button>
     </div>

@@ -27,51 +27,110 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  /* Marca o que é de hoje (data no cabeçalho, item ativo da navegação). */
+
+  --color-papel: var(--papel);
+  --color-folha: var(--folha);
+  --color-areia: var(--areia);
+  --color-linha: var(--linha);
+  --color-petroleo: var(--tinta);
+  --color-petroleo-escuro: var(--petroleo-escuro);
+  --color-petroleo-claro: var(--petroleo-claro);
+  --color-terracota: var(--terracota);
+  --color-terracota-viva: var(--terracota-viva);
+  --color-terracota-clara: var(--terracota-clara);
+  --color-ok: var(--ok);
+  --color-ok-fundo: var(--ok-fundo);
+  /* Marca o que é de hoje e o item ativo (a "fita" marcadora): terracota. */
   --color-hoje: var(--hoje);
-  /* Atrasado/vencido. */
+  /* Atrasado/vencido: vinho, para não se confundir com a terracota. */
   --color-atraso: var(--atraso);
-  /* Séries do relatório de gastos (paleta validada: contraste e daltonismo). */
+  --color-atraso-fundo: var(--atraso-fundo);
+  /* Cor da área da tela aberta (definida pelo layout a partir da rota). */
+  --color-area: var(--area);
+  --color-area-fundo: var(--area-fundo);
+  /* Séries do relatório de gastos. */
   --color-serie-pago: var(--serie-pago);
   --color-serie-previsto: var(--serie-previsto);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-xl: calc(var(--radius) * 1.3);
+  --radius-2xl: calc(var(--radius) * 1.7);
+
+  /* Sombra quente e baixa: separa sem precisar de borda cinza. */
+  --shadow-folha: 0 1px 2px rgb(43 36 32 / 0.06), 0 4px 12px rgb(43 36 32 / 0.05);
+  --shadow-barra: 0 -1px 2px rgb(43 36 32 / 0.05), 0 -6px 16px rgb(43 36 32 / 0.06);
 }
 
-/* Paleta "agenda de capa dura": papel frio, tinta azul-petróleo, açafrão para o dia. */
+/* Agenda de couro numa mesa de madeira: capa azul-petróleo, folhas creme, marcador terracota.
+   Guia completo (e contrastes medidos) em docs/identidade-visual.md. */
 :root {
-  --papel: #f5f6f2;
+  --papel: #f7f1e8;
+  --folha: #fffcf7;
+  --areia: #efe6d8;
+  --linha: #e2d6c4;
+  --grafite: #2b2420;
   --tinta: #0e4a5a;
-  --grafite: #1c262b;
-  --linha: #d9dde0;
+  --petroleo-escuro: #0a3945;
+  --petroleo-claro: #bfd6d9;
+  --terracota: #9a4527;
+  --terracota-viva: #c2603a;
+  --terracota-clara: #f6ddd0;
+  --ok: #2f6b45;
+  --ok-fundo: #ddebdd;
 
   --background: var(--papel);
   --foreground: var(--grafite);
-  --card: #ffffff;
+  --card: var(--folha);
   --card-foreground: var(--grafite);
-  --popover: #ffffff;
+  --popover: var(--folha);
   --popover-foreground: var(--grafite);
   --primary: var(--tinta);
-  --primary-foreground: #ffffff;
-  --secondary: #e2ebeb;
+  --primary-foreground: var(--folha);
+  --secondary: #dcebec;
   --secondary-foreground: var(--tinta);
-  --muted: #eceee9;
-  --muted-foreground: #4f5b61;
-  --accent: #e2ebeb;
-  --accent-foreground: var(--tinta);
-  --destructive: #b83227;
+  --muted: var(--areia);
+  --muted-foreground: #6b5d50;
+  --accent: var(--areia);
+  --accent-foreground: var(--grafite);
+  --destructive: #9e1f2c;
   --border: var(--linha);
-  --input: #9aa4a9;
+  --input: #8a7968;
   --ring: var(--tinta);
-  --hoje: #e3a21a;
-  --atraso: #b83227;
-  --serie-pago: #007f9a;
-  --serie-previsto: #c98200;
-  --radius: 0.75rem;
+  --hoje: var(--terracota-viva);
+  --atraso: #9e1f2c;
+  --atraso-fundo: #f5dcdc;
+  --serie-pago: var(--tinta);
+  --serie-previsto: var(--terracota-viva);
+  --radius: 0.875rem;
+
+  /* Áreas: tinta (ícone, fita) + fundo claro (selo). Contraste entre os dois ≥ 4,8:1. */
+  --area-agenda: #0e4a5a;
+  --area-agenda-fundo: #dcebec;
+  --area-contas: #9a4527;
+  --area-contas-fundo: #f6ddd0;
+  --area-remedios: #2f6b45;
+  --area-remedios-fundo: #ddebdd;
+  --area-compromissos: #8a5a00;
+  --area-compromissos-fundo: #f6e7c6;
+  --area-viagens: #2d5c8a;
+  --area-viagens-fundo: #dce6f2;
+  --area-compras: #7a3f6b;
+  --area-compras-fundo: #f0ddea;
+  --area-radio: #8b3a2e;
+  --area-radio-fundo: #f4dcd6;
+  --area-atividade: #4f6b1f;
+  --area-atividade-fundo: #e6edd3;
+  --area-fisioterapia: #3b5f73;
+  --area-fisioterapia-fundo: #dde8ee;
+  --area-hoje: var(--terracota);
+  --area-hoje-fundo: var(--terracota-clara);
+  --area-geral: var(--tinta);
+  --area-geral-fundo: #dcebec;
+
+  --area: var(--area-geral);
+  --area-fundo: var(--area-geral-fundo);
 }
 
 @layer base {
@@ -88,8 +147,16 @@
     @apply bg-background text-foreground antialiased;
     line-height: 1.5;
   }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
   :focus-visible {
-    outline: 3px solid var(--tinta);
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -101,3 +168,46 @@
     }
   }
 }
+
+@layer components {
+  /* Superfície da capa (cabeçalho, barra lateral): dentro dela as cores se invertem, então
+     `text-primary`, `text-muted-foreground` e o botão padrão continuam legíveis sobre o petróleo. */
+  .capa {
+    --foreground: var(--folha);
+    --muted-foreground: var(--petroleo-claro);
+    --primary: var(--folha);
+    --primary-foreground: var(--tinta);
+    --secondary: var(--petroleo-escuro);
+    --secondary-foreground: var(--folha);
+    --muted: var(--petroleo-escuro);
+    --accent: var(--petroleo-escuro);
+    --accent-foreground: var(--folha);
+    --border: rgb(255 252 247 / 0.22);
+    --ring: var(--folha);
+    background-color: var(--tinta);
+    color: var(--folha);
+  }
+
+  /* Selo de área: quadradinho arredondado com o fundo claro e o ícone na tinta da área. */
+  .selo-area {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    background-color: var(--area-fundo);
+    color: var(--area);
+  }
+}
+
+/* Uma classe por área: define --area/--area-fundo para quem estiver dentro. */
+.area-agenda { --area: var(--area-agenda); --area-fundo: var(--area-agenda-fundo); }
+.area-contas { --area: var(--area-contas); --area-fundo: var(--area-contas-fundo); }
+.area-remedios { --area: var(--area-remedios); --area-fundo: var(--area-remedios-fundo); }
+.area-compromissos { --area: var(--area-compromissos); --area-fundo: var(--area-compromissos-fundo); }
+.area-viagens { --area: var(--area-viagens); --area-fundo: var(--area-viagens-fundo); }
+.area-compras { --area: var(--area-compras); --area-fundo: var(--area-compras-fundo); }
+.area-radio { --area: var(--area-radio); --area-fundo: var(--area-radio-fundo); }
+.area-atividade { --area: var(--area-atividade); --area-fundo: var(--area-atividade-fundo); }
+.area-fisioterapia { --area: var(--area-fisioterapia); --area-fundo: var(--area-fisioterapia-fundo); }
+.area-hoje { --area: var(--area-hoje); --area-fundo: var(--area-hoje-fundo); }
+.area-geral { --area: var(--area-geral); --area-fundo: var(--area-geral-fundo); }

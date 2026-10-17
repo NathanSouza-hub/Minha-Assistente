@@ -48,8 +48,8 @@ export function Opcoes<T extends string>({
             className={cn(
               'text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
               formato === 'lista'
-                ? 'flex min-h-14 items-center gap-3 rounded-lg border border-input bg-card px-4 py-3 data-[state=checked]:border-primary data-[state=checked]:bg-secondary'
-                : 'min-h-11 rounded-lg px-2 text-center text-base font-semibold text-muted-foreground data-[state=checked]:bg-card data-[state=checked]:text-primary data-[state=checked]:shadow-sm',
+                ? 'flex min-h-14 items-center gap-3 rounded-lg border-2 border-linha bg-folha px-4 py-3 shadow-folha data-[state=checked]:border-primary data-[state=checked]:bg-secondary'
+                : 'min-h-11 rounded-lg px-2 text-center text-base font-semibold text-muted-foreground data-[state=checked]:bg-folha data-[state=checked]:text-primary data-[state=checked]:shadow-folha',
             )}
           >
             {formato === 'lista' && (
