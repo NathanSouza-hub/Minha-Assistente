@@ -88,7 +88,10 @@ npm run lint                                  # oxlint
   numa aba vem com a categoria dela e volta para a aba. Categorias também se gerenciam em Mais →
   Categorias (renomear, subir/descer, excluir). Na aba cujo nome contém "residen" (Contas
   residenciais), os imóveis viram sub-abas (`?imovel=`) e a conta nova já vem com o imóvel; nas
-  outras, o imóvel é um filtro recolhido.
+  outras, o imóvel é um filtro recolhido. "Todas" e as abas de categoria mostram as contas do mês em
+  tabela (`paginas/pagamentos/TabelaContas.tsx`: contas, faturas e equipe, com pagar/desfazer/editar/
+  excluir na linha); no celular só descrição, valor, vencimento e pagar (o resto a partir de `lg`).
+  Pagar e desfazer ficam em `marcarComoPago.ts` (também usado por `ItemPagamento`, no painel e na equipe).
 - **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
   de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
   `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem

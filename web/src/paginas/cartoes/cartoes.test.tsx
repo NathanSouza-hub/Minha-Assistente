@@ -129,11 +129,13 @@ describe('aba Cartões', () => {
 
     await usuario.click(screen.getByRole('link', { name: 'Visa' }))
     await usuario.click(await screen.findByRole('button', { name: 'Todas' }))
-    const fatura = (await screen.findByRole('link', { name: /^Fatura Visa/ })).closest('li') as HTMLElement
+    const fatura = (await screen.findByRole('link', { name: /^Fatura Visa/ })).closest('tr') as HTMLElement
     expect(within(fatura).getByText('Visa')).toBeInTheDocument()
-    expect(within(fatura).getByText('Pago em 13/10/2026')).toBeInTheDocument()
+    expect(within(fatura).getByText('em 13/10/2026')).toBeInTheDocument()
+    // A fatura vem das compras: não volta a pendente nem é excluída pela lista.
+    expect(within(fatura).queryByRole('button', { name: /Desfazer|Excluir/ })).not.toBeInTheDocument()
 
-    await usuario.click(within(fatura).getByRole('link'))
+    await usuario.click(within(fatura).getByRole('link', { name: /^Fatura Visa/ }))
     expect(await screen.findByRole('button', { name: /Visa/ })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('heading', { name: 'Outubro de 2026' })).toBeInTheDocument()
   })

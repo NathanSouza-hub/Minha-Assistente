@@ -1,21 +1,18 @@
 import { useState, type FormEvent } from 'react'
 import { CircleAlert, CircleCheck, Paperclip, Repeat } from 'lucide-react'
 import { Link } from 'react-router'
-import { toast } from 'sonner'
 import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
-import { useEditarPagamentoPorId, usePagarPagamento } from '@/consultas/pagamentos'
 import { dataCurta, descreverVencimento, hojeISO } from '@/lib/datas'
 import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
-import { paraEdicao } from './formulario'
+import { useMarcarComoPago } from './marcarComoPago'
 
 const textoRecorrencia = { mensal: 'Todo mês', anual: 'Todo ano' } as const
 
 export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
-  const pagar = usePagarPagamento()
-  const desfazer = useEditarPagamentoPorId()
+  const { marcar, marcando } = useMarcarComoPago()
   // Conta da equipe com valor a definir: "Pagar…" abre o campo do valor pago.
   const [pedindoValor, setPedindoValor] = useState(false)
   const [valorDigitado, setValorDigitado] = useState('')
@@ -31,29 +28,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
     ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}`
     : `/pagamentos/${p.id}`
 
-  function marcarComoPago(valorCentavos?: number) {
-    pagar.mutate(
-      { id: p.id, valorCentavos },
-      {
-        onSuccess: () => {
-          setPedindoValor(false)
-          toast.success(`${p.descricao} marcado como pago.`, {
-            description: p.recorrencia !== 'nenhuma' ? 'A conta do próximo período já foi criada.' : undefined,
-            action: p.cartaoId
-              ? undefined
-              : {
-                  label: 'Desfazer',
-                  onClick: () =>
-                    desfazer.mutate({
-                      id: p.id,
-                      dados: { ...paraEdicao(p), status: 'pendente', dataPagamento: null },
-                    }),
-                },
-          })
-        },
-      },
-    )
-  }
+  const marcarComoPago = (valorCentavos?: number) => marcar(p, valorCentavos, () => setPedindoValor(false))
 
   function confirmarValor(evento: FormEvent) {
     evento.preventDefault()
@@ -136,9 +111,9 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
               erro={erroValor}
             />
             <div className="flex gap-2">
-              <Button type="submit" disabled={pagar.isPending}>
+              <Button type="submit" disabled={marcando}>
                 <CircleCheck aria-hidden />
-                {pagar.isPending ? 'Marcando…' : 'Confirmar pagamento'}
+                {marcando ? 'Marcando…' : 'Confirmar pagamento'}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setPedindoValor(false)}>
                 Cancelar
@@ -149,12 +124,12 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
           <Button
             variant={p.vencido ? 'default' : 'outline'}
             onClick={() => (aDefinir ? setPedindoValor(true) : marcarComoPago())}
-            disabled={pagar.isPending}
+            disabled={marcando}
             aria-label={aDefinir ? `Pagar ${p.descricao}` : `Marcar ${p.descricao} como pago`}
             className="w-full sm:w-auto sm:self-start"
           >
             <CircleCheck aria-hidden />
-            {pagar.isPending ? 'Marcando…' : aDefinir ? 'Pagar…' : 'Marcar como pago'}
+            {marcando ? 'Marcando…' : aDefinir ? 'Pagar…' : 'Marcar como pago'}
           </Button>
         ))}
     </li>

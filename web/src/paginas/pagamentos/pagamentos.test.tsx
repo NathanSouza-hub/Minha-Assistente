@@ -25,7 +25,7 @@ afterEach(() => {
 afterAll(() => servidor.close())
 
 const item = async (descricao: string) =>
-  (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('li') as HTMLElement
+  (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('tr') as HTMLElement
 
 describe('lista de pagamentos', () => {
   test('mostra o mês atual com totais, vencidos em destaque e parcelas', async () => {
@@ -33,11 +33,14 @@ describe('lista de pagamentos', () => {
     expect(await screen.findByRole('heading', { name: 'Outubro de 2026' })).toBeInTheDocument()
 
     const condominio = await item('Condomínio')
-    expect(within(condominio).getByText('Venceu há 3 dias')).toBeInTheDocument()
+    expect(within(condominio).getByText('10/10/2026').closest('td')).toHaveClass('text-atraso')
+    expect(within(condominio).getByText('Atrasada')).toBeInTheDocument()
     expect(within(condominio).getByText('R$ 1.250,00')).toBeInTheDocument()
     expect(screen.getByText('1 conta vencida')).toBeInTheDocument()
     expect(screen.getByLabelText('parcela 2 de 3')).toBeInTheDocument()
-    expect(within(await item('Consulta cardiologista')).getByText('Pago em 07/10/2026')).toBeInTheDocument()
+    const consulta = await item('Consulta cardiologista')
+    expect(within(consulta).getByText('Pago')).toBeInTheDocument()
+    expect(within(consulta).getByText('em 07/10/2026')).toBeInTheDocument()
   })
 
   test('navega entre meses e filtra por status', async () => {
@@ -60,10 +63,10 @@ describe('lista de pagamentos', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Marcar Condomínio como pago' }))
 
     expect(await screen.findByText('Condomínio marcado como pago.')).toBeInTheDocument()
-    expect(await within(await item('Condomínio')).findByText('Pago em 13/10/2026')).toBeInTheDocument()
+    expect(await within(await item('Condomínio')).findByText('em 13/10/2026')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
-    expect(await within(await item('Condomínio')).findByText('Vence 10/11')).toBeInTheDocument()
+    expect(await within(await item('Condomínio')).findByText('10/11/2026')).toBeInTheDocument()
   })
 
   test('"Desfazer" volta o pagamento para pendente', async () => {
@@ -72,6 +75,58 @@ describe('lista de pagamentos', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Marcar Conta de luz como pago' }))
     await usuario.click(await screen.findByRole('button', { name: 'Desfazer' }))
     expect(await screen.findByRole('button', { name: 'Marcar Conta de luz como pago' })).toBeInTheDocument()
+  })
+})
+
+describe('tabela de contas', () => {
+  test('mostra as colunas e a conta da equipe "A definir", paga informando o valor', async () => {
+    const usuario = userEvent.setup()
+    banco.membros[0].dias[0].valorPrevistoCentavos = null
+    renderizarApp('/pagamentos')
+    const tabela = await screen.findByRole('table', { name: 'Contas do mês' })
+    expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual([
+      'Descrição',
+      'Valor',
+      'Vencimento',
+      'Parcelas',
+      'Fixo',
+      'Categoria',
+      'Status',
+      'Ações',
+    ])
+    const condominio = await item('Condomínio')
+    expect(within(condominio).getByText('R$ 1.250,00')).toBeInTheDocument()
+    // Parcelas "–" e Fixo "Sim" (todo mês).
+    expect(within(condominio).getByText('–')).toBeInTheDocument()
+    expect(within(condominio).getByText('Sim')).toBeInTheDocument()
+
+    const joana = await item('Joana')
+    expect(within(joana).getByText('A definir')).toBeInTheDocument()
+    expect(within(joana).getByRole('cell', { name: 'Salários equipe' })).toBeInTheDocument()
+    await usuario.click(within(joana).getByRole('button', { name: 'Pagar Joana' }))
+    const dialogo = await screen.findByRole('alertdialog', { name: 'Pagar Joana' })
+    await usuario.type(within(dialogo).getByLabelText('Valor pago a Joana'), '1.900,00')
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Confirmar pagamento' }))
+
+    expect(await screen.findByText('Joana marcado como pago.')).toBeInTheDocument()
+    expect(await within(await item('Joana')).findByText('R$ 1.900,00')).toBeInTheDocument()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  test('desfaz o pagamento e exclui a conta pela própria linha', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/pagamentos')
+    const consulta = await item('Consulta cardiologista')
+    await usuario.click(within(consulta).getByRole('button', { name: 'Desfazer pagamento de Consulta cardiologista' }))
+    expect(
+      await screen.findByRole('button', { name: 'Marcar Consulta cardiologista como pago' }),
+    ).toBeInTheDocument()
+
+    await usuario.click(within(await item('Exame de sangue')).getByRole('button', { name: 'Excluir Exame de sangue' }))
+    const dialogo = await screen.findByRole('alertdialog')
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Excluir conta' }))
+    expect(await screen.findByText('Exame de sangue excluído.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Exame de sangue/ })).not.toBeInTheDocument())
   })
 })
 
@@ -289,7 +344,7 @@ describe('comprovantes', () => {
     // Na lista de contas, o clipe mostra que tem comprovante.
     await usuario.click(within(screen.getByRole('main')).getByRole('link', { name: 'Contas' }))
     const condominio = await item('Condomínio')
-    expect(within(condominio).getByText('Com comprovante')).toBeInTheDocument()
+    expect(within(condominio).getByRole('img', { name: 'Com comprovante' })).toBeInTheDocument()
     expect(within(condominio).queryByRole('link', { name: /Anexar comprovante/ })).not.toBeInTheDocument()
 
     await usuario.click(screen.getByRole('link', { name: /^Condomínio/ }))

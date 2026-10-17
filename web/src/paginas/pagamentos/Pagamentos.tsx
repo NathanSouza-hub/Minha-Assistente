@@ -15,8 +15,8 @@ import { cn } from '@/lib/utils'
 import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
-import { ItemPagamento } from './ItemPagamento'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
+import { TabelaContas } from './TabelaContas'
 
 type FiltroStatus = 'todos' | StatusPagamento
 
@@ -178,6 +178,7 @@ function ListaDeContas({
   return (
     <Pagina
       titulo="Contas"
+      larga
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
@@ -292,11 +293,7 @@ function ListaDeContas({
             />
           )
         ) : (
-          <ul className="flex flex-col gap-3" aria-label={`Contas${ondeEstou} do mês`}>
-            {pagamentos.map((p) => (
-              <ItemPagamento key={p.id} pagamento={p} />
-            ))}
-          </ul>
+          <TabelaContas pagamentos={pagamentos} rotulo={`Contas${ondeEstou} do mês`} />
         )}
       </div>
     </Pagina>
