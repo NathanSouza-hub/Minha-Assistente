@@ -158,7 +158,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
           control={control}
           name="lembrete"
           render={({ field }) => (
-            <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+            <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
               <div className="flex items-center justify-between gap-4">
                 <Label htmlFor="lembrete" className="text-lg">
                   Lembrar na hora
@@ -177,7 +177,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             control={control}
             name="ativo"
             render={({ field }) => (
-              <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+              <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="ativa" className="text-lg">
                     Ativo

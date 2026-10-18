@@ -180,7 +180,7 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
             control={control}
             name="ativo"
             render={({ field }) => (
-              <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+              <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="em-uso" className="text-lg">
                     Em uso
@@ -255,7 +255,7 @@ function LinhaHorario({
   })
 
   return (
-    <li className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+    <li className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
       <div className="flex items-center justify-between gap-2">
         <span className="font-semibold text-muted-foreground">Horário {numero}</span>
         {podeRemover && (
