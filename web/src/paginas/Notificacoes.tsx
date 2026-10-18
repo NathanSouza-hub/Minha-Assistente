@@ -1,5 +1,17 @@
 import { useState, type ReactNode } from 'react'
-import { BellOff, BellRing, CalendarDays, ListChecks, Pill, Share, SquarePlus, Sun, Wallet } from 'lucide-react'
+import {
+  BellRingingIcon,
+  BellSlashIcon,
+  CalendarDotsIcon,
+  CheckSquareIcon,
+  ExportIcon,
+  PillIcon,
+  PlusSquareIcon,
+  SunIcon,
+  WalletIcon,
+  type Icon,
+} from '@phosphor-icons/react'
+import type { Area } from '@/app/navegacao'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
@@ -14,13 +26,15 @@ import {
   useSalvarResumo,
   useTestarNotificacao,
 } from '@/consultas/notificacoes'
+import { cn } from '@/lib/utils'
 
-const O_QUE_AVISA = [
-  { icone: CalendarDays, texto: 'Agendamentos, com a antecedência que você escolher' },
-  { icone: Pill, texto: 'Remédios, na hora de cada dose' },
-  { icone: ListChecks, texto: 'Compromissos que têm lembrete' },
-  { icone: Wallet, texto: 'Contas a pagar, na véspera e no dia, às 9h' },
-  { icone: Sun, texto: 'O resumo do dia, de manhã, na hora que você escolher' },
+// Cada aviso no selo da sua área, para reconhecer de relance.
+const O_QUE_AVISA: { icone: Icon; area: Area; texto: string }[] = [
+  { icone: CalendarDotsIcon, area: 'agenda', texto: 'Agendamentos, com a antecedência que você escolher' },
+  { icone: PillIcon, area: 'remedios', texto: 'Remédios, na hora de cada dose' },
+  { icone: CheckSquareIcon, area: 'compromissos', texto: 'Compromissos que têm lembrete' },
+  { icone: WalletIcon, area: 'contas', texto: 'Contas a pagar, na véspera e no dia, às 9h' },
+  { icone: SunIcon, area: 'hoje', texto: 'O resumo do dia, de manhã, na hora que você escolher' },
 ]
 
 /** Mais → Notificações: liga, testa e desliga os lembretes neste aparelho. */
@@ -32,7 +46,7 @@ export function Notificacoes() {
     <Pagina titulo="Notificações">
       <div className="flex flex-col gap-6">
         {consulta.isPending ? (
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-40" />
         ) : estado === 'ligado' ? (
           <Ligado />
         ) : estado === 'desligado' ? (
@@ -42,11 +56,11 @@ export function Notificacoes() {
         ) : estado === 'instalar-iphone' ? (
           <InstalarIphone />
         ) : estado === 'indisponivel' ? (
-          <Cartao icone={<BellOff className="size-8 text-muted-foreground" aria-hidden />} titulo="Ainda não disponível">
+          <Cartao icone={BellSlashIcon} tom="apagado" titulo="Ainda não disponível">
             <p>As notificações ainda não estão prontas neste aparelho. Recarregue a página e tente de novo.</p>
           </Cartao>
         ) : (
-          <Cartao icone={<BellOff className="size-8 text-muted-foreground" aria-hidden />} titulo="Este navegador não recebe notificações">
+          <Cartao icone={BellSlashIcon} tom="apagado" titulo="Este navegador não recebe notificações">
             <p>Use o Chrome, o Edge, o Firefox ou o Safari atualizados para receber os lembretes.</p>
           </Cartao>
         )}
@@ -55,10 +69,12 @@ export function Notificacoes() {
 
         <section className="flex flex-col gap-3">
           <h2 className="text-xl font-bold">O que é avisado</h2>
-          <ul className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-            {O_QUE_AVISA.map(({ icone: Icone, texto }) => (
-              <li key={texto} className="flex items-center gap-3">
-                <Icone className="size-6 shrink-0 text-primary" aria-hidden />
+          <ul className="flex flex-col divide-y divide-linha">
+            {O_QUE_AVISA.map(({ icone: Icone, area, texto }) => (
+              <li key={texto} className={`area-${area} flex items-center gap-4 py-3 first:pt-0`}>
+                <span className="selo-area size-11" aria-hidden>
+                  <Icone className="size-6" weight="fill" />
+                </span>
                 {texto}
               </li>
             ))}
@@ -75,7 +91,7 @@ function ResumoDaManha() {
   const salvar = useSalvarResumo()
   // Hora sendo digitada; salva ao sair do campo (não a cada dígito).
   const [editando, setEditando] = useState<string | null>(null)
-  if (consulta.isPending) return <Skeleton className="h-36 rounded-xl" />
+  if (consulta.isPending) return <Skeleton className="h-36" />
   if (!consulta.data) return null
   const { ativo, hora } = consulta.data
 
@@ -92,7 +108,7 @@ function ResumoDaManha() {
       <h2 id="resumo-titulo" className="text-xl font-bold">
         Resumo da manhã
       </h2>
-      <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+      <div className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="resumo-ativo" className="text-lg">
             Receber o resumo do dia
@@ -122,11 +138,23 @@ function ResumoDaManha() {
   )
 }
 
-function Cartao({ icone, titulo, children }: { icone: ReactNode; titulo: string; children: ReactNode }) {
+type Tom = 'area' | 'ok' | 'apagado' | 'atraso'
+
+const TONS: Record<Tom, string> = {
+  area: 'bg-area-fundo text-area',
+  ok: 'bg-ok-fundo text-ok',
+  apagado: 'bg-areia text-muted-foreground',
+  atraso: 'bg-atraso-fundo text-atraso',
+}
+
+/** O estado do aparelho é um objeto de verdade: folha com sombra e o sino num selo. */
+function Cartao({ icone: Icone, tom = 'area', titulo, children }: { icone: Icon; tom?: Tom; titulo: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+    <section className="flex flex-col gap-4 rounded-2xl bg-folha p-5 shadow-folha">
       <div className="flex items-center gap-3">
-        {icone}
+        <span className={cn('grid size-12 shrink-0 place-items-center rounded-lg', TONS[tom])} aria-hidden>
+          <Icone className="size-7" weight="fill" />
+        </span>
         <h2 className="text-xl font-bold">{titulo}</h2>
       </div>
       <div className="flex flex-col gap-4 text-lg">{children}</div>
@@ -138,7 +166,7 @@ function Ligado() {
   const testar = useTestarNotificacao()
   const desativar = useDesativarNotificacoes()
   return (
-    <Cartao icone={<BellRing className="size-8 text-primary" aria-hidden />} titulo="Ligadas neste aparelho">
+    <Cartao icone={BellRingingIcon} tom="ok" titulo="Ligadas neste aparelho">
       <p>Os lembretes chegam aqui mesmo com o app fechado.</p>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button size="lg" onClick={() => testar.mutate()} disabled={testar.isPending}>
@@ -155,10 +183,10 @@ function Ligado() {
 function Desligado() {
   const ativar = useAtivarNotificacoes()
   return (
-    <Cartao icone={<BellOff className="size-8 text-muted-foreground" aria-hidden />} titulo="Desligadas neste aparelho">
+    <Cartao icone={BellSlashIcon} tom="apagado" titulo="Desligadas neste aparelho">
       <p>Ative para receber os lembretes mesmo com o app fechado. O aparelho vai pedir sua permissão.</p>
       <Button size="lg" className="sm:self-start" onClick={() => ativar.mutate()} disabled={ativar.isPending}>
-        <BellRing aria-hidden />
+        <BellRingingIcon aria-hidden />
         {ativar.isPending ? 'Ativando…' : 'Ativar notificações'}
       </Button>
     </Cartao>
@@ -167,7 +195,7 @@ function Desligado() {
 
 function Bloqueado() {
   return (
-    <Cartao icone={<BellOff className="size-8 text-atraso" aria-hidden />} titulo="Bloqueadas neste aparelho">
+    <Cartao icone={BellSlashIcon} tom="atraso" titulo="Bloqueadas neste aparelho">
       <p>As notificações foram recusadas. Para receber os lembretes, libere de novo:</p>
       <ol className="ml-6 flex list-decimal flex-col gap-2">
         <li>
@@ -186,12 +214,12 @@ function Bloqueado() {
 
 function InstalarIphone() {
   return (
-    <Cartao icone={<SquarePlus className="size-8 text-primary" aria-hidden />} titulo="No iPhone, instale o app primeiro">
+    <Cartao icone={PlusSquareIcon} titulo="No iPhone, instale o app primeiro">
       <p>O iPhone só manda notificações para apps instalados na Tela de Início (iOS 16.4 ou mais novo).</p>
       <ol className="flex flex-col gap-4" aria-label="Como instalar">
         <Passo numero={1}>
           No Safari, toque em <strong>Compartilhar</strong>{' '}
-          <Share className="inline size-5 align-text-bottom text-primary" aria-label="(o quadrado com a seta para cima)" />{' '}
+          <ExportIcon className="inline size-5 align-text-bottom text-primary" aria-label="(o quadrado com a seta para cima)" />{' '}
           na barra de baixo.
         </Passo>
         <Passo numero={2}>
