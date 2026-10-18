@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, CircleCheck, CreditCard, Pencil, Plus } from 'lucide-react'
+import { CaretLeftIcon, CaretRightIcon, CheckCircleIcon, CreditCardIcon, PencilSimpleIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -43,7 +43,7 @@ function CartaoDesenhado({
     >
       <span className="flex items-start justify-between gap-2">
         <span className="text-lg leading-tight font-bold">{c.nome}</span>
-        <CreditCard className="size-6 shrink-0 opacity-80" aria-hidden />
+        <CreditCardIcon className="size-6 shrink-0 opacity-80" aria-hidden />
       </span>
       {c.final && (
         <span className="font-mono text-base tracking-widest" aria-label={`final ${c.final}`}>
@@ -83,23 +83,23 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
 
   return (
     <section className="flex flex-col gap-4" aria-label={`Fatura do ${cartao.nome}`}>
-      <nav aria-label="Mês da fatura" className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1">
+      <nav aria-label="Mês da fatura" className="flex items-center justify-between gap-2">
         <Button variant="ghost" size="icon" onClick={() => aoMudarMes(somarMeses(mes, -1))} aria-label="Fatura anterior">
-          <ChevronLeft className="size-7" aria-hidden />
+          <CaretLeftIcon weight="bold" className="size-7" aria-hidden />
         </Button>
         <h2 className="text-xl font-bold" aria-live="polite">
           {nomeDoMes(mes)}
         </h2>
         <Button variant="ghost" size="icon" onClick={() => aoMudarMes(somarMeses(mes, 1))} aria-label="Próxima fatura">
-          <ChevronRight className="size-7" aria-hidden />
+          <CaretRightIcon weight="bold" className="size-7" aria-hidden />
         </Button>
       </nav>
 
       {!fatura ? (
-        <Skeleton className="h-32 rounded-xl" role="status" aria-label="Carregando fatura" />
+        <Skeleton className="h-32" role="status" aria-label="Carregando fatura" />
       ) : (
         <>
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+          <div className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col">
                 <span className="text-base text-muted-foreground">Total da fatura</span>
@@ -108,9 +108,9 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
               <span
                 className={cn(
                   'rounded-full px-3 py-1 font-semibold',
-                  fatura.situacao === 'paga' && 'bg-primary text-primary-foreground',
-                  fatura.situacao === 'fechada' && 'bg-hoje/25',
-                  fatura.situacao === 'aberta' && 'bg-muted',
+                  fatura.situacao === 'paga' && 'bg-ok-fundo text-ok',
+                  fatura.situacao === 'fechada' && 'bg-terracota-clara text-terracota',
+                  fatura.situacao === 'aberta' && 'bg-areia',
                 )}
               >
                 {textoSituacao[fatura.situacao]}
@@ -122,13 +122,13 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
             <div className="flex flex-col gap-2 sm:flex-row">
               {fatura.situacao === 'fechada' && fatura.pagamentoId && (
                 <Button onClick={pagarFatura} disabled={pagar.isPending}>
-                  <CircleCheck aria-hidden />
+                  <CheckCircleIcon aria-hidden />
                   {pagar.isPending ? 'Pagando…' : 'Pagar fatura'}
                 </Button>
               )}
               <Button asChild variant={fatura.situacao === 'fechada' ? 'outline' : 'default'}>
                 <Link to={`/cartoes/${cartao.id}/compras/nova?mes=${mes}`}>
-                  <Plus aria-hidden />
+                  <PlusIcon weight="bold" aria-hidden />
                   Adicionar compra
                 </Link>
               </Button>
@@ -136,16 +136,16 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
           </div>
 
           {fatura.parcelas.length === 0 ? (
-            <p className="rounded-xl border border-dashed p-4 text-center text-muted-foreground">
+            <p className="rounded-2xl border-2 border-dashed border-linha p-4 text-center text-muted-foreground">
               Nenhuma compra nesta fatura.
             </p>
           ) : (
-            <ul className="flex flex-col gap-2" aria-label="Compras da fatura">
+            <ul className="flex flex-col divide-y divide-linha" aria-label="Compras da fatura">
               {fatura.parcelas.map((p) => (
                 <li key={`${p.compraId}-${p.parcela}`}>
                   <Link
                     to={`/cartoes/${cartao.id}/compras/${p.compraId}`}
-                    className="flex items-start justify-between gap-3 rounded-xl border bg-card p-4 hover:bg-muted/60"
+                    className="-mx-2 my-1 flex items-start justify-between gap-3 rounded-lg px-2 py-3 hover:bg-areia/70"
                   >
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="text-lg leading-snug font-bold">{p.descricao}</span>
@@ -157,7 +157,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
                       <span className="text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
                       {p.totalParcelas > 1 && (
                         <span
-                          className="rounded-md bg-muted px-2 font-semibold tabular-nums"
+                          className="rounded-full bg-areia px-2.5 font-semibold tabular-nums"
                           aria-label={`parcela ${p.parcela} de ${p.totalParcelas}`}
                         >
                           {p.parcela}/{p.totalParcelas}
@@ -174,7 +174,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
 
       <Button asChild variant="ghost" className="self-start">
         <Link to={`/cartoes/${cartao.id}`}>
-          <Pencil aria-hidden />
+          <PencilSimpleIcon aria-hidden />
           Editar cartão
         </Link>
       </Button>
@@ -210,7 +210,7 @@ export function AbaCartoes() {
   if (consulta.isError) {
     return (
       <EstadoVazio
-        icone={CreditCard}
+        icone={CreditCardIcon}
         titulo="Não foi possível carregar os cartões"
         acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
       >
@@ -221,7 +221,7 @@ export function AbaCartoes() {
   if (!escolhido) {
     return (
       <EstadoVazio
-        icone={CreditCard}
+        icone={CreditCardIcon}
         titulo="Nenhum cartão cadastrado"
         acao={
           <Button asChild>
@@ -251,9 +251,9 @@ export function AbaCartoes() {
           <li className="snap-start p-1">
             <Link
               to="/cartoes/novo"
-              className="flex aspect-[1.586] w-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed font-semibold text-primary hover:bg-muted"
+              className="flex aspect-[1.586] w-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-input font-semibold text-area hover:bg-areia"
             >
-              <Plus className="size-7" aria-hidden />
+              <PlusIcon weight="bold" className="size-7" aria-hidden />
               Novo cartão
             </Link>
           </li>
