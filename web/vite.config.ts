@@ -20,7 +20,7 @@ export default defineConfig({
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f5f6f2',
+        background_color: '#f7f1e8',
         theme_color: '#0e4a5a',
       },
       workbox: {

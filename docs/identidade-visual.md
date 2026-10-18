@@ -152,3 +152,5 @@ Branch de integração `redesign`; a `main` só recebe tudo no fim.
   Compras, Notificações. Sessão 2: Contas, Cartões, Salários equipe, Categorias, Relatório,
   Imóveis, Entrar, Cadastro, Trocar senha, Mais, Não encontrada.
 - Componente compartilhado só muda pela Sessão 1; a Sessão 2 pede.
+- Em 2026-10-18 a Sessão 2 não tinha começado e a Sessão 1 fez também as telas e a marca dela
+  (as ilustrações de `components/ilustracoes/` ficaram para depois).
