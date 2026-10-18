@@ -2,7 +2,7 @@ import { useEffect, useId } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Check, Trash2 } from 'lucide-react'
+import { ArrowLeftIcon, CheckIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -122,7 +122,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             to={voltar}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon className="size-5" weight="bold" aria-hidden />
             Compromissos
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
@@ -208,7 +208,7 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir compromisso
                 </Button>
               }
@@ -271,7 +271,7 @@ function EscolhaDias({
                 ligado ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card',
               )}
             >
-              {ligado && <Check className="size-5" aria-hidden />}
+              {ligado && <CheckIcon className="size-5" weight="bold" aria-hidden />}
               {DIAS[d]}
             </button>
           )

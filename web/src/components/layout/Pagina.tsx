@@ -36,12 +36,17 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
       <header className="capa pt-[env(safe-area-inset-top)]">
         <div
           className={cn(
-            'mx-auto flex w-full flex-wrap items-end justify-between gap-x-4 gap-y-3 px-4 pt-5 pb-6 md:px-8 md:pt-9 md:pb-8',
+            'mx-auto flex w-full items-end justify-between gap-4 px-4 pt-5 pb-6 md:px-8 md:pt-9 md:pb-8',
             largura,
           )}
         >
-          {cabecalho ?? <h1 className="text-[1.75rem] leading-tight font-[750] tracking-[-0.01em]">{titulo}</h1>}
-          {acoes}
+          {cabecalho ?? (
+            <h1 className="min-w-0 text-[1.625rem] leading-tight font-[750] tracking-[-0.01em] hyphens-auto min-[400px]:text-[1.75rem]">
+              {titulo}
+            </h1>
+          )}
+          {/* O botão fica sempre ao lado do título (mais justo no celular); se faltar espaço, o título quebra. */}
+          {acoes && <div className="shrink-0 *:data-[slot=button]:px-4 md:*:data-[slot=button]:px-6">{acoes}</div>}
         </div>
       </header>
       <div aria-hidden className="h-1.5 bg-area-fundo" />

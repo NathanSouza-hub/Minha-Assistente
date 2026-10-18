@@ -1,4 +1,4 @@
-import { ListChecks, Plus } from 'lucide-react'
+import { CheckSquareIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -38,7 +38,7 @@ export function Rotina() {
       acoes={
         <Button asChild size="lg">
           <Link to="/rotina/nova">
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Novo
           </Link>
         </Button>
@@ -81,9 +81,9 @@ function Sugestoes() {
       <ul className="flex flex-wrap gap-2">
         {faltando.map((s) => (
           <li key={s}>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="border-dashed">
               <Link to={`/rotina/nova?titulo=${encodeURIComponent(s)}`}>
-                <Plus aria-hidden />
+                <PlusIcon weight="bold" aria-hidden />
                 {s}
               </Link>
             </Button>
@@ -106,12 +106,12 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
       {consulta.isPending ? (
         <div className="flex flex-col gap-3" role="status" aria-label="Carregando compromissos">
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-20 rounded-xl" />
+            <Skeleton key={n} className="h-16" />
           ))}
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
-          icone={ListChecks}
+          icone={CheckSquareIcon}
           titulo="Não foi possível carregar os compromissos"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
@@ -119,7 +119,7 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
         </EstadoVazio>
       ) : tarefas.length === 0 ? (
         <EstadoVazio
-          icone={ListChecks}
+          icone={CheckSquareIcon}
           titulo="Nenhum compromisso para este dia"
           acao={
             <Button asChild>
@@ -156,7 +156,7 @@ function TodasAsTarefas() {
   if (rotinas.length === 0) {
     return (
       <EstadoVazio
-        icone={ListChecks}
+        icone={CheckSquareIcon}
         titulo="Nenhum compromisso cadastrado"
         acao={
           <Button asChild>
@@ -167,16 +167,16 @@ function TodasAsTarefas() {
     )
   }
   return (
-    <ul className="divide-y rounded-xl border bg-card" aria-label="Todos os compromissos">
+    <ul className="flex flex-col divide-y divide-linha" aria-label="Todos os compromissos">
       {rotinas.map((r) => (
         <li key={r.id}>
-          <Link to={`/rotina/${r.id}`} className="flex flex-col gap-0.5 p-4 hover:bg-muted/60">
+          <Link to={`/rotina/${r.id}`} className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-areia/70">
             <span className="flex items-center justify-between gap-3">
               <span className={cn('text-lg font-semibold', !r.ativo && 'text-muted-foreground')}>
                 {r.titulo}
               </span>
               {!r.ativo && (
-                <span className="rounded-md bg-muted px-2 font-semibold text-muted-foreground">Pausado</span>
+                <span className="rounded-full bg-areia px-2.5 font-semibold text-muted-foreground">Pausado</span>
               )}
             </span>
             <span className="text-base text-muted-foreground">

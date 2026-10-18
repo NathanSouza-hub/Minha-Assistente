@@ -1,4 +1,4 @@
-/** "2 de 5 doses tomadas" com barra; quando tudo foi feito, mostra `textoCompleto`. */
+/** "2 de 5 doses tomadas" com barra, direto no papel; quando tudo foi feito, mostra `textoCompleto`. */
 export function Progresso({
   feitos,
   total,
@@ -11,11 +11,11 @@ export function Progresso({
   textoCompleto: string
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-folha p-4 shadow-folha">
+    <div className="flex flex-col gap-2">
       <p className="text-lg font-semibold" aria-live="polite">
         {feitos === total ? textoCompleto : texto}
       </p>
-      <div className="h-3 rounded-full bg-areia" aria-hidden>
+      <div className="h-2.5 rounded-full bg-linha" aria-hidden>
         <div
           className="h-full rounded-full bg-ok transition-[width]"
           style={{ width: `${(feitos / total) * 100}%` }}

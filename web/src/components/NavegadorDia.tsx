@@ -6,7 +6,7 @@ import { hojeISO, rotuloDoDia, somarDias } from '@/lib/datas'
 export function NavegadorDia({ data, aoMudar }: { data: string; aoMudar: (data: string) => void }) {
   return (
     <div className="flex flex-col gap-2">
-      <nav aria-label="Dia" className="flex items-center justify-between gap-2 rounded-xl bg-folha p-1 shadow-folha">
+      <nav aria-label="Dia" className="flex items-center justify-between gap-2">
         <Button variant="ghost" size="icon" onClick={() => aoMudar(somarDias(data, -1))} aria-label="Dia anterior">
           <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
         </Button>
