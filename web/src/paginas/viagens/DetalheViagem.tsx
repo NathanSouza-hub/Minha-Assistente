@@ -1,4 +1,5 @@
-import { ArrowLeft, Pencil } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { AirplaneTiltIcon, ArrowLeftIcon, BedIcon, CalendarDotsIcon, NoteIcon, PencilSimpleIcon, type Icon } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { ListaArquivos, type TextosArquivos } from '@/components/ListaArquivos'
@@ -7,11 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useBaixarAnexo, useEnviarAnexo, useExcluirAnexo, useViagem } from '@/consultas/viagens'
 import { TAMANHO_MAXIMO_MB } from '@/lib/arquivos'
 import type { Viagem } from '@/lib/tipos'
+import { cn } from '@/lib/utils'
 import { descreverPeriodo, MAXIMO_ANEXOS, situacaoViagem } from './textos'
 
 const voltar = (
   <Link to="/viagens" className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary">
-    <ArrowLeft className="size-5" aria-hidden />
+    <ArrowLeftIcon className="size-5" weight="bold" aria-hidden />
     Viagens
   </Link>
 )
@@ -44,12 +46,12 @@ export function DetalheViagem() {
   }
 
   const v = consulta.data
-  const { texto } = situacaoViagem(v.ida, v.volta)
-  const detalhes = [
-    ['Hospedagem', v.hospedagem],
-    ['Transporte', v.transporte],
-    ['Observações', v.observacoes],
-  ].filter((d): d is [string, string] => Boolean(d[1]))
+  const { fase, texto } = situacaoViagem(v.ida, v.volta)
+  const detalhes: [string, string | null, Icon][] = [
+    ['Hospedagem', v.hospedagem, BedIcon],
+    ['Transporte', v.transporte, AirplaneTiltIcon],
+    ['Observações', v.observacoes, NoteIcon],
+  ]
 
   return (
     <Pagina
@@ -63,29 +65,45 @@ export function DetalheViagem() {
       acoes={
         <Button asChild variant="outline">
           <Link to={`/viagens/${v.id}/editar`}>
-            <Pencil aria-hidden />
+            <PencilSimpleIcon aria-hidden />
             Editar
           </Link>
         </Button>
       }
     >
       <div className="flex flex-col gap-8">
-        <dl className="flex flex-col gap-4 rounded-xl border bg-card p-4">
-          <div>
-            <dt className="text-base text-muted-foreground">Quando</dt>
+        <dl className="flex flex-col divide-y divide-linha">
+          <Detalhe rotulo="Quando" icone={CalendarDotsIcon}>
             <dd className="text-lg font-semibold">{descreverPeriodo(v.ida, v.volta)}</dd>
-            {texto && <dd className="font-semibold text-primary">{texto}</dd>}
-          </div>
-          {detalhes.map(([rotulo, valor]) => (
-            <div key={rotulo}>
-              <dt className="text-base text-muted-foreground">{rotulo}</dt>
-              <dd className="text-lg break-words whitespace-pre-line">{valor}</dd>
-            </div>
-          ))}
+            {texto && <dd className={cn('font-semibold', fase === 'agora' ? 'text-terracota' : 'text-area')}>{texto}</dd>}
+          </Detalhe>
+          {detalhes.map(
+            ([rotulo, valor, icone]) =>
+              valor && (
+                <Detalhe key={rotulo} rotulo={rotulo} icone={icone}>
+                  <dd className="text-lg break-words whitespace-pre-line">{valor}</dd>
+                </Detalhe>
+              ),
+          )}
         </dl>
         <Anexos viagem={v} />
       </div>
     </Pagina>
+  )
+}
+
+/** Uma linha dos dados da viagem: selo da área com o ícone, rótulo e valor. */
+function Detalhe({ rotulo, icone: Icone, children }: { rotulo: string; icone: Icon; children: ReactNode }) {
+  return (
+    <div className="flex gap-4 py-4 first:pt-0">
+      <span className="selo-area size-11" aria-hidden>
+        <Icone className="size-6" />
+      </span>
+      <div className="min-w-0">
+        <dt className="text-base text-muted-foreground">{rotulo}</dt>
+        {children}
+      </div>
+    </div>
   )
 }
 

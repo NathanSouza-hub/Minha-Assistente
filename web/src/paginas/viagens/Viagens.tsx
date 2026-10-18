@@ -1,11 +1,11 @@
-import { Paperclip, Plane, Plus } from 'lucide-react'
+import { AirplaneTiltIcon, PaperclipIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useViagens } from '@/consultas/viagens'
-import { hojeISO } from '@/lib/datas'
+import { deDataISO, hojeISO } from '@/lib/datas'
 import type { Viagem } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { contarAnexos, descreverPeriodo, situacaoViagem, type Fase } from './textos'
@@ -24,7 +24,7 @@ export function Viagens() {
       acoes={
         <Button asChild size="lg">
           <Link to="/viagens/nova">
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Nova
           </Link>
         </Button>
@@ -33,12 +33,12 @@ export function Viagens() {
       {consulta.isPending ? (
         <div className="flex flex-col gap-3" role="status" aria-label="Carregando viagens">
           {[1, 2].map((n) => (
-            <Skeleton key={n} className="h-28 rounded-xl" />
+            <Skeleton key={n} className="h-20" />
           ))}
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
-          icone={Plane}
+          icone={AirplaneTiltIcon}
           titulo="Não foi possível carregar as viagens"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
@@ -46,7 +46,7 @@ export function Viagens() {
         </EstadoVazio>
       ) : viagens.length === 0 ? (
         <EstadoVazio
-          icone={Plane}
+          icone={AirplaneTiltIcon}
           titulo="Nenhuma viagem cadastrada"
           acao={
             <Button asChild>
@@ -70,9 +70,9 @@ export function Viagens() {
 function Grupo({ titulo, viagens, hoje }: { titulo: string; viagens: Viagem[]; hoje: string }) {
   if (viagens.length === 0) return null
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-1">
       <h2 className="text-xl font-bold">{titulo}</h2>
-      <ul className="flex flex-col gap-3" aria-label={titulo}>
+      <ul className="flex flex-col divide-y divide-linha" aria-label={titulo}>
         {viagens.map((v) => (
           <ItemViagem key={v.id} viagem={v} hoje={hoje} />
         ))}
@@ -83,29 +83,42 @@ function Grupo({ titulo, viagens, hoje }: { titulo: string; viagens: Viagem[]; h
 
 function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
   const { fase, texto } = situacaoViagem(v.ida, v.volta, hoje)
+  const ida = deDataISO(v.ida)
   return (
     <li>
-      <Link
-        to={`/viagens/${v.id}`}
-        className={cn(
-          'flex flex-col gap-1 rounded-xl border bg-card p-4 hover:bg-muted/60',
-          fase === 'agora' && 'border-l-4 border-l-hoje',
-          fase === 'passada' && 'text-muted-foreground',
-        )}
-      >
-        <span className="text-lg leading-snug font-bold">{v.destino}</span>
-        <span className="text-base">{descreverPeriodo(v.ida, v.volta, hoje)}</span>
-        {(texto || v.anexos.length > 0) && (
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
-            {texto && <span className="font-semibold text-primary">{texto}</span>}
-            {v.anexos.length > 0 && (
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Paperclip className="size-5" aria-hidden />
-                {contarAnexos(v.anexos.length)}
-              </span>
-            )}
+      <Link to={`/viagens/${v.id}`} className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-areia/70">
+        {/* Canhoto da passagem: dia e mês da ida. Em viagem, na cor cheia da área. */}
+        <span
+          aria-hidden
+          className={cn(
+            'flex w-14 shrink-0 flex-col items-center rounded-lg py-1.5 leading-none tabular-nums',
+            fase === 'agora' && 'bg-area text-folha',
+            fase === 'proxima' && 'bg-area-fundo text-area',
+            fase === 'passada' && 'bg-areia text-muted-foreground',
+          )}
+        >
+          <span className="text-2xl font-bold">{ida.day}</span>
+          <span className="mt-1 text-sm font-semibold">{ida.toFormat('LLL').replace('.', '')}</span>
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className={cn('text-lg leading-snug font-bold break-words', fase === 'passada' && 'text-muted-foreground')}>
+            {v.destino}
           </span>
-        )}
+          <span className="text-base">{descreverPeriodo(v.ida, v.volta, hoje)}</span>
+          {(texto || v.anexos.length > 0) && (
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
+              {texto && (
+                <span className={cn('font-semibold', fase === 'agora' ? 'text-terracota' : 'text-area')}>{texto}</span>
+              )}
+              {v.anexos.length > 0 && (
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <PaperclipIcon className="size-5" aria-hidden />
+                  {contarAnexos(v.anexos.length)}
+                </span>
+              )}
+            </span>
+          )}
+        </span>
       </Link>
     </li>
   )

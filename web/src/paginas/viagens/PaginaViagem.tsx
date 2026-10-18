@@ -1,7 +1,7 @@
 import { useEffect, useId, type ComponentProps } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeftIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -99,7 +99,7 @@ function FormularioViagem({ viagem }: { viagem?: Viagem }) {
             to={viagem ? `/viagens/${viagem.id}` : '/viagens'}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon className="size-5" weight="bold" aria-hidden />
             {viagem ? viagem.destino : 'Viagens'}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
@@ -159,7 +159,7 @@ function FormularioViagem({ viagem }: { viagem?: Viagem }) {
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir viagem
                 </Button>
               }
