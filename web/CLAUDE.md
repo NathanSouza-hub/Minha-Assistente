@@ -36,6 +36,9 @@ npm run lint                                  # oxlint
 - **Agenda**: `inicio`/`fim` sempre com fuso (`combinarDataHora`/`separarDataHora` de
   `src/lib/datas.ts`). A listagem devolve cada ocorrência de série separada (mesmo `id`); para
   editar, abra `GET /eventos/:id` (a série) — o PUT precisa do início da série, não da ocorrência.
+  A visão Dia busca a semana inteira (a faixa de dias marca os que têm agendamento) e filtra com
+  `eventosDoDia` (`porDia.ts`, fim exclusivo como na API). Cada item tem a fita na cor da área do
+  tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda).
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
 - **Remédios**: no PUT, mande o `id` dos horários que continuam — sem ele o back-end recria o

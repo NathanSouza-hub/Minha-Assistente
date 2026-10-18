@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Bell, Check, Repeat, Trash2 } from 'lucide-react'
+import { ArrowLeftIcon, BellIcon, CheckIcon, RepeatIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -146,7 +146,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
             to={voltarPara(evento ? diaDe(evento.inicio) : dataPadrao)}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon className="size-5" weight="bold" aria-hidden />
             {area ? TIPOS[area.tipo] : 'Agenda'}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
@@ -156,7 +156,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
       <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
         {evento?.recorrente && (
           <p className="flex items-start gap-3 rounded-lg bg-secondary px-4 py-3 text-secondary-foreground">
-            <Repeat className="mt-0.5 size-5 shrink-0" aria-hidden />
+            <RepeatIcon className="mt-0.5 size-5 shrink-0" aria-hidden />
             <span>
               Este agendamento se repete (
               {RECORRENCIAS[evento.recorrencia as keyof typeof RECORRENCIAS].toLowerCase()}). As mudanças
@@ -284,7 +284,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir agendamento
                 </Button>
               }
@@ -324,7 +324,7 @@ function EscolhaLembretes({
   return (
     <fieldset className="flex flex-col gap-2" aria-describedby={`${id}-dica`}>
       <legend className="mb-2 flex items-center gap-2 text-base font-semibold">
-        <Bell className="size-5 text-primary" aria-hidden />
+        <BellIcon className="size-5 text-primary" aria-hidden />
         Lembrar
       </legend>
       <div className="flex flex-wrap gap-2">
@@ -342,7 +342,7 @@ function EscolhaLembretes({
                 ligado ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card',
               )}
             >
-              {ligado && <Check className="size-5" aria-hidden />}
+              {ligado && <CheckIcon className="size-5" weight="bold" aria-hidden />}
               {rotuloDoLembrete(l)}
             </button>
           )

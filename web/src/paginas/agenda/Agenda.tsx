@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { CalendarDotsIcon, CaretLeftIcon, CaretRightIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -10,7 +10,7 @@ import { deDataISO, diasDaSemana, hojeISO, inicioDaSemana, rotuloDoDia, somarDia
 import type { Evento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { ItemEvento } from './ItemEvento'
-import { porDia } from './porDia'
+import { eventosDoDia, porDia } from './porDia'
 
 type Visao = 'dia' | 'semana' | 'lista'
 
@@ -37,9 +37,9 @@ function useNavegacao() {
   return { visao, data, mudar }
 }
 
+/** O dia também busca a semana inteira: a faixa de dias marca quais têm agendamento. */
 function periodo(visao: Visao, data: string) {
-  if (visao === 'dia') return { inicio: data, fim: data }
-  if (visao === 'semana') {
+  if (visao !== 'lista') {
     const segunda = inicioDaSemana(data)
     return { inicio: segunda, fim: somarDias(segunda, 6) }
   }
@@ -68,7 +68,7 @@ export function Agenda() {
       acoes={
         <Button asChild size="lg">
           <Link to={`/agenda/novo${visao === 'dia' && data !== hojeISO() ? `?data=${data}` : ''}`}>
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Novo
           </Link>
         </Button>
@@ -90,17 +90,14 @@ export function Agenda() {
 
         {visao !== 'lista' && (
           <div className="flex flex-col gap-2">
-            <nav
-              aria-label={visao === 'dia' ? 'Dia' : 'Semana'}
-              className="flex items-center justify-between gap-2 rounded-xl border bg-card p-1"
-            >
+            <nav aria-label={visao === 'dia' ? 'Dia' : 'Semana'} className="flex items-center justify-between gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => mudar({ data: somarDias(data, -passo) })}
                 aria-label={visao === 'dia' ? 'Dia anterior' : 'Semana anterior'}
               >
-                <ChevronLeft className="size-7" aria-hidden />
+                <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
               </Button>
               <h2 className="text-center text-lg font-bold min-[400px]:text-xl" aria-live="polite">
                 {visao === 'dia' ? rotuloDoDia(data) : tituloSemana(inicio)}
@@ -111,9 +108,12 @@ export function Agenda() {
                 onClick={() => mudar({ data: somarDias(data, passo) })}
                 aria-label={visao === 'dia' ? 'Próximo dia' : 'Próxima semana'}
               >
-                <ChevronRight className="size-7" aria-hidden />
+                <CaretRightIcon className="size-7" weight="bold" aria-hidden />
               </Button>
             </nav>
+            {visao === 'dia' && (
+              <FaixaSemana data={data} eventos={eventos} aoEscolher={(dia) => mudar({ data: dia })} />
+            )}
             {!ehHoje && (
               <Button variant="link" className="self-center" onClick={() => mudar({ data: hojeISO() })}>
                 Voltar para hoje
@@ -125,30 +125,32 @@ export function Agenda() {
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando agenda">
             {[1, 2].map((n) => (
-              <Skeleton key={n} className="h-28 rounded-xl" />
+              <Skeleton key={n} className="h-24" />
             ))}
           </div>
         ) : consulta.isError ? (
           <EstadoVazio
-            icone={CalendarDays}
+            icone={CalendarDotsIcon}
             titulo="Não foi possível carregar a agenda"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           >
             Verifique a internet e tente de novo.
           </EstadoVazio>
         ) : visao === 'dia' ? (
-          eventos.length === 0 ? (
+          eventosDoDia(eventos, data).length === 0 ? (
             <EstadoVazio
-              icone={CalendarDays}
+              icone={CalendarDotsIcon}
               titulo="Nada marcado para este dia"
               acao={
                 <Button asChild>
                   <Link to={`/agenda/novo?data=${data}`}>Novo agendamento</Link>
                 </Button>
               }
-            />
+            >
+              Quer agendar alguma coisa?
+            </EstadoVazio>
           ) : (
-            <ListaEventos eventos={eventos} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} />
+            <ListaEventos eventos={eventosDoDia(eventos, data)} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} />
           )
         ) : visao === 'semana' ? (
           <Semana eventos={eventos} segunda={inicio} />
@@ -170,10 +172,61 @@ export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; r
   )
 }
 
+/** Os 7 dias da semana do dia aberto, ao alcance do polegar; o ponto marca os dias com agendamento. */
+function FaixaSemana({
+  data,
+  eventos,
+  aoEscolher,
+}: {
+  data: string
+  eventos: Evento[]
+  aoEscolher: (dia: string) => void
+}) {
+  const hoje = hojeISO()
+  return (
+    <ol aria-label="Dias da semana" className="grid grid-cols-7 gap-1">
+      {diasDaSemana(inicioDaSemana(data)).map((dia) => {
+        const quantos = eventosDoDia(eventos, dia).length
+        const aberto = dia === data
+        // "seg." -> "Seg"
+        const semana = deDataISO(dia).toFormat('ccc').replace('.', '')
+        return (
+          <li key={dia}>
+            <button
+              type="button"
+              onClick={() => aoEscolher(dia)}
+              aria-pressed={aberto}
+              aria-label={`${rotuloDoDia(dia)}${quantos ? `, ${quantos} ${quantos === 1 ? 'agendamento' : 'agendamentos'}` : ''}`}
+              className={cn(
+                'flex h-[4.75rem] w-full flex-col items-center justify-center gap-1 rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                aberto
+                  ? 'bg-primary text-primary-foreground shadow-folha'
+                  : dia === hoje
+                    ? 'bg-terracota-clara text-terracota'
+                    : 'hover:bg-areia',
+              )}
+            >
+              <span className="text-[0.8rem] leading-none font-semibold first-letter:uppercase">{semana}</span>
+              <span className="text-xl leading-none font-bold tabular-nums">{deDataISO(dia).day}</span>
+              <span
+                aria-hidden
+                className={cn(
+                  'size-1.5 rounded-full',
+                  !quantos ? 'bg-transparent' : aberto ? 'bg-primary-foreground' : 'bg-current opacity-70',
+                )}
+              />
+            </button>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
 export function CabecalhoDia({ dia }: { dia: string }) {
   const hoje = dia === hojeISO()
   return (
-    <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-primary')}>
+    <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-terracota')}>
       {hoje && <span aria-hidden className="h-5 w-1.5 rounded-full bg-hoje" />}
       {rotuloDoDia(dia)}
     </h3>
@@ -184,17 +237,19 @@ export function CabecalhoDia({ dia }: { dia: string }) {
 function Semana({ eventos, segunda }: { eventos: Evento[]; segunda: string }) {
   const grupos = porDia(eventos, segunda)
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {diasDaSemana(segunda).map((dia) => {
         const doDia = grupos.get(dia) ?? []
-        return (
-          <section key={dia} className="flex flex-col gap-3">
+        // Dia livre ocupa uma linha só: a semana cabe na tela.
+        return doDia.length ? (
+          <section key={dia} className="flex flex-col gap-1">
             <CabecalhoDia dia={dia} />
-            {doDia.length ? (
-              <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
-            ) : (
-              <p className="text-base text-muted-foreground">Nada marcado.</p>
-            )}
+            <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
+          </section>
+        ) : (
+          <section key={dia} className="flex flex-wrap items-baseline justify-between gap-x-4">
+            <CabecalhoDia dia={dia} />
+            <p className="text-base text-muted-foreground">Nada marcado.</p>
           </section>
         )
       })}
@@ -207,7 +262,7 @@ function Proximos({ eventos }: { eventos: Evento[] }) {
   if (eventos.length === 0) {
     return (
       <EstadoVazio
-        icone={CalendarDays}
+        icone={CalendarDotsIcon}
         titulo={`Nada marcado nos próximos ${DIAS_DA_LISTA} dias`}
         acao={
           <Button asChild>
@@ -220,7 +275,7 @@ function Proximos({ eventos }: { eventos: Evento[] }) {
   return (
     <div className="flex flex-col gap-6">
       {[...porDia(eventos, hojeISO())].map(([dia, doDia]) => (
-        <section key={dia} className="flex flex-col gap-3">
+        <section key={dia} className="flex flex-col gap-1">
           <CabecalhoDia dia={dia} />
           <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
         </section>

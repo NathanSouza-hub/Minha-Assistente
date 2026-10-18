@@ -1,10 +1,11 @@
 import { ArrowSquareOutIcon, MapPinIcon, RepeatIcon, VideoCameraIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
+import { areaDaRota } from '@/app/navegacao'
 import { Button } from '@/components/ui/button'
 import { agora, deDataHoraISO, horaDe } from '@/lib/datas'
 import type { Evento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
-import { MODALIDADES, ONLINE, RECORRENCIAS, TIPOS } from './textos'
+import { AREAS_DO_TIPO, MODALIDADES, ONLINE, RECORRENCIAS, TIPOS } from './textos'
 
 /** `voltar`: rota para onde o formulário volta ao salvar (ex.: a área "Programa de rádio"). */
 export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: string }) {
@@ -12,16 +13,17 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
   const passou = fimOuInicio < agora()
   const acontecendo = !passou && deDataHoraISO(e.inicio) <= agora()
   const online = e.modalidade !== null && ONLINE.includes(e.modalidade)
+  // Rádio, atividade física e fisioterapia têm cor própria; o resto fica na cor da Agenda.
+  const area = areaDaRota(AREAS_DO_TIPO.find((a) => a.tipo === e.tipo)?.rota ?? '/agenda')
   const detalhes = [TIPOS[e.tipo], e.modalidade && MODALIDADES[e.modalidade]].filter(Boolean).join(', ')
 
   return (
-    <li
-      className="flex flex-col gap-3 py-3">
+    <li className={cn('flex flex-col gap-3 py-3', `area-${area}`)}>
       <Link
         to={`/agenda/${e.id}${voltar ? `?voltar=${encodeURIComponent(voltar)}` : ''}`}
-        className="-mx-2 grid grid-cols-[5rem_1fr] gap-3 rounded-lg px-2 py-1 hover:bg-areia/70"
+        className="-mx-2 grid grid-cols-[5.5rem_1fr] gap-3 rounded-lg px-2 py-1 hover:bg-areia/70"
       >
-        <span className={cn('flex flex-col', passou && 'text-muted-foreground')}>
+        <span className={cn('flex flex-col border-l-4 border-area pl-2.5', passou && 'border-area/40 text-muted-foreground')}>
           <span className="text-xl font-bold tabular-nums">{horaDe(e.inicio)}</span>
           {e.fim && <span className="text-base whitespace-nowrap tabular-nums text-muted-foreground">até {horaDe(e.fim)}</span>}
         </span>

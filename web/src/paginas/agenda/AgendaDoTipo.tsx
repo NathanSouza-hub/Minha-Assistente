@@ -1,4 +1,4 @@
-import { CalendarDays, Plus } from 'lucide-react'
+import { CalendarDotsIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -29,7 +29,7 @@ export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string })
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Novo
           </Link>
         </Button>
@@ -38,12 +38,12 @@ export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string })
       {consulta.isPending ? (
         <div className="flex flex-col gap-3" role="status" aria-label="Carregando agenda">
           {[1, 2].map((n) => (
-            <Skeleton key={n} className="h-28 rounded-xl" />
+            <Skeleton key={n} className="h-24" />
           ))}
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
-          icone={CalendarDays}
+          icone={CalendarDotsIcon}
           titulo="Não foi possível carregar a agenda"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
@@ -51,7 +51,7 @@ export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string })
         </EstadoVazio>
       ) : eventos.length === 0 ? (
         <EstadoVazio
-          icone={CalendarDays}
+          icone={CalendarDotsIcon}
           titulo={`Nada marcado nos próximos ${DIAS} dias`}
           acao={
             <Button asChild>
@@ -62,7 +62,7 @@ export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string })
       ) : (
         <div className="flex flex-col gap-6">
           {[...porDia(eventos, inicio)].map(([dia, doDia]) => (
-            <section key={dia} className="flex flex-col gap-3">
+            <section key={dia} className="flex flex-col gap-1">
               <CabecalhoDia dia={dia} />
               <ListaEventos eventos={doDia} rotulo={`${TIPOS[tipo]} de ${rotuloDoDia(dia)}`} voltar={rota} />
             </section>

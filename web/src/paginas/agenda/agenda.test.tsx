@@ -71,6 +71,20 @@ describe('visões da agenda', () => {
     expect(await screen.findByRole('heading', { name: 'Hoje, 13 de outubro' })).toBeInTheDocument()
   })
 
+  test('faixa da semana: conta os agendamentos de cada dia e abre o dia tocado', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/agenda')
+    const faixa = await screen.findByRole('list', { name: 'Dias da semana' })
+    expect(await within(faixa).findByRole('button', { name: 'Hoje, 13 de outubro, 2 agendamentos' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(within(faixa).getByRole('button', { name: 'Segunda, 12 de outubro' })).toBeInTheDocument()
+    await usuario.click(within(faixa).getByRole('button', { name: /^Sexta, 16 de outubro/ }))
+    expect(await screen.findByRole('heading', { name: 'Sexta, 16 de outubro' })).toBeInTheDocument()
+    expect(await cartao('Caminhada no parque')).toBeInTheDocument()
+  })
+
   test('semana mostra os 7 dias, inclusive os livres, e expande as repetições', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
