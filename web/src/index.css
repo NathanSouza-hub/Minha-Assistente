@@ -38,6 +38,7 @@
   --color-terracota: var(--terracota);
   --color-terracota-viva: var(--terracota-viva);
   --color-terracota-clara: var(--terracota-clara);
+  --color-terracota-marca: var(--terracota-marca);
   --color-ok: var(--ok);
   --color-ok-fundo: var(--ok-fundo);
   /* Marca o que é de hoje e o item ativo (a "fita" marcadora): terracota. */
@@ -72,11 +73,12 @@
   --linha: #e2d6c4;
   --grafite: #2b2420;
   --tinta: #0e4a5a;
-  --petroleo-escuro: #0a3945;
+  --petroleo-escuro: #0a3642;
   --petroleo-claro: #bfd6d9;
   --terracota: #9a4527;
   --terracota-viva: #c2603a;
   --terracota-clara: #f6ddd0;
+  --terracota-marca: #ee9068;
   --ok: #2f6b45;
   --ok-fundo: #ddebdd;
 
@@ -118,8 +120,8 @@
   --area-viagens-fundo: #dce6f2;
   --area-compras: #7a3f6b;
   --area-compras-fundo: #f0ddea;
-  --area-radio: #8b3a2e;
-  --area-radio-fundo: #f4dcd6;
+  --area-radio: #4a4a8c;
+  --area-radio-fundo: #e3e2f3;
   --area-atividade: #4f6b1f;
   --area-atividade-fundo: #e6edd3;
   --area-fisioterapia: #3b5f73;

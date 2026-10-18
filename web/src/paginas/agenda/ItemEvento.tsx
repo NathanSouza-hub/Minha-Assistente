@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, Repeat, Video } from 'lucide-react'
+import { ArrowSquareOutIcon, MapPinIcon, RepeatIcon, VideoCameraIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { agora, deDataHoraISO, horaDe } from '@/lib/datas'
@@ -16,15 +16,10 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
 
   return (
     <li
-      className={cn(
-        'flex flex-col gap-3 rounded-xl border bg-card p-4',
-        acontecendo && 'border-l-4 border-l-hoje',
-        passou && 'bg-card/60',
-      )}
-    >
+      className="flex flex-col gap-3 py-3">
       <Link
         to={`/agenda/${e.id}${voltar ? `?voltar=${encodeURIComponent(voltar)}` : ''}`}
-        className="-m-1 grid grid-cols-[5.5rem_1fr] gap-3 rounded-lg p-1 hover:bg-muted/60"
+        className="-mx-2 grid grid-cols-[5rem_1fr] gap-3 rounded-lg px-2 py-1 hover:bg-areia/70"
       >
         <span className={cn('flex flex-col', passou && 'text-muted-foreground')}>
           <span className="text-xl font-bold tabular-nums">{horaDe(e.inicio)}</span>
@@ -34,19 +29,21 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
           <span className={cn('text-lg leading-snug font-bold', passou && 'text-muted-foreground')}>
             {e.titulo}
           </span>
-          <span className="text-base text-muted-foreground">
-            {detalhes}
-            {acontecendo && <strong className="ml-2 font-semibold text-foreground">Acontecendo agora</strong>}
-          </span>
+          {acontecendo && (
+            <strong className="self-start rounded-full bg-terracota-clara px-2.5 text-base font-semibold text-terracota">
+              Acontecendo agora
+            </strong>
+          )}
+          <span className="text-base text-muted-foreground">{detalhes}</span>
           {e.local && (
             <span className="flex items-start gap-1.5 text-base">
-              <MapPin className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+              <MapPinIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
               {e.local}
             </span>
           )}
           {e.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1.5 text-base text-muted-foreground">
-              <Repeat className="size-5" aria-hidden />
+              <RepeatIcon className="size-5" aria-hidden />
               {RECORRENCIAS[e.recorrencia]}
             </span>
           )}
@@ -55,7 +52,7 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
       {e.link && !passou && (
         <Button asChild variant={online && acontecendo ? 'default' : 'outline'} className="sm:self-start">
           <a href={e.link} target="_blank" rel="noopener noreferrer">
-            {online ? <Video aria-hidden /> : <ExternalLink aria-hidden />}
+            {online ? <VideoCameraIcon aria-hidden /> : <ArrowSquareOutIcon aria-hidden />}
             {online ? 'Entrar' : 'Abrir link'}
             <span className="sr-only"> em {e.titulo} (abre em outra janela)</span>
           </a>

@@ -131,7 +131,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
                 <h3 id={`grupo-${periodo}`} className="text-lg font-bold">
                   {titulo}
                 </h3>
-                <ul className="flex flex-col gap-3">
+                <ul className="flex flex-col divide-y divide-linha">
                   {doGrupo.map((d) => (
                     <ItemDose key={d.horarioId} dose={d} futuro={futuro} />
                   ))}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { CircleAlert, CircleCheck, Paperclip, Repeat } from 'lucide-react'
+import { CheckCircleIcon, PaperclipIcon, RepeatIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
@@ -39,17 +39,12 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
   }
 
   return (
-    <li
-      className={cn(
-        'flex flex-col gap-3 rounded-xl border bg-card p-4',
-        p.vencido && 'border-l-4 border-l-atraso',
-      )}
-    >
-      <Link to={endereco} className="-m-1 flex flex-col gap-1 rounded-lg p-1 hover:bg-muted/60">
+    <li className="flex flex-col gap-3 py-3">
+      <Link to={endereco} className="-mx-2 flex flex-col gap-1 rounded-lg px-2 py-1 hover:bg-foreground/5">
         <span className="flex items-start justify-between gap-3">
           <span className="text-lg leading-snug font-bold">{p.descricao}</span>
           {aDefinir ? (
-            <span className="shrink-0 rounded-md bg-hoje/25 px-2 font-semibold">A definir</span>
+            <span className="shrink-0 rounded-full bg-terracota-clara px-2.5 font-semibold text-terracota">A definir</span>
           ) : (
             <span className="shrink-0 text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos!)}</span>
           )}
@@ -57,19 +52,19 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
         <span className="text-base text-muted-foreground">{detalhes}</span>
         <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
           {p.status === 'pago' ? (
-            <span className="flex items-center gap-1.5 font-semibold text-primary">
-              <CircleCheck className="size-5" aria-hidden />
+            <span className="flex items-center gap-1.5 font-semibold text-ok">
+              <CheckCircleIcon className="size-5" weight="fill" aria-hidden />
               Pago em {dataCurta(p.dataPagamento!)}
             </span>
           ) : (
             <span className={cn('flex items-center gap-1.5 font-semibold', p.vencido && 'text-atraso')}>
-              {p.vencido && <CircleAlert className="size-5" aria-hidden />}
+              {p.vencido && <WarningCircleIcon className="size-5" weight="fill" aria-hidden />}
               {descreverVencimento(p.vencimento)}
             </span>
           )}
           {p.parcelaTotal && (
             <span
-              className="rounded-md bg-muted px-2 font-semibold tabular-nums"
+              className="rounded-full bg-areia px-2.5 font-semibold tabular-nums"
               aria-label={`parcela ${p.parcelaAtual} de ${p.parcelaTotal}`}
             >
               {p.parcelaAtual}/{p.parcelaTotal}
@@ -77,13 +72,13 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
           )}
           {p.totalComprovantes > 0 && (
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Paperclip className="size-5" aria-hidden />
+              <PaperclipIcon className="size-5" aria-hidden />
               {p.totalComprovantes === 1 ? 'Com comprovante' : `${p.totalComprovantes} comprovantes`}
             </span>
           )}
           {p.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Repeat className="size-5" aria-hidden />
+              <RepeatIcon className="size-5" aria-hidden />
               {textoRecorrencia[p.recorrencia]}
             </span>
           )}
@@ -92,7 +87,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
       {pedirComprovante && (
         <Button asChild variant="outline" className="w-full sm:w-auto sm:self-start">
           <Link to={`/pagamentos/${p.id}#comprovantes`} aria-label={`Anexar comprovante de ${p.descricao}`}>
-            <Paperclip aria-hidden />
+            <PaperclipIcon aria-hidden />
             Anexar comprovante
           </Link>
         </Button>
@@ -112,7 +107,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
             />
             <div className="flex gap-2">
               <Button type="submit" disabled={marcando}>
-                <CircleCheck aria-hidden />
+                <CheckCircleIcon aria-hidden />
                 {marcando ? 'Marcando…' : 'Confirmar pagamento'}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setPedindoValor(false)}>
@@ -128,7 +123,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
             aria-label={aDefinir ? `Pagar ${p.descricao}` : `Marcar ${p.descricao} como pago`}
             className="w-full sm:w-auto sm:self-start"
           >
-            <CircleCheck aria-hidden />
+            <CheckCircleIcon aria-hidden />
             {marcando ? 'Marcando…' : aDefinir ? 'Pagar…' : 'Marcar como pago'}
           </Button>
         ))}

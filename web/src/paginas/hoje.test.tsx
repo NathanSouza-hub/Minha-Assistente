@@ -32,6 +32,8 @@ describe('painel Hoje', () => {
 
   test('junta o dia: resumo, vencidas em destaque, compromissos, remédios, rotina e contas da semana', async () => {
     renderizarApp('/')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
+    expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
     expect(
       await screen.findByText('Para hoje: 2 agendamentos, 3 remédios para tomar e 3 compromissos.'),
     ).toBeInTheDocument()

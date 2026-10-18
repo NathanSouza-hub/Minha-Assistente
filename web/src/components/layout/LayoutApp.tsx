@@ -31,10 +31,10 @@ export function LayoutApp() {
   )
 }
 
-/** Computador: a "lombada" da agenda, em petróleo escuro ao lado do cabeçalho das telas. */
+/** Computador: a "lombada" da agenda, em petróleo como o cabeçalho; o item aberto fica mais escuro. */
 function BarraLateral() {
   return (
-    <aside className="capa sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto bg-petroleo-escuro px-3 py-6 md:flex">
+    <aside className="capa sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto px-3 py-6 md:flex">
       <p className="flex items-center gap-3 px-3 text-xl font-bold">
         <img src="/favicon.svg" alt="" className="size-9" />
         Minha Assistente
@@ -65,8 +65,8 @@ function LinkLateral({ item }: { item: ItemNavegacao }) {
       end={item.rota === '/'}
       className={({ isActive }) =>
         cn(
-          'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-petroleo-claro hover:bg-white/8 hover:text-folha',
-          isActive && 'bg-petroleo text-folha',
+          'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-petroleo-claro hover:bg-petroleo-escuro/60 hover:text-folha',
+          isActive && 'bg-petroleo-escuro text-folha',
         )
       }
     >

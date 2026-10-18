@@ -162,7 +162,7 @@ export function Agenda() {
 
 export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; rotulo: string; voltar?: string }) {
   return (
-    <ul className="flex flex-col gap-3" aria-label={rotulo}>
+    <ul className="flex flex-col divide-y divide-linha" aria-label={rotulo}>
       {eventos.map((e) => (
         <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />
       ))}

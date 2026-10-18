@@ -138,7 +138,7 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
             textoCompleto="Todos os compromissos do dia feitos."
           />
           {futuro && <p className="text-base text-muted-foreground">Dá para marcar quando o dia chegar.</p>}
-          <ul className="flex flex-col gap-3" aria-label="Compromissos do dia">
+          <ul className="flex flex-col divide-y divide-linha" aria-label="Compromissos do dia">
             {tarefas.map((t) => (
               <ItemTarefa key={t.rotinaId} tarefa={t} desabilitada={futuro} />
             ))}

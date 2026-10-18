@@ -1,12 +1,23 @@
 import type { ReactNode } from 'react'
-import { CircleAlert, Sun } from 'lucide-react'
+import {
+  CalendarDotsIcon,
+  CaretRightIcon,
+  CheckSquareIcon,
+  PillIcon,
+  SunIcon,
+  WalletIcon,
+  WarningCircleIcon,
+  type Icon,
+} from '@phosphor-icons/react'
 import { Link } from 'react-router'
+import type { Area } from '@/app/navegacao'
+import { useSessao } from '@/app/useSessao'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePainelHoje } from '@/consultas/hoje'
-import { agora, hojeISO } from '@/lib/datas'
+import { agora, dataPorExtenso, hojeISO } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { PainelHoje } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -15,20 +26,30 @@ import { ItemPagamento } from '@/paginas/pagamentos/ItemPagamento'
 import { ItemDose } from '@/paginas/remedios/ItemDose'
 import { ItemTarefa } from '@/paginas/rotina/ItemTarefa'
 
-function CabecalhoHoje() {
+/** "Bom dia" até o meio-dia, "Boa tarde" até as 18h, "Boa noite" depois (e de madrugada). */
+function saudacao(hora: number) {
+  if (hora >= 5 && hora < 12) return 'Bom dia'
+  if (hora >= 12 && hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+/** "Bom dia, Débora", a data por extenso e o resumo do dia, na capa. */
+function CabecalhoHoje({ resumo }: { resumo: string | null }) {
+  const { usuario } = useSessao()
   const hoje = agora()
+  const primeiroNome = usuario?.nome.trim().split(/\s+/)[0]
   return (
-    <div className="relative pl-5">
-      {/* Fita açafrão: o marcador de página da agenda, preso no dia de hoje. */}
-      <span aria-hidden className="absolute top-1 bottom-1 left-0 w-1.5 rounded-full bg-hoje" />
-      <h1 className="flex flex-col">
-        <span className="text-xl font-semibold text-muted-foreground first-letter:uppercase">
-          {hoje.toFormat('cccc')}
-        </span>
-        <span className="text-[2.75rem] leading-[1.05] font-bold tracking-tight text-primary md:text-6xl">
-          {hoje.toFormat("d 'de' LLLL")}
-        </span>
+    <div className="flex flex-col gap-1">
+      <h1 className="text-[2rem] leading-tight font-[750] tracking-[-0.01em] md:text-[2.5rem]">
+        {saudacao(hoje.hour)}
+        {primeiroNome && `, ${primeiroNome}`}
       </h1>
+      <p className="text-lg font-semibold text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
+      {resumo && (
+        <p className="mt-2 max-w-prose text-lg" aria-live="polite">
+          {resumo}
+        </p>
+      )}
     </div>
   )
 }
@@ -47,40 +68,45 @@ function frase(r: PainelHoje['resumo']) {
   return `Para hoje: ${lista}.`
 }
 
+/** Grupo do dia: selo da área, título, andamento ("1 de 4 tomados") e o atalho para a área. */
 function Secao({
   id,
+  area,
+  icone: Icone,
   titulo,
   detalhe,
   link,
-  destaque,
   children,
 }: {
   id: string
+  area: Area
+  icone: Icon
   titulo: string
   detalhe?: ReactNode
   link: { para: string; rotulo: string }
-  destaque?: boolean
   children: ReactNode
 }) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id={id} className={cn('flex items-center gap-2 text-xl font-bold', destaque && 'text-atraso')}>
-          {destaque && <CircleAlert className="size-6" aria-hidden />}
-          {titulo}
-        </h2>
-        <Link to={link.para} className="font-semibold text-primary underline underline-offset-4">
-          {link.rotulo}
-        </Link>
+    <section aria-labelledby={id} className={cn('flex flex-col gap-1', `area-${area}`)}>
+      <div className="flex items-center gap-3">
+        <span className="selo-area size-11" aria-hidden>
+          <Icone className="size-6" weight="fill" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4">
+          <h2 id={id} className="text-xl font-bold">
+            {titulo}
+          </h2>
+          {detalhe && <p className="text-base text-muted-foreground">{detalhe}</p>}
+        </div>
       </div>
-      {detalhe && (
-        <p
-          className={cn('-mt-1 text-base', destaque ? 'font-semibold text-atraso' : 'text-muted-foreground')}
-        >
-          {detalhe}
-        </p>
-      )}
       {children}
+      <Link
+        to={link.para}
+        className="-mx-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 font-semibold text-area hover:bg-area-fundo/60"
+      >
+        {link.rotulo}
+        <CaretRightIcon className="size-5" weight="bold" aria-hidden />
+      </Link>
     </section>
   )
 }
@@ -90,17 +116,23 @@ export function Hoje() {
   const consulta = usePainelHoje(data)
 
   return (
-    <Pagina titulo="Hoje" cabecalho={<CabecalhoHoje />}>
+    <Pagina
+      titulo="Hoje"
+      cabecalho={<CabecalhoHoje resumo={consulta.data ? frase(consulta.data.resumo) : null} />}
+    >
       {consulta.isPending ? (
-        <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-4">
-          <Skeleton className="h-6 w-2/3" />
+        <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-8">
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-28 rounded-xl" />
+            <div key={n} className="flex flex-col gap-3">
+              <Skeleton className="h-11 w-1/2" />
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+            </div>
           ))}
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
-          icone={Sun}
+          icone={SunIcon}
           titulo="Não foi possível carregar o seu dia"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
@@ -114,8 +146,7 @@ export function Hoje() {
 }
 
 function Painel({ painel }: { painel: PainelHoje }) {
-  const { resumo, eventos, medicamentos, rotina, pagamentos } = painel
-  const resumoTexto = frase(resumo)
+  const { eventos, medicamentos, rotina, pagamentos } = painel
   const tomados = medicamentos.filter((m) => m.tomado).length
   const feitas = rotina.filter((t) => t.concluida).length
   const nadaNoDia =
@@ -129,7 +160,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
   if (nadaNoDia) {
     return (
       <EstadoVazio
-        icone={Sun}
+        icone={SunIcon}
         titulo="Dia livre"
         acao={
           <Button asChild>
@@ -137,50 +168,38 @@ function Painel({ painel }: { painel: PainelHoje }) {
           </Button>
         }
       >
-        Nada agendado, nenhum remédio, compromisso ou conta para hoje.
+        Nenhum agendamento, remédio, compromisso ou conta para hoje. Aproveite!
       </EstadoVazio>
     )
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      {resumoTexto && (
-        <p className="-mt-2 text-lg text-muted-foreground" aria-live="polite">
-          {resumoTexto}
-        </p>
-      )}
+    <div className="flex flex-col gap-10">
+      {pagamentos.vencidos.length > 0 && <ContasVencidas pagamentos={pagamentos} />}
 
-      {pagamentos.vencidos.length > 0 && (
-        <Secao
-          id="hoje-vencidas"
-          titulo={pagamentos.vencidos.length === 1 ? 'Conta vencida' : 'Contas vencidas'}
-          detalhe={`${formatarCentavos(pagamentos.totalVencidoCentavos)} em atraso`}
-          link={{ para: '/pagamentos?status=pendente', rotulo: 'Ver pagamentos' }}
-          destaque
-        >
-          <ul className="flex flex-col gap-3">
-            {pagamentos.vencidos.map((p) => (
-              <ItemPagamento key={p.id} pagamento={p} />
-            ))}
-          </ul>
-        </Secao>
-      )}
-
-      <Secao id="hoje-agenda" titulo="Agendamentos" link={{ para: '/agenda', rotulo: 'Ver agenda' }}>
+      <Secao
+        id="hoje-agenda"
+        area="agenda"
+        icone={CalendarDotsIcon}
+        titulo="Agendamentos"
+        link={{ para: '/agenda', rotulo: 'Ver agenda' }}
+      >
         {eventos.length ? (
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col divide-y divide-linha">
             {eventos.map((e) => (
               <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} />
             ))}
           </ul>
         ) : (
-          <p className="text-base text-muted-foreground">Nada marcado para hoje.</p>
+          <p className="py-3 text-muted-foreground">Nada marcado para hoje.</p>
         )}
       </Secao>
 
       {medicamentos.length > 0 && (
         <Secao
           id="hoje-remedios"
+          area="remedios"
+          icone={PillIcon}
           titulo="Remédios"
           detalhe={
             tomados === medicamentos.length
@@ -189,7 +208,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
           }
           link={{ para: '/remedios', rotulo: 'Ver remédios' }}
         >
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col divide-y divide-linha">
             {medicamentos.map((d) => (
               <ItemDose key={d.horarioId} dose={d} futuro={false} />
             ))}
@@ -200,6 +219,8 @@ function Painel({ painel }: { painel: PainelHoje }) {
       {rotina.length > 0 && (
         <Secao
           id="hoje-rotina"
+          area="compromissos"
+          icone={CheckSquareIcon}
           titulo="Compromissos"
           detalhe={
             feitas === rotina.length
@@ -208,7 +229,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
           }
           link={{ para: '/rotina', rotulo: 'Ver compromissos' }}
         >
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col divide-y divide-linha">
             {rotina.map((t) => (
               <ItemTarefa key={t.rotinaId} tarefa={t} desabilitada={false} />
             ))}
@@ -219,11 +240,13 @@ function Painel({ painel }: { painel: PainelHoje }) {
       {pagamentos.aVencer.length > 0 && (
         <Secao
           id="hoje-a-vencer"
+          area="contas"
+          icone={WalletIcon}
           titulo="Contas dos próximos 7 dias"
           detalhe={`${formatarCentavos(pagamentos.totalAVencerCentavos)} no total`}
           link={{ para: '/pagamentos', rotulo: 'Ver pagamentos' }}
         >
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col divide-y divide-linha">
             {pagamentos.aVencer.map((p) => (
               <ItemPagamento key={p.id} pagamento={p} />
             ))}
@@ -231,5 +254,40 @@ function Painel({ painel }: { painel: PainelHoje }) {
         </Secao>
       )}
     </div>
+  )
+}
+
+/** Contas em atraso vêm primeiro, numa folha vinho-clara: é o único aviso do dia. */
+function ContasVencidas({ pagamentos }: { pagamentos: PainelHoje['pagamentos'] }) {
+  const titulo = pagamentos.vencidos.length === 1 ? 'Conta vencida' : 'Contas vencidas'
+  return (
+    <section
+      aria-labelledby="hoje-vencidas"
+      className="-mx-4 flex flex-col gap-1 bg-atraso-fundo px-4 pt-4 pb-2 sm:mx-0 sm:rounded-xl"
+    >
+      <div className="flex items-center gap-3">
+        <WarningCircleIcon className="size-8 shrink-0 text-atraso" weight="fill" aria-hidden />
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4">
+          <h2 id="hoje-vencidas" className="text-xl font-bold text-atraso">
+            {titulo}
+          </h2>
+          <p className="font-semibold text-atraso">
+            {formatarCentavos(pagamentos.totalVencidoCentavos)} em atraso
+          </p>
+        </div>
+      </div>
+      <ul className="flex flex-col divide-y divide-atraso/20">
+        {pagamentos.vencidos.map((p) => (
+          <ItemPagamento key={p.id} pagamento={p} />
+        ))}
+      </ul>
+      <Link
+        to="/pagamentos?status=pendente"
+        className="-mx-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 font-semibold text-atraso hover:bg-atraso/8"
+      >
+        Ver pagamentos
+        <CaretRightIcon className="size-5" weight="bold" aria-hidden />
+      </Link>
+    </section>
   )
 }

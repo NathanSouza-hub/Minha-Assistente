@@ -44,7 +44,7 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
           {acoes}
         </div>
       </header>
-      <div aria-hidden className="h-1.5 bg-area" />
+      <div aria-hidden className="h-1.5 bg-area-fundo" />
       <div className={cn('mx-auto w-full px-4 pt-6 pb-8 md:px-8 md:pt-8', largura)}>{children}</div>
     </div>
   )

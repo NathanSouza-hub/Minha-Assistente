@@ -94,7 +94,7 @@ export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: 
           Nenhum pagamento da equipe em {nomeDoMes(mes).toLowerCase()}.
         </p>
       ) : (
-        <ul className="flex flex-col gap-3" aria-label="Pagamentos da equipe do mês">
+        <ul className="flex flex-col divide-y divide-linha" aria-label="Pagamentos da equipe do mês">
           {pagamentos.map((p) => (
             <ItemPagamento key={p.id} pagamento={p} />
           ))}

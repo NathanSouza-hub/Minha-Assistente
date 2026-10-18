@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { CheckIcon } from '@phosphor-icons/react'
 import { useConcluirTarefa } from '@/consultas/rotinas'
 import { horaDe } from '@/lib/datas'
 import type { TarefaDoDia } from '@/lib/tipos'
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; desabilitada: boolean }) {
   const concluir = useConcluirTarefa(t.data)
   return (
-    <li>
+    <li className="py-1.5">
       <button
         type="button"
         role="checkbox"
@@ -16,18 +16,17 @@ export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; d
         disabled={desabilitada}
         onClick={() => concluir.mutate({ rotinaId: t.rotinaId, concluida: !t.concluida })}
         className={cn(
-          'flex min-h-16 w-full items-center gap-4 rounded-xl border bg-card p-4 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60',
-          t.concluida && 'bg-secondary/60',
+          '-mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-areia/70 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60',
         )}
       >
         <span
           aria-hidden
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg border-2',
-            t.concluida ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card',
+            t.concluida ? 'border-ok bg-ok text-folha' : 'border-input bg-folha',
           )}
         >
-          {t.concluida && <Check className="size-6" strokeWidth={3} />}
+          {t.concluida && <CheckIcon className="size-6" weight="bold" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={cn('text-lg font-semibold', t.concluida && 'text-muted-foreground line-through')}>
