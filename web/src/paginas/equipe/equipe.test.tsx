@@ -110,6 +110,6 @@ describe('aba Salários equipe', () => {
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
     expect(await screen.findByText('Nenhum pagamento da equipe em outubro de 2026.')).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByText('(inativa)')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Inativa')).toBeInTheDocument())
   })
 })

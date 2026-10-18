@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeftIcon, PlusIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -99,7 +99,7 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
             to={LISTA}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon weight="bold" className="size-5" aria-hidden />
             Salários equipe
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
@@ -165,7 +165,7 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
                   aria-label={`Remover ${i + 1}º dia de pagamento`}
                   onClick={() => dias.remove(i)}
                 >
-                  <X className="size-5" aria-hidden />
+                  <XIcon weight="bold" className="size-5" aria-hidden />
                 </Button>
               )}
             </div>
@@ -177,7 +177,7 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
             className="self-start"
             onClick={() => dias.append({ dia: '', valor: '' })}
           >
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Outro dia
           </Button>
         </fieldset>
@@ -193,7 +193,7 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
           control={control}
           name="ativo"
           render={({ field }) => (
-            <div className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4">
+            <div className="flex items-center justify-between gap-4 rounded-2xl bg-folha p-4 shadow-folha">
               <Label htmlFor="ativo" className="flex flex-col items-start gap-1 text-lg">
                 Ativa
                 <span className="text-base font-normal text-muted-foreground">
@@ -219,7 +219,7 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir pessoa
                 </Button>
               }

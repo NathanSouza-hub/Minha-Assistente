@@ -142,7 +142,7 @@ export function FormularioContaEquipe({
           className="flex flex-col gap-6"
         >
           {membro?.chavePix && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-folha p-4 shadow-folha">
               <div className="flex min-w-0 flex-col">
                 <span className="text-base text-muted-foreground">
                   Chave PIX

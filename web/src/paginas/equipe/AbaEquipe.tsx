@@ -1,4 +1,4 @@
-import { ChevronRight, Plus, Users } from 'lucide-react'
+import { CaretRightIcon, PlusIcon, UsersIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
@@ -35,38 +35,46 @@ function ListaEquipe() {
         </h2>
         <Button asChild variant="outline">
           <Link to="/equipe/novo">
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Adicionar pessoa
           </Link>
         </Button>
       </div>
       {isPending ? (
-        <Skeleton className="h-20 rounded-xl" role="status" aria-label="Carregando equipe" />
+        <Skeleton className="h-20" role="status" aria-label="Carregando equipe" />
       ) : !equipe?.length ? (
-        <EstadoVazio icone={Users} titulo="Ninguém na equipe ainda">
+        <EstadoVazio icone={UsersIcon} titulo="Ninguém na equipe ainda">
           Cadastre quem recebe salário, plantão ou honorário. O app cria as contas nos dias de pagamento.
         </EstadoVazio>
       ) : (
-        <ul className="flex flex-col gap-2" aria-label="Pessoas da equipe">
+        <ul className="flex flex-col divide-y divide-linha" aria-label="Pessoas da equipe">
           {equipe.map((m) => (
             <li key={m.id}>
               <Link
                 to={`/equipe/${m.id}`}
-                className={cn(
-                  'flex items-center justify-between gap-3 rounded-xl border bg-card p-4 hover:bg-muted/60',
-                  !m.ativo && 'opacity-60',
-                )}
+                className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-areia/70"
               >
-                <span className="flex min-w-0 flex-col gap-1">
-                  <span className="text-lg leading-snug font-bold">
-                    {m.nome}
-                    {!m.ativo && <span className="ml-2 text-base font-semibold text-muted-foreground">(inativa)</span>}
+                {/* Inicial do nome no selo da área, como um crachá. */}
+                <span
+                  aria-hidden
+                  className={cn('selo-area size-11 text-lg font-bold', !m.ativo && 'bg-areia text-muted-foreground')}
+                >
+                  {m.nome.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-x-2 text-lg leading-snug font-bold">
+                    <span className={cn(!m.ativo && 'text-muted-foreground')}>{m.nome}</span>
+                    {!m.ativo && (
+                      <span className="rounded-full bg-areia px-2.5 text-base font-semibold text-muted-foreground">
+                        Inativa
+                      </span>
+                    )}
                   </span>
                   <span className="text-base text-muted-foreground">
                     {[m.funcao, textoForma[m.formaPagamento], descreverDias(m.dias)].filter(Boolean).join(' · ')}
                   </span>
                 </span>
-                <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <CaretRightIcon weight="bold" className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </li>
           ))}
@@ -88,9 +96,9 @@ export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: 
       {pagamentos.length > 0 && <ResumoContas pagamentos={pagamentos} />}
 
       {consulta.isPending ? (
-        <Skeleton className="h-36 rounded-xl" role="status" aria-label="Carregando pagamentos da equipe" />
+        <Skeleton className="h-36" role="status" aria-label="Carregando pagamentos da equipe" />
       ) : pagamentos.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-4 text-center text-muted-foreground">
+        <p className="rounded-2xl border-2 border-dashed border-linha p-4 text-center text-muted-foreground">
           Nenhum pagamento da equipe em {nomeDoMes(mes).toLowerCase()}.
         </p>
       ) : (
