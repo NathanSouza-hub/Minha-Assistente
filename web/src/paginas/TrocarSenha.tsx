@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeftIcon } from '@phosphor-icons/react'
 import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -53,7 +53,7 @@ export function TrocarSenha() {
             to="/mais"
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon weight="bold" className="size-5" aria-hidden />
             Mais
           </Link>
           <h1 className="text-3xl leading-tight font-bold">Trocar senha</h1>

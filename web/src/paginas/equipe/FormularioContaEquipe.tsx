@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Copy, Trash2 } from "lucide-react";
+import { ArrowLeftIcon, CopyIcon, TrashIcon } from "@phosphor-icons/react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -123,7 +123,7 @@ export function FormularioContaEquipe({
             to={lista(p.vencimento)}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon weight="bold" className="size-5" aria-hidden />
             {daLista ? "Lista de despesas" : "Salários equipe"}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">
@@ -152,7 +152,7 @@ export function FormularioContaEquipe({
                 </span>
               </div>
               <Button type="button" variant="outline" onClick={copiarPix}>
-                <Copy aria-hidden />
+                <CopyIcon aria-hidden />
                 Copiar
               </Button>
             </div>
@@ -226,7 +226,7 @@ export function FormularioContaEquipe({
                   size="lg"
                   className="w-full sm:w-auto"
                 >
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir pagamento
                 </Button>
               }
