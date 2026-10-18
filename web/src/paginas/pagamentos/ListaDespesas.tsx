@@ -1,4 +1,4 @@
-import { ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
+import { CaretRightIcon, PlusIcon, SlidersHorizontalIcon, WalletIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -36,7 +36,7 @@ export function ListaDespesas() {
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Nova
           </Link>
         </Button>
@@ -58,16 +58,16 @@ export function ListaDespesas() {
           ]}
         />
 
-        <details className="group rounded-xl border bg-card" open={filtrosAbertos > 0 || undefined}>
+        <details className="group rounded-2xl bg-folha shadow-folha" open={filtrosAbertos > 0 || undefined}>
           <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
-            <SlidersHorizontal className="size-5 text-primary" aria-hidden />
+            <SlidersHorizontalIcon className="size-5 text-area" weight="bold" aria-hidden />
             Categoria e imóvel
             {filtrosAbertos > 0 && (
-              <span className="rounded-full bg-primary px-2 text-sm text-primary-foreground">{filtrosAbertos}</span>
+              <span className="rounded-full bg-area px-2 text-sm text-folha">{filtrosAbertos}</span>
             )}
-            <ChevronRight className="ml-auto size-5 transition-transform group-open:rotate-90" aria-hidden />
+            <CaretRightIcon className="ml-auto size-5 transition-transform group-open:rotate-90" weight="bold" aria-hidden />
           </summary>
-          <div className="grid gap-4 border-t p-4 sm:grid-cols-2">
+          <div className="grid gap-4 border-t border-linha p-4 sm:grid-cols-2">
             <Selecao rotulo="Categoria" value={categoriaId} onChange={(e) => mudar({ categoria: e.target.value })}>
               <option value="">Todas</option>
               {categorias.map((c) => (
@@ -94,12 +94,12 @@ export function ListaDespesas() {
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando despesas">
             {[1, 2, 3].map((n) => (
-              <Skeleton key={n} className="h-16 rounded-xl" />
+              <Skeleton key={n} className="h-16" />
             ))}
           </div>
         ) : consulta.isError ? (
           <EstadoVazio
-            icone={Wallet}
+            icone={WalletIcon}
             titulo="Não foi possível carregar as despesas"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           >
@@ -108,7 +108,7 @@ export function ListaDespesas() {
         ) : pagamentos.length === 0 ? (
           temFiltro ? (
             <EstadoVazio
-              icone={Wallet}
+              icone={WalletIcon}
               titulo="Nenhuma despesa com esses filtros"
               acao={
                 <Button variant="outline" onClick={() => mudar({ status: '', categoria: '', imovel: '' })}>
@@ -118,7 +118,7 @@ export function ListaDespesas() {
             />
           ) : (
             <EstadoVazio
-              icone={Wallet}
+              icone={WalletIcon}
               titulo={`Nenhuma despesa em ${nomeDoMes(mes).toLowerCase()}`}
               acao={
                 <Button asChild>

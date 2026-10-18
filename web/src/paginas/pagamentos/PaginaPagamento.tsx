@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeftIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -206,7 +206,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
             to={enderecoDaLista(pagamento?.vencimento ?? vencimentoPadrao)}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon weight="bold" className="size-5" aria-hidden />
             {daLista ? 'Lista de despesas' : 'Cadastro de despesas'}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{editando ? 'Editar pagamento' : 'Novo pagamento'}</h1>
@@ -258,7 +258,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
                 <option value={NOVA_CATEGORIA}>+ Nova categoria…</option>
               </Selecao>
               {criandoCategoria && (
-                <div className="rounded-xl border bg-card p-4">
+                <div className="rounded-2xl bg-folha p-4 shadow-folha">
                   <FormCategoria
                     rotulo="Nome da nova categoria"
                     autoFocus
@@ -333,7 +333,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
           )}
 
           {!parcelado && (
-            <div className="flex flex-col gap-4 rounded-xl border bg-card p-4">
+            <div className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
               <Controller
                 control={control}
                 name="jaPago"
@@ -389,7 +389,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
               <Confirmar
                 gatilho={
                   <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                    <Trash2 aria-hidden />
+                    <TrashIcon aria-hidden />
                     Excluir pagamento
                   </Button>
                 }

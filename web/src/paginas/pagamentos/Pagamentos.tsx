@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
+import { CaretRightIcon, PlusIcon, SlidersHorizontalIcon, WalletIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -55,8 +55,8 @@ function Abas({
               aria-pressed={ativa === aba.id}
               onClick={() => aoMudar(aba.id)}
               className={cn(
-                'min-h-11 rounded-full border px-4 font-semibold whitespace-nowrap',
-                ativa === aba.id ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-muted',
+                'min-h-11 rounded-full px-4 font-semibold whitespace-nowrap',
+                ativa === aba.id ? 'bg-area text-folha' : 'bg-areia hover:bg-linha',
               )}
             >
               {aba.nome}
@@ -66,15 +66,15 @@ function Abas({
             type="button"
             aria-expanded={criando}
             onClick={() => setCriando((v) => !v)}
-            className="flex min-h-11 items-center gap-1 rounded-full border border-dashed px-4 font-semibold whitespace-nowrap text-primary hover:bg-muted"
+            className="flex min-h-11 items-center gap-1 rounded-full border-2 border-dashed border-input px-4 font-semibold whitespace-nowrap text-area hover:bg-areia"
           >
-            <Plus className="size-5" aria-hidden />
+            <PlusIcon className="size-5" weight="bold" aria-hidden />
             Nova
           </button>
         </div>
       </div>
       {criando && (
-        <div className="rounded-xl border bg-card p-4">
+        <div className="rounded-2xl bg-folha p-4 shadow-folha">
           <FormCategoria
             autoFocus
             aoSalvar={(nova) => {
@@ -125,7 +125,7 @@ function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) 
   if (isPending) {
     return (
       <Pagina titulo="Cadastro de despesas">
-        <Skeleton className="h-36 rounded-xl" role="status" aria-label="Carregando categorias" />
+        <Skeleton className="h-36" role="status" aria-label="Carregando categorias" />
       </Pagina>
     )
   }
@@ -133,7 +133,7 @@ function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) 
     return (
       <Pagina titulo="Cadastro de despesas">
         <EstadoVazio
-          icone={Wallet}
+          icone={WalletIcon}
           titulo="Não foi possível carregar as categorias"
           acao={<Button onClick={() => refetch()}>Tentar de novo</Button>}
         >
@@ -149,7 +149,7 @@ function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) 
       <Pagina titulo="Cadastro de despesas">
         <div className="flex flex-col gap-5">
           <Abas categorias={categorias} ativa="" aoMudar={(nova) => filtros.mudar({ aba: nova })} />
-          <EstadoVazio icone={Wallet} titulo="Nenhuma categoria">
+          <EstadoVazio icone={WalletIcon} titulo="Nenhuma categoria">
             Crie uma categoria em "+ Nova" para cadastrar as contas.
           </EstadoVazio>
         </div>
@@ -193,7 +193,7 @@ function ContasDaCategoria({
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Nova
           </Link>
         </Button>
@@ -218,8 +218,8 @@ function ContasDaCategoria({
                   aria-pressed={imovelId === i.id}
                   onClick={() => mudar({ imovel: i.id })}
                   className={cn(
-                    'min-h-11 rounded-lg border px-3 font-semibold whitespace-nowrap',
-                    imovelId === i.id ? 'border-primary bg-secondary text-secondary-foreground' : 'bg-card hover:bg-muted',
+                    'min-h-11 rounded-lg border-2 px-3 font-semibold whitespace-nowrap',
+                    imovelId === i.id ? 'border-area bg-area-fundo text-area' : 'border-transparent bg-areia hover:bg-linha',
                   )}
                 >
                   {i.nome}
@@ -245,14 +245,14 @@ function ContasDaCategoria({
         />
 
         {imoveis.length > 0 && !imoveisEmAbas && (
-          <details className="group rounded-xl border bg-card" open={Boolean(imovelId) || undefined}>
+          <details className="group rounded-2xl bg-folha shadow-folha" open={Boolean(imovelId) || undefined}>
             <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
-              <SlidersHorizontal className="size-5 text-primary" aria-hidden />
+              <SlidersHorizontalIcon className="size-5 text-area" weight="bold" aria-hidden />
               Imóvel
-              {imovelId && <span className="rounded-full bg-primary px-2 text-sm text-primary-foreground">1</span>}
-              <ChevronRight className="ml-auto size-5 transition-transform group-open:rotate-90" aria-hidden />
+              {imovelId && <span className="rounded-full bg-area px-2 text-sm text-folha">1</span>}
+              <CaretRightIcon className="ml-auto size-5 transition-transform group-open:rotate-90" weight="bold" aria-hidden />
             </summary>
-            <div className="border-t p-4">
+            <div className="border-t border-linha p-4">
               <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
                 <option value="">Todos</option>
                 {imoveis.map((i) => (
@@ -270,12 +270,12 @@ function ContasDaCategoria({
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando contas">
             {[1, 2, 3].map((n) => (
-              <Skeleton key={n} className="h-36 rounded-xl" />
+              <Skeleton key={n} className="h-16" />
             ))}
           </div>
         ) : consulta.isError ? (
           <EstadoVazio
-            icone={Wallet}
+            icone={WalletIcon}
             titulo="Não foi possível carregar as contas"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           >
@@ -284,7 +284,7 @@ function ContasDaCategoria({
         ) : pagamentos.length === 0 ? (
           temFiltro ? (
             <EstadoVazio
-              icone={Wallet}
+              icone={WalletIcon}
               titulo="Nenhuma conta com esses filtros"
               acao={
                 <Button variant="outline" onClick={() => mudar({ status: '', imovel: '' })}>
@@ -294,7 +294,7 @@ function ContasDaCategoria({
             />
           ) : (
             <EstadoVazio
-              icone={Wallet}
+              icone={WalletIcon}
               titulo={`Nenhuma conta${ondeEstou} em ${nomeDoMes(mes).toLowerCase()}`}
               acao={
                 <Button asChild>
@@ -304,7 +304,7 @@ function ContasDaCategoria({
             />
           )
         ) : (
-          <ul className="flex flex-col gap-3" aria-label={`Contas${ondeEstou} do mês`}>
+          <ul className="flex flex-col divide-y divide-linha" aria-label={`Contas${ondeEstou} do mês`}>
             {pagamentos.map((p) => (
               <ItemPagamento key={p.id} pagamento={p} />
             ))}

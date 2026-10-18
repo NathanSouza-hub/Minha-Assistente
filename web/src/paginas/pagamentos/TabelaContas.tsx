@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { CircleCheck, Paperclip, Pencil, Trash2, Undo2 } from 'lucide-react'
+import { ArrowCounterClockwiseIcon, CheckCircleIcon, PaperclipIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Campo } from '@/components/Campo'
@@ -41,9 +41,9 @@ const enderecoDe = (p: Pagamento, ancora = '') =>
 /** Contas do mês em tabela: contas comuns, faturas dos cartões e pagamentos da equipe. */
 export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; rotulo: string }) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
+    <div className="overflow-x-auto rounded-2xl bg-folha shadow-folha">
       <table className="w-full border-collapse text-left" aria-label={rotulo}>
-        <thead className="bg-muted/60 text-base text-muted-foreground">
+        <thead className="bg-areia text-base text-muted-foreground">
           <tr>
             <th scope="col" className="px-2.5 py-2 font-semibold">
               Descrição
@@ -103,13 +103,13 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
   }
 
   return (
-    <tr className="border-t align-middle">
+    <tr className="border-t border-linha align-middle">
       <td className="px-2.5 py-2">
-        <Link to={enderecoDe(p)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-muted/60">
+        <Link to={enderecoDe(p)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-areia/70">
           <span className="flex items-center gap-1.5 leading-snug font-bold">
             {p.descricao}
             {p.totalComprovantes > 0 && (
-              <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-label="Com comprovante" role="img" />
+              <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" aria-label="Com comprovante" role="img" />
             )}
           </span>
           {/* No celular as colunas escondidas viram uma linha de detalhes. */}
@@ -120,7 +120,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
       </td>
       <td className="px-2.5 py-2 text-right whitespace-nowrap tabular-nums">
         {aDefinir ? (
-          <span className="rounded-md bg-hoje/25 px-2 font-semibold">A definir</span>
+          <span className="rounded-full bg-terracota-clara px-2.5 font-semibold text-terracota">A definir</span>
         ) : (
           <span className="font-bold">{formatarCentavos(p.valorCentavos!)}</span>
         )}
@@ -139,7 +139,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
       <td className={cn(soLargo, 'px-2.5 py-2 whitespace-nowrap')}>
         {p.status === 'pago' ? (
           <span className="flex flex-col">
-            <span className="font-semibold text-primary">Pago</span>
+            <span className="font-semibold text-ok">Pago</span>
             <span className="text-sm text-muted-foreground">em {dataCurta(p.dataPagamento!)}</span>
           </span>
         ) : p.vencido ? (
@@ -154,13 +154,13 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary"
+              className="text-ok"
               disabled={marcando}
               onClick={() => (aDefinir ? setPedindoValor(true) : marcar(p))}
               aria-label={aDefinir ? `Pagar ${p.descricao}` : `Marcar ${p.descricao} como pago`}
               title="Marcar como pago"
             >
-              <CircleCheck className="size-6" aria-hidden />
+              <CheckCircleIcon className="size-7" aria-hidden />
             </Button>
           ) : (
             !fatura && (
@@ -172,20 +172,20 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
                 aria-label={`Desfazer pagamento de ${p.descricao}`}
                 title="Desfazer pagamento"
               >
-                <Undo2 className="size-6" aria-hidden />
+                <ArrowCounterClockwiseIcon className="size-6" aria-hidden />
               </Button>
             )
           )}
           {pedirComprovante && (
             <Button asChild variant="ghost" size="icon" title="Anexar comprovante">
               <Link to={enderecoDe(p, '#comprovantes')} aria-label={`Anexar comprovante de ${p.descricao}`}>
-                <Paperclip className="size-6" aria-hidden />
+                <PaperclipIcon className="size-6" aria-hidden />
               </Link>
             </Button>
           )}
           <Button asChild variant="ghost" size="icon" className="hidden lg:inline-flex" title="Editar">
             <Link to={enderecoDe(p)} aria-label={`Editar ${p.descricao}`}>
-              <Pencil className="size-5" aria-hidden />
+              <PencilSimpleIcon className="size-5" aria-hidden />
             </Link>
           </Button>
           {!fatura && (
@@ -198,7 +198,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
                   aria-label={`Excluir ${p.descricao}`}
                   title="Excluir"
                 >
-                  <Trash2 className="size-5" aria-hidden />
+                  <TrashIcon className="size-5" aria-hidden />
                 </Button>
               }
               titulo="Excluir esta conta?"
@@ -271,7 +271,7 @@ function PagarComValor({
               Voltar
             </Button>
             <Button type="submit" disabled={enviando}>
-              <CircleCheck aria-hidden />
+              <CheckCircleIcon aria-hidden />
               {enviando ? 'Marcando…' : 'Confirmar pagamento'}
             </Button>
           </div>
