@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus } from 'lucide-react'
+import { PlusIcon } from '@phosphor-icons/react'
 import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
 import { useSalvarCategoria } from '@/consultas/pagamentos'
@@ -76,7 +76,7 @@ export function FormCategoria({
       />
       <div className="flex flex-wrap gap-2">
         <Button type="button" onClick={enviarAgora} disabled={salvar.isPending}>
-          {!categoria && <Plus aria-hidden />}
+          {!categoria && <PlusIcon weight="bold" aria-hidden />}
           {salvar.isPending ? 'Salvando…' : textoBotao}
         </Button>
         {aoCancelar && (

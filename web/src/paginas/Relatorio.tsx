@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChartColumn } from 'lucide-react'
+import { ChartBarIcon } from '@phosphor-icons/react'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -33,7 +33,7 @@ export function Relatorio() {
   return (
     <Pagina titulo="Relatório de gastos">
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2">
+        <div className="grid gap-4 rounded-2xl bg-folha p-4 shadow-folha sm:grid-cols-2">
           <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
             <option value="este-mes">Este mês</option>
             <option value="mes-passado">Mês passado</option>
@@ -71,12 +71,12 @@ export function Relatorio() {
 
         {!periodoValido ? null : consulta.isPending ? (
           <div role="status" aria-label="Carregando relatório" className="flex flex-col gap-3">
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-64" />
           </div>
         ) : consulta.isError ? (
           <EstadoVazio
-            icone={ChartColumn}
+            icone={ChartBarIcon}
             titulo="Não foi possível carregar o relatório"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           />
@@ -93,7 +93,7 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
 
   if (itens.length === 0) {
     return (
-      <EstadoVazio icone={ChartColumn} titulo="Nada pago ou previsto neste período">
+      <EstadoVazio icone={ChartBarIcon} titulo="Nada pago ou previsto neste período">
         De {dataCurta(inicio)} a {dataCurta(fim)} não há pagamentos. Experimente outro período.
       </EstadoVazio>
     )
@@ -105,14 +105,14 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
   return (
     <div className="flex flex-col gap-6">
       <dl className="grid grid-cols-2 gap-3">
-        <div className="min-w-0 rounded-xl border bg-card p-4">
+        <div className="min-w-0 rounded-2xl bg-folha p-4 shadow-folha">
           <dt className="flex items-center gap-2 text-base text-muted-foreground">
             <span aria-hidden className="size-3 rounded-sm bg-serie-pago" />
             Pago
           </dt>
           <dd className="text-xl font-bold tabular-nums sm:text-2xl">{formatarCentavos(totalPagoCentavos)}</dd>
         </div>
-        <div className="min-w-0 rounded-xl border bg-card p-4">
+        <div className="min-w-0 rounded-2xl bg-folha p-4 shadow-folha">
           <dt className="flex items-center gap-2 text-base text-muted-foreground">
             <span aria-hidden className="size-3 rounded-sm bg-serie-previsto" />
             Previsto
@@ -121,7 +121,7 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
         </div>
       </dl>
 
-      <section className="rounded-xl border bg-card p-4" aria-labelledby="titulo-grafico">
+      <section className="rounded-2xl bg-folha p-4 shadow-folha" aria-labelledby="titulo-grafico">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 id="titulo-grafico" className="text-xl font-bold">
             {relatorio.agruparPor === 'imovel' ? 'Por imóvel' : 'Por categoria'}

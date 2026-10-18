@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { House, Pencil, Plus, Trash2 } from 'lucide-react'
+import { HouseIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
@@ -67,7 +67,7 @@ function FormNome({
       />
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={salvar.isPending}>
-          {!imovel && <Plus aria-hidden />}
+          {!imovel && <PlusIcon weight="bold" aria-hidden />}
           {salvar.isPending ? 'Salvando…' : textoBotao}
         </Button>
         {aoCancelar && (
@@ -86,7 +86,7 @@ function LinhaImovel({ imovel }: { imovel: Imovel }) {
 
   if (renomeando) {
     return (
-      <li className="p-4">
+      <li className="py-4">
         <FormNome
           imovel={imovel}
           rotulo={`Novo nome para ${imovel.nome}`}
@@ -99,20 +99,22 @@ function LinhaImovel({ imovel }: { imovel: Imovel }) {
   }
 
   return (
-    <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
       <span className="flex flex-1 items-center gap-3 text-lg font-semibold">
-        <House className="size-6 shrink-0 text-primary" aria-hidden />
+        <span className="selo-area size-11" aria-hidden>
+          <HouseIcon className="size-6" />
+        </span>
         {imovel.nome}
       </span>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${imovel.nome}`}>
-          <Pencil aria-hidden />
+          <PencilSimpleIcon aria-hidden />
           Renomear
         </Button>
         <Confirmar
           gatilho={
             <Button variant="destructive" aria-label={`Excluir ${imovel.nome}`} disabled={excluir.isPending}>
-              <Trash2 aria-hidden />
+              <TrashIcon aria-hidden />
               Excluir
             </Button>
           }
@@ -139,18 +141,18 @@ export function Imoveis() {
           Separe os pagamentos por imóvel para saber quanto cada um custa no relatório de gastos.
         </p>
 
-        <section className="rounded-xl border bg-card p-4">
+        <section className="rounded-2xl bg-folha p-4 shadow-folha">
           <FormNome rotulo="Nome do imóvel" textoBotao="Adicionar imóvel" />
         </section>
 
         {consulta.isPending ? (
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-40" />
         ) : imoveis.length === 0 ? (
-          <EstadoVazio icone={House} titulo="Nenhum imóvel cadastrado">
+          <EstadoVazio icone={HouseIcon} titulo="Nenhum imóvel cadastrado">
             Adicione o primeiro acima. Pagamentos sem imóvel aparecem como "Sem imóvel" no relatório.
           </EstadoVazio>
         ) : (
-          <ul className="divide-y rounded-xl border bg-card" aria-label="Seus imóveis">
+          <ul className="flex flex-col divide-y divide-linha" aria-label="Seus imóveis">
             {imoveis.map((imovel) => (
               <LinhaImovel key={imovel.id} imovel={imovel} />
             ))}

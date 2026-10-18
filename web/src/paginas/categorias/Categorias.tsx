@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Tags, Trash2 } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, PencilSimpleIcon, TagIcon, TrashIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Confirmar } from '@/components/Confirmar'
@@ -30,7 +30,7 @@ function LinhaCategoria({
 
   if (renomeando) {
     return (
-      <li className="p-4">
+      <li className="py-4">
         <FormCategoria
           categoria={categoria}
           rotulo={`Novo nome para ${categoria.nome}`}
@@ -47,9 +47,11 @@ function LinhaCategoria({
   }
 
   return (
-    <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
       <span className="flex flex-1 items-center gap-3 text-lg font-semibold">
-        <Tags className="size-6 shrink-0 text-primary" aria-hidden />
+        <span className="selo-area size-11" aria-hidden>
+          <TagIcon className="size-6" />
+        </span>
         {categoria.nome}
       </span>
       <div className="flex flex-wrap gap-2">
@@ -60,7 +62,7 @@ function LinhaCategoria({
           disabled={primeira || movendo}
           aria-label={`Subir ${categoria.nome}`}
         >
-          <ArrowUp aria-hidden />
+          <ArrowUpIcon weight="bold" aria-hidden />
         </Button>
         <Button
           variant="outline"
@@ -69,16 +71,16 @@ function LinhaCategoria({
           disabled={ultima || movendo}
           aria-label={`Descer ${categoria.nome}`}
         >
-          <ArrowDown aria-hidden />
+          <ArrowDownIcon weight="bold" aria-hidden />
         </Button>
         <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${categoria.nome}`}>
-          <Pencil aria-hidden />
+          <PencilSimpleIcon aria-hidden />
           Renomear
         </Button>
         <Confirmar
           gatilho={
             <Button variant="destructive" aria-label={`Excluir ${categoria.nome}`} disabled={excluir.isPending}>
-              <Trash2 aria-hidden />
+              <TrashIcon aria-hidden />
               Excluir
             </Button>
           }
@@ -125,18 +127,18 @@ export function Categorias() {
           Cada categoria é uma aba na tela de Contas, nesta ordem. Crie as que precisar.
         </p>
 
-        <section className="rounded-xl border bg-card p-4">
+        <section className="rounded-2xl bg-folha p-4 shadow-folha">
           <FormCategoria aoSalvar={(c) => toast.success(`${c.nome} criada.`)} />
         </section>
 
         {consulta.isPending ? (
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-40" />
         ) : categorias.length === 0 ? (
-          <EstadoVazio icone={Tags} titulo="Nenhuma categoria">
+          <EstadoVazio icone={TagIcon} titulo="Nenhuma categoria">
             Crie a primeira acima para separar suas contas.
           </EstadoVazio>
         ) : (
-          <ul className="divide-y rounded-xl border bg-card" aria-label="Suas categorias">
+          <ul className="flex flex-col divide-y divide-linha" aria-label="Suas categorias">
             {categorias.map((categoria, i) => (
               <LinhaCategoria
                 key={categoria.id}
