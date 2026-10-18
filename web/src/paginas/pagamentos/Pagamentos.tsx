@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronRight, Plus, SlidersHorizontal, Wallet } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router'
+import { Link } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Opcoes } from '@/components/Opcoes'
@@ -9,16 +9,15 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
 import { chaveCategoria } from '@/lib/compras'
-import { intervaloDoMes, mesDe, nomeDoMes } from '@/lib/datas'
-import type { CategoriaPagamento, StatusPagamento } from '@/lib/tipos'
+import { intervaloDoMes, nomeDoMes } from '@/lib/datas'
+import type { CategoriaPagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
-import { TabelaContas } from './TabelaContas'
-
-type FiltroStatus = 'todos' | StatusPagamento
+import { type FiltroStatus, useFiltros } from './filtros'
+import { ItemPagamento } from './ItemPagamento'
 
 /** Valores de ?aba= das abas fixas (as outras abas são ids de categoria). */
 const ABA_EQUIPE = 'equipe'
@@ -27,31 +26,8 @@ const ABA_CARTOES = 'cartoes'
 /** "Contas residenciais" (ou "residências"...): a categoria das contas de casa, pelo nome. */
 const ehResidencial = (nome: string) => chaveCategoria(nome).includes('residen')
 
-/** Mês, aba e filtros moram na URL: recarregar ou voltar mantém o que a pessoa escolheu. */
-function useFiltros() {
-  const [params, setParams] = useSearchParams()
-  const mes = /^\d{4}-\d{2}$/.test(params.get('mes') ?? '') ? params.get('mes')! : mesDe()
-  const status = (params.get('status') as FiltroStatus | null) ?? 'todos'
-  const aba = params.get('aba') ?? ''
-  const imovelId = params.get('imovel') ?? ''
-
-  const mudar = (mudancas: Record<string, string>) =>
-    setParams(
-      (atual) => {
-        const novo = new URLSearchParams(atual)
-        for (const [chave, valor] of Object.entries(mudancas)) {
-          if (valor && valor !== 'todos') novo.set(chave, valor)
-          else novo.delete(chave)
-        }
-        return novo
-      },
-      { replace: true },
-    )
-
-  return { mes, status, aba, imovelId, mudar }
-}
-
-/** "Todas", uma aba por categoria, "Cartões" e o botão de criar categoria. Rola para o lado no celular. */
+/** Uma aba por categoria, "Salários equipe", "Cartões" e o botão de criar categoria. Rola para o lado no celular.
+ * Ver tudo junto é na Lista de despesas (ListaDespesas.tsx). */
 function Abas({
   categorias,
   ativa,
@@ -63,7 +39,6 @@ function Abas({
 }) {
   const [criando, setCriando] = useState(false)
   const abas = [
-    { id: '', nome: 'Todas' },
     ...categorias,
     { id: ABA_EQUIPE, nome: 'Salários equipe' },
     { id: ABA_CARTOES, nome: 'Cartões' },
@@ -120,7 +95,7 @@ export function Pagamentos() {
 
   if (filtros.aba === ABA_EQUIPE) {
     return (
-      <Pagina titulo="Contas">
+      <Pagina titulo="Cadastro de despesas">
         <div className="flex flex-col gap-5">
           <Abas
             categorias={categorias}
@@ -134,7 +109,7 @@ export function Pagamentos() {
   }
   if (filtros.aba === ABA_CARTOES) {
     return (
-      <Pagina titulo="Contas">
+      <Pagina titulo="Cadastro de despesas">
         <div className="flex flex-col gap-5">
           <Abas categorias={categorias} ativa={ABA_CARTOES} aoMudar={(nova) => filtros.mudar({ aba: nova, mes: '', cartao: '' })} />
           <AbaCartoes />
@@ -142,43 +117,79 @@ export function Pagamentos() {
       </Pagina>
     )
   }
-  return <ListaDeContas filtros={filtros} categorias={categorias} />
+  return <ListaDeContas filtros={filtros} />
 }
 
-function ListaDeContas({
-  filtros: { mes, status, aba, imovelId, mudar },
+function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) {
+  const { data: categorias, isPending, isError, refetch } = useCategorias()
+  if (isPending) {
+    return (
+      <Pagina titulo="Cadastro de despesas">
+        <Skeleton className="h-36 rounded-xl" role="status" aria-label="Carregando categorias" />
+      </Pagina>
+    )
+  }
+  if (isError) {
+    return (
+      <Pagina titulo="Cadastro de despesas">
+        <EstadoVazio
+          icone={Wallet}
+          titulo="Não foi possível carregar as categorias"
+          acao={<Button onClick={() => refetch()}>Tentar de novo</Button>}
+        >
+          Verifique a internet e tente de novo.
+        </EstadoVazio>
+      </Pagina>
+    )
+  }
+  // Sem aba (ou aba de categoria apagada, link antigo): abre na primeira categoria.
+  const categoriaAtiva = categorias.find((c) => c.id === filtros.aba) ?? categorias[0]
+  if (!categoriaAtiva) {
+    return (
+      <Pagina titulo="Cadastro de despesas">
+        <div className="flex flex-col gap-5">
+          <Abas categorias={categorias} ativa="" aoMudar={(nova) => filtros.mudar({ aba: nova })} />
+          <EstadoVazio icone={Wallet} titulo="Nenhuma categoria">
+            Crie uma categoria em "+ Nova" para cadastrar as contas.
+          </EstadoVazio>
+        </div>
+      </Pagina>
+    )
+  }
+  return <ContasDaCategoria filtros={filtros} categorias={categorias} categoriaAtiva={categoriaAtiva} />
+}
+
+function ContasDaCategoria({
+  filtros: { mes, status, imovelId, mudar },
   categorias,
+  categoriaAtiva,
 }: {
   filtros: ReturnType<typeof useFiltros>
   categorias: CategoriaPagamento[]
+  categoriaAtiva: CategoriaPagamento
 }) {
   const { data: imoveis = [] } = useImoveis()
-  // Aba de categoria que não existe mais (apagada, link antigo) vira "Todas".
-  const categoriaAtiva = categorias.find((c) => c.id === aba)
-  const categoriaId = categoriaAtiva?.id ?? ''
+  const categoriaId = categoriaAtiva.id
   const consulta = usePagamentos({
     ...intervaloDoMes(mes),
     status: status === 'todos' ? undefined : status,
-    categoriaId: categoriaId || undefined,
+    categoriaId,
     imovelId: imovelId || undefined,
   })
   const pagamentos = consulta.data ?? []
   // Na aba de contas residenciais os imóveis viram sub-abas (no resto, um filtro recolhido).
-  const imoveisEmAbas = Boolean(categoriaAtiva && ehResidencial(categoriaAtiva.nome) && imoveis.length > 0)
+  const imoveisEmAbas = ehResidencial(categoriaAtiva.nome) && imoveis.length > 0
   const imovelAtivo = imoveis.find((i) => i.id === imovelId)
 
   const temFiltro = status !== 'todos' || (Boolean(imovelId) && !imoveisEmAbas)
-  const novo = `/pagamentos/novo?mes=${mes}${categoriaId ? `&aba=${categoriaId}` : ''}${
+  const novo = `/pagamentos/novo?mes=${mes}&aba=${categoriaId}${
     imoveisEmAbas && imovelAtivo ? `&imovel=${imovelAtivo.id}` : ''
   }`
-  const ondeEstou = categoriaAtiva
-    ? ` de ${categoriaAtiva.nome.toLowerCase()}${imoveisEmAbas && imovelAtivo ? ` (${imovelAtivo.nome})` : ''}`
-    : ''
+  const ondeEstou = ` de ${categoriaAtiva.nome.toLowerCase()}${imoveisEmAbas && imovelAtivo ? ` (${imovelAtivo.nome})` : ''}`
 
   return (
     <Pagina
-      titulo="Contas"
-      larga
+      titulo="Cadastro de despesas"
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
@@ -293,7 +304,11 @@ function ListaDeContas({
             />
           )
         ) : (
-          <TabelaContas pagamentos={pagamentos} rotulo={`Contas${ondeEstou} do mês`} />
+          <ul className="flex flex-col gap-3" aria-label={`Contas${ondeEstou} do mês`}>
+            {pagamentos.map((p) => (
+              <ItemPagamento key={p.id} pagamento={p} />
+            ))}
+          </ul>
         )}
       </div>
     </Pagina>

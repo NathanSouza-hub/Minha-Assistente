@@ -17,6 +17,7 @@ import { dataCurta, hojeISO } from '@/lib/datas'
 import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { VOLTAR_DESPESAS } from './filtros'
 import { useDesfazerPagamento, useMarcarComoPago } from './marcarComoPago'
 
 // Colunas que só aparecem em tela larga; no celular a linha mostra descrição, valor, vencimento
@@ -30,9 +31,12 @@ const fixoDe = (p: Pagamento) =>
 
 const grupoDe = (p: Pagamento) => p.categoriaNome ?? p.cartaoNome ?? (p.membroId ? 'Salários equipe' : '')
 
-/** A fatura do cartão abre na aba Cartões, no mês dela; as outras contas, na tela da conta. */
-const enderecoDe = (p: Pagamento) =>
-  p.cartaoId ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}` : `/pagamentos/${p.id}`
+/** A fatura do cartão abre na aba Cartões, no mês dela; as outras contas, na tela da conta (que volta
+ * para a Lista de despesas). */
+const enderecoDe = (p: Pagamento, ancora = '') =>
+  p.cartaoId
+    ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}`
+    : `/pagamentos/${p.id}?voltar=${VOLTAR_DESPESAS}${ancora}`
 
 /** Contas do mês em tabela: contas comuns, faturas dos cartões e pagamentos da equipe. */
 export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; rotulo: string }) {
@@ -174,7 +178,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
           )}
           {pedirComprovante && (
             <Button asChild variant="ghost" size="icon" title="Anexar comprovante">
-              <Link to={`/pagamentos/${p.id}#comprovantes`} aria-label={`Anexar comprovante de ${p.descricao}`}>
+              <Link to={enderecoDe(p, '#comprovantes')} aria-label={`Anexar comprovante de ${p.descricao}`}>
                 <Paperclip className="size-6" aria-hidden />
               </Link>
             </Button>

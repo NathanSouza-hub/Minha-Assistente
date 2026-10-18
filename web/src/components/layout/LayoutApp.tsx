@@ -123,7 +123,7 @@ function BarraInferior() {
                     >
                       <Icone className="size-7" weight={marcar(isActive) ? 'fill' : 'regular'} aria-hidden />
                     </span>
-                    {item.rotulo}
+                    {item.rotuloCurto ?? item.rotulo}
                   </>
                 )}
               </NavLink>

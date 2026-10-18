@@ -10,6 +10,7 @@ import {
   MicrophoneStageIcon,
   PersonSimpleRunIcon,
   PillIcon,
+  ReceiptIcon,
   SquaresFourIcon,
   SunIcon,
   TagIcon,
@@ -31,13 +32,14 @@ export type Area =
   | 'fisioterapia'
   | 'geral'
 
-export type ItemNavegacao = { rota: string; rotulo: string; icone: Icon; area: Area }
+/** `rotuloCurto`: o nome na barra inferior do celular, quando o completo não cabe. */
+export type ItemNavegacao = { rota: string; rotulo: string; rotuloCurto?: string; icone: Icon; area: Area }
 
 /** Barra inferior do celular: as quatro áreas de uso diário e "Mais". */
 export const navegacaoPrincipal: ItemNavegacao[] = [
   { rota: '/', rotulo: 'Hoje', icone: SunIcon, area: 'hoje' },
   { rota: '/agenda', rotulo: 'Agenda', icone: CalendarDotsIcon, area: 'agenda' },
-  { rota: '/pagamentos', rotulo: 'Contas', icone: WalletIcon, area: 'contas' },
+  { rota: '/despesas', rotulo: 'Lista de despesas', rotuloCurto: 'Despesas', icone: ReceiptIcon, area: 'contas' },
   { rota: '/remedios', rotulo: 'Remédios', icone: PillIcon, area: 'remedios' },
 ]
 
@@ -47,6 +49,7 @@ export const itemMais: ItemNavegacao = { rota: '/mais', rotulo: 'Mais', icone: S
 // Na ordem da lista da Débora. Rádio, Atividade física e Fisioterapia são a agenda só daquele tipo
 // (paginas/agenda/AgendaDoTipo.tsx; rotas em AREAS_DO_TIPO de paginas/agenda/textos.ts).
 export const navegacaoSecundaria: ItemNavegacao[] = [
+  { rota: '/pagamentos', rotulo: 'Cadastro de despesas', icone: WalletIcon, area: 'contas' },
   { rota: '/rotina', rotulo: 'Compromissos', icone: CheckSquareIcon, area: 'compromissos' },
   { rota: '/radio', rotulo: 'Programa de rádio', icone: MicrophoneStageIcon, area: 'radio' },
   { rota: '/viagens', rotulo: 'Viagens', icone: AirplaneTiltIcon, area: 'viagens' },

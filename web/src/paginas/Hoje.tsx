@@ -244,7 +244,7 @@ function Painel({ painel }: { painel: PainelHoje }) {
           icone={WalletIcon}
           titulo="Contas dos próximos 7 dias"
           detalhe={`${formatarCentavos(pagamentos.totalAVencerCentavos)} no total`}
-          link={{ para: '/pagamentos', rotulo: 'Ver pagamentos' }}
+          link={{ para: '/despesas', rotulo: 'Ver despesas' }}
         >
           <ul className="flex flex-col divide-y divide-linha">
             {pagamentos.aVencer.map((p) => (
@@ -282,10 +282,10 @@ function ContasVencidas({ pagamentos }: { pagamentos: PainelHoje['pagamentos'] }
         ))}
       </ul>
       <Link
-        to="/pagamentos?status=pendente"
+        to="/despesas?status=pendente"
         className="-mx-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 font-semibold text-atraso hover:bg-atraso/8"
       >
-        Ver pagamentos
+        Ver despesas
         <CaretRightIcon className="size-5" weight="bold" aria-hidden />
       </Link>
     </section>

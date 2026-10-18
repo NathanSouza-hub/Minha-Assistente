@@ -2,7 +2,7 @@ import { useId } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Copy, Trash2 } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Pagina } from "@/components/layout/Pagina";
@@ -21,6 +21,7 @@ import { paraCentavos } from "@/lib/dinheiro";
 import { aplicarErroApi } from "@/lib/formulario";
 import type { PagamentoDetalhe } from "@/lib/tipos";
 import { Comprovantes } from "@/paginas/pagamentos/PaginaPagamento";
+import { enderecoDespesas, VOLTAR_DESPESAS } from "@/paginas/pagamentos/filtros";
 import { centavosParaTexto } from "./formulario";
 
 const esquema = z.object({
@@ -50,8 +51,13 @@ export function FormularioContaEquipe({
   const membro = equipe.find((m) => m.id === p.membroId);
   const idObs = useId();
   const pago = p.status === "pago";
+  // Aberto da Lista de despesas: volta para ela; senão, para a aba Salários equipe.
+  const [params] = useSearchParams();
+  const daLista = params.get("voltar") === VOLTAR_DESPESAS;
   const lista = (vencimento: string) =>
-    `/pagamentos?aba=equipe&mes=${mesDe(vencimento)}`;
+    daLista
+      ? enderecoDespesas(mesDe(vencimento))
+      : `/pagamentos?aba=equipe&mes=${mesDe(vencimento)}`;
 
   const {
     register,
@@ -118,7 +124,7 @@ export function FormularioContaEquipe({
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeft className="size-5" aria-hidden />
-            Salários equipe
+            {daLista ? "Lista de despesas" : "Salários equipe"}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">
             Pagamento de {p.descricao}

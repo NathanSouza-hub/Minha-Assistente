@@ -42,6 +42,7 @@ import {
   type DadosPagamento,
   type Repeticao,
 } from './formulario'
+import { enderecoDespesas, VOLTAR_DESPESAS } from './filtros'
 
 /** Mesmo limite do back-end (src/modules/pagamentos/comprovantes.js). */
 const MAXIMO_COMPROVANTES = 5
@@ -70,7 +71,7 @@ export function PaginaPagamento() {
       <Pagina titulo="Pagamento não encontrado">
         <p className="mb-4 text-lg">Este pagamento não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
-          <Link to="/pagamentos">Voltar para pagamentos</Link>
+          <Link to="/despesas">Voltar para a lista de despesas</Link>
         </Button>
       </Pagina>
     )
@@ -144,9 +145,15 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
   // aparecer; sem `value`, o <select> descartaria o valor e ficaria na primeira opção.
   const categoriaId = useWatch({ control, name: 'categoriaId' })
 
-  const enderecoDaLista = (vencimento: string) =>
-    `/pagamentos?mes=${mesDe(vencimento)}${aba ? `&aba=${aba}` : ''}${imovel ? `&imovel=${imovel}` : ''}`
-  const voltarParaLista = (vencimento: string) => navegar(enderecoDaLista(vencimento))
+  // Aberto da Lista de despesas: volta para ela; senão, para a aba do Cadastro de despesas.
+  const daLista = params.get('voltar') === VOLTAR_DESPESAS
+  // Sem aba de origem, volta para a aba da categoria da conta.
+  const enderecoDaLista = (vencimento: string, categoria = aba || pagamento?.categoriaId || '') =>
+    daLista
+      ? enderecoDespesas(mesDe(vencimento))
+      : `/pagamentos?mes=${mesDe(vencimento)}${categoria ? `&aba=${categoria}` : ''}${imovel ? `&imovel=${imovel}` : ''}`
+  const voltarParaLista = (vencimento: string, categoria?: string) =>
+    navegar(enderecoDaLista(vencimento, categoria || undefined))
   const campoCategoria = register('categoriaId')
 
   async function salvar(dados: DadosPagamento) {
@@ -161,7 +168,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
         const criados = await criar.mutateAsync(corpo)
         toast.success(criados.length > 1 ? `${criados.length} parcelas criadas.` : 'Pagamento criado.')
       }
-      voltarParaLista(corpo.vencimento)
+      voltarParaLista(corpo.vencimento, aba || corpo.categoriaId || undefined)
       // Conta pendente é lembrada na véspera e no dia do vencimento.
       if (corpo.status === 'pendente') void convidar()
     } catch (erro) {
@@ -200,7 +207,7 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeft className="size-5" aria-hidden />
-            Contas
+            {daLista ? 'Lista de despesas' : 'Cadastro de despesas'}
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{editando ? 'Editar pagamento' : 'Novo pagamento'}</h1>
         </div>
