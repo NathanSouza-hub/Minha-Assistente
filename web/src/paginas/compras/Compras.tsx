@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, Pencil, Plus, ShoppingCart } from 'lucide-react'
+import { CheckIcon, PencilSimpleIcon, PlusIcon, ShoppingCartIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -40,19 +40,19 @@ export function Compras() {
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando a lista">
             {[1, 2, 3].map((n) => (
-              <Skeleton key={n} className="h-16 rounded-xl" />
+              <Skeleton key={n} className="h-16" />
             ))}
           </div>
         ) : consulta.isError ? (
           <EstadoVazio
-            icone={ShoppingCart}
+            icone={ShoppingCartIcon}
             titulo="Não foi possível carregar a lista"
             acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
           >
             Verifique a internet e tente de novo.
           </EstadoVazio>
         ) : itens.length === 0 ? (
-          <EstadoVazio icone={ShoppingCart} titulo="A lista está vazia">
+          <EstadoVazio icone={ShoppingCartIcon} titulo="A lista está vazia">
             Escreva acima o que falta comprar. No mercado, toque no item para marcar que já pegou.
           </EstadoVazio>
         ) : (
@@ -105,7 +105,7 @@ function AdicionarItem({ categorias }: { categorias: string[] }) {
       noValidate
       onSubmit={handleSubmit(enviar)}
       aria-label="Adicionar item"
-      className="flex flex-col gap-4 rounded-xl border bg-card p-4"
+      className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha"
     >
       <Campo
         rotulo="O que falta comprar?"
@@ -122,7 +122,7 @@ function AdicionarItem({ categorias }: { categorias: string[] }) {
         </p>
       )}
       <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
-        <Plus aria-hidden />
+        <PlusIcon weight="bold" aria-hidden />
         {isSubmitting ? 'Adicionando…' : 'Adicionar à lista'}
       </Button>
     </form>
@@ -142,12 +142,12 @@ function Pendentes({ itens }: { itens: ItemCompra[] }) {
   const soUmSemCategoria = grupos.size === 1 && grupos.has('')
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-4">
       <h2 className="text-xl font-bold">A comprar</h2>
       {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
-        <div key={chave} className="flex flex-col gap-3">
-          {!soUmSemCategoria && <h3 className="font-semibold text-muted-foreground">{titulo}</h3>}
-          <ul className="flex flex-col gap-3" aria-label={soUmSemCategoria ? 'A comprar' : titulo}>
+        <div key={chave} className="flex flex-col">
+          {!soUmSemCategoria && <h3 className="font-semibold text-area">{titulo}</h3>}
+          <ul className="flex flex-col divide-y divide-linha" aria-label={soUmSemCategoria ? 'A comprar' : titulo}>
             {doGrupo.map((i) => (
               <LinhaItem key={i.id} item={i} />
             ))}
@@ -170,7 +170,7 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
   }
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold">Já comprados</h2>
         <Confirmar
@@ -185,7 +185,7 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
           aoConfirmar={tirarDaLista}
         />
       </div>
-      <ul className="flex flex-col gap-3" aria-label="Já comprados">
+      <ul className="flex flex-col divide-y divide-linha" aria-label="Já comprados">
         {itens.map((i) => (
           <LinhaItem key={i.id} item={i} />
         ))}
@@ -200,22 +200,22 @@ function LinhaItem({ item: i }: { item: ItemCompra }) {
   const detalhe = i.comprado && i.compradoEm ? descreverCompra(i.compradoEm) : i.quantidade
 
   return (
-    <li className={cn('flex items-stretch rounded-xl border bg-card', i.comprado && 'bg-secondary/60')}>
+    <li className="flex items-center gap-1 py-1.5">
       <button
         type="button"
         role="checkbox"
         aria-checked={i.comprado}
         onClick={() => marcar.mutate({ id: i.id, comprado: !i.comprado })}
-        className="flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-l-xl p-4 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="-ml-2 flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-areia/70 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <span
           aria-hidden
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg border-2',
-            i.comprado ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card',
+            i.comprado ? 'border-ok bg-ok text-folha' : 'border-input bg-folha',
           )}
         >
-          {i.comprado && <Check className="size-6" strokeWidth={3} />}
+          {i.comprado && <CheckIcon className="size-6" weight="bold" />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span
@@ -229,9 +229,9 @@ function LinhaItem({ item: i }: { item: ItemCompra }) {
       <Link
         to={`/compras/${i.id}`}
         aria-label={`Editar ${i.nome}`}
-        className="grid w-14 shrink-0 place-items-center rounded-r-xl border-l text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="-mr-2 grid size-12 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-areia hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <Pencil className="size-5" aria-hidden />
+        <PencilSimpleIcon className="size-6" aria-hidden />
       </Link>
     </li>
   )
