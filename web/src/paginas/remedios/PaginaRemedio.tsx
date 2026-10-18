@@ -1,7 +1,7 @@
 import { useEffect, useId } from 'react'
 import { Controller, useFieldArray, useForm, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeftIcon, PlusIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
@@ -116,7 +116,7 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
             to={editando ? '/remedios?visao=lista' : '/remedios'}
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
-            <ArrowLeft className="size-5" aria-hidden />
+            <ArrowLeftIcon className="size-5" weight="bold" aria-hidden />
             Remédios
           </Link>
           <h1 className="text-3xl leading-tight font-bold">{titulo}</h1>
@@ -164,7 +164,7 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
               className="self-start"
               onClick={() => horarios.append(novoHorario(horarios.fields.length === 1 ? 'noite' : 'tarde'))}
             >
-              <Plus aria-hidden />
+              <PlusIcon weight="bold" aria-hidden />
               Adicionar horário
             </Button>
           )}
@@ -211,7 +211,7 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
             <Confirmar
               gatilho={
                 <Button type="button" variant="destructive" size="lg" className="w-full sm:w-auto">
-                  <Trash2 aria-hidden />
+                  <TrashIcon aria-hidden />
                   Excluir remédio
                 </Button>
               }
@@ -266,7 +266,7 @@ function LinhaHorario({
             onClick={aoRemover}
             aria-label={`Remover horário ${numero}`}
           >
-            <X aria-hidden />
+            <XIcon weight="bold" aria-hidden />
             Remover
           </Button>
         )}

@@ -1,4 +1,4 @@
-import { Pill, Plus } from 'lucide-react'
+import { CalendarCheckIcon, MoonIcon, PillIcon, PlusIcon, SunHorizonIcon, SunIcon, type Icon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -16,11 +16,11 @@ import { descreverHorario } from './textos'
 
 type Visao = 'hoje' | 'lista'
 
-const GRUPOS: { periodo: PeriodoRemedio; titulo: string }[] = [
-  { periodo: 'manha', titulo: 'Manhã' },
-  { periodo: 'tarde', titulo: 'Tarde' },
-  { periodo: 'noite', titulo: 'Noite' },
-  { periodo: 'semanal', titulo: 'Remédio da semana' },
+const GRUPOS: { periodo: PeriodoRemedio; titulo: string; icone: Icon }[] = [
+  { periodo: 'manha', titulo: 'Manhã', icone: SunHorizonIcon },
+  { periodo: 'tarde', titulo: 'Tarde', icone: SunIcon },
+  { periodo: 'noite', titulo: 'Noite', icone: MoonIcon },
+  { periodo: 'semanal', titulo: 'Remédio da semana', icone: CalendarCheckIcon },
 ]
 
 export function Remedios() {
@@ -51,7 +51,7 @@ export function Remedios() {
       acoes={
         <Button asChild size="lg">
           <Link to="/remedios/novo">
-            <Plus aria-hidden />
+            <PlusIcon weight="bold" aria-hidden />
             Novo
           </Link>
         </Button>
@@ -92,12 +92,12 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
       {consulta.isPending ? (
         <div className="flex flex-col gap-3" role="status" aria-label="Carregando remédios">
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-28 rounded-xl" />
+            <Skeleton key={n} className="h-20" />
           ))}
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
-          icone={Pill}
+          icone={PillIcon}
           titulo="Não foi possível carregar os remédios"
           acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
         >
@@ -105,7 +105,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
         </EstadoVazio>
       ) : doses.length === 0 ? (
         <EstadoVazio
-          icone={Pill}
+          icone={PillIcon}
           titulo="Nenhum remédio para este dia"
           acao={
             <Button asChild>
@@ -123,12 +123,15 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
             texto={`${tomadas} de ${doses.length} ${doses.length === 1 ? 'dose tomada' : 'doses tomadas'}`}
             textoCompleto="Tudo tomado neste dia."
           />
-          {GRUPOS.map(({ periodo, titulo }) => {
+          {GRUPOS.map(({ periodo, titulo, icone: Icone }) => {
             const doGrupo = doses.filter((d) => d.periodo === periodo)
             if (!doGrupo.length) return null
             return (
-              <section key={periodo} className="flex flex-col gap-3" aria-labelledby={`grupo-${periodo}`}>
-                <h3 id={`grupo-${periodo}`} className="text-lg font-bold">
+              <section key={periodo} className="flex flex-col" aria-labelledby={`grupo-${periodo}`}>
+                <h3 id={`grupo-${periodo}`} className="flex items-center gap-2.5 text-lg font-bold">
+                  <span className="selo-area size-9" aria-hidden>
+                    <Icone className="size-5" weight="fill" />
+                  </span>
                   {titulo}
                 </h3>
                 <ul className="flex flex-col divide-y divide-linha">
@@ -149,11 +152,11 @@ function MeusRemedios() {
   const consulta = useMedicamentos()
   const remedios = consulta.data ?? []
 
-  if (consulta.isPending) return <Skeleton className="h-40 rounded-xl" />
+  if (consulta.isPending) return <Skeleton className="h-40" />
   if (remedios.length === 0) {
     return (
       <EstadoVazio
-        icone={Pill}
+        icone={PillIcon}
         titulo="Nenhum remédio cadastrado"
         acao={
           <Button asChild>
@@ -166,20 +169,17 @@ function MeusRemedios() {
     )
   }
   return (
-    <ul className="flex flex-col gap-3" aria-label="Meus remédios">
+    <ul className="flex flex-col divide-y divide-linha" aria-label="Meus remédios">
       {remedios.map((m) => (
         <li key={m.id}>
           <Link
             to={`/remedios/${m.id}`}
-            className={cn(
-              'flex flex-col gap-1 rounded-xl border bg-card p-4 hover:bg-muted/60',
-              !m.ativo && 'bg-card/60',
-            )}
+            className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-areia/70"
           >
             <span className="flex items-center justify-between gap-3">
               <span className={cn('text-lg font-bold', !m.ativo && 'text-muted-foreground')}>{m.nome}</span>
               {!m.ativo && (
-                <span className="rounded-md bg-muted px-2 font-semibold text-muted-foreground">Pausado</span>
+                <span className="rounded-full bg-areia px-2.5 font-semibold text-muted-foreground">Pausado</span>
               )}
             </span>
             {m.dose && <span className="text-base">{m.dose}</span>}
