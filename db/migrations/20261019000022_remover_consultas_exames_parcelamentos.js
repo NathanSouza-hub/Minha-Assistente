@@ -1,8 +1,9 @@
-// "Consultas" e "Exames" deixam de ser abas do Cadastro de despesas: apaga essas categorias de
-// todos. As contas e as compras de cartão que estavam nelas passam para "Outros" (criada se a
-// pessoa tiver apagado a dela e tiver algo para mover), então nada fica sem categoria.
+// "Consultas", "Exames" e "Parcelamentos" deixam de ser abas do Cadastro de despesas: apaga essas
+// categorias de todos. As contas e as compras de cartão que estavam nelas passam para "Outros"
+// (criada se a pessoa tiver apagado a dela e tiver algo para mover). Parcelar uma conta continua
+// igual: não depende de categoria.
 
-const NOMES = ['consultas', 'exames'];
+const NOMES = ['consultas', 'exames', 'parcelamentos'];
 
 exports.up = async (knex) => {
   await knex.raw(

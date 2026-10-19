@@ -31,7 +31,7 @@ describe('tela de categorias', () => {
     const conteudo = await screen.findByRole('main')
     await usuario.click(await within(conteudo).findByRole('link', { name: 'Categorias' }))
     await screen.findByRole('list', { name: 'Suas categorias' })
-    expect(nomes()).toEqual(['Parcelamentos', 'Contas residenciais', 'Outros'])
+    expect(nomes()).toEqual(['Contas residenciais', 'Outros'])
   })
 
   test('cria, renomeia e muda a ordem', async () => {
@@ -53,7 +53,7 @@ describe('tela de categorias', () => {
     await usuario.click(screen.getByRole('button', { name: 'Subir Saúde' }))
     await waitFor(() => expect(nomes().at(-2)).toBe('Saúde'))
     expect(nomes().at(-1)).toBe('Outros')
-    expect(screen.getByRole('button', { name: 'Subir Parcelamentos' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Subir Contas residenciais' })).toBeDisabled()
   })
 
   test('não exclui categoria com contas e exclui a vazia', async () => {

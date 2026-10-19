@@ -25,10 +25,10 @@ after(async () => {
 const listar = async (sessao) =>
   (await request(app).get('/categorias-pagamento').set(sessao.auth).expect(200)).body;
 
-test('cadastro cria as 3 categorias padrão, separadas por usuário', async () => {
+test('cadastro cria as 2 categorias padrão, separadas por usuário', async () => {
   const daAna = await listar(ana);
   const daBia = await listar(bia);
-  const padrao = ['Parcelamentos', 'Contas residenciais', 'Outros'];
+  const padrao = ['Contas residenciais', 'Outros'];
   assert.deepEqual(daAna.map((c) => c.nome), padrao);
   assert.deepEqual(daBia.map((c) => c.nome), padrao);
   assert.notEqual(daAna[0].id, daBia[0].id);
@@ -41,14 +41,14 @@ test('criar, renomear, reordenar e apagar categoria', async () => {
     .send({ nome: '  Plano de saúde ' })
     .expect(201);
   assert.equal(criada.body.nome, 'Plano de saúde');
-  assert.equal(criada.body.ordem, 4, 'vai para o fim da lista');
+  assert.equal(criada.body.ordem, 3, 'vai para o fim da lista');
 
   const renomeada = await request(app)
     .put(`/categorias-pagamento/${criada.body.id}`)
     .set(ana.auth)
     .send({ nome: 'Saúde' })
     .expect(200);
-  assert.deepEqual(renomeada.body, { id: criada.body.id, nome: 'Saúde', ordem: 4 });
+  assert.deepEqual(renomeada.body, { id: criada.body.id, nome: 'Saúde', ordem: 3 });
 
   const reordenada = await request(app)
     .put(`/categorias-pagamento/${criada.body.id}`)
@@ -61,7 +61,7 @@ test('criar, renomear, reordenar e apagar categoria', async () => {
   await request(app).put(`/categorias-pagamento/${criada.body.id}`).set(ana.auth).send({}).expect(400);
 
   await request(app).delete(`/categorias-pagamento/${criada.body.id}`).set(ana.auth).expect(204);
-  assert.equal((await listar(ana)).length, 3);
+  assert.equal((await listar(ana)).length, 2);
 });
 
 test('nome repetido sem diferenciar maiúsculas responde 409', async () => {

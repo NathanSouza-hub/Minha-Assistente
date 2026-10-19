@@ -53,7 +53,7 @@ test('cadastro novo começa com as 5 categorias padrão (sem Salários e Honorá
   const { body } = await request(app).get('/categorias-pagamento').set(ana.auth).expect(200);
   assert.deepEqual(
     body.map((c) => c.nome),
-    ['Parcelamentos', 'Contas residenciais', 'Outros'],
+    ['Contas residenciais', 'Outros'],
   );
 });
 

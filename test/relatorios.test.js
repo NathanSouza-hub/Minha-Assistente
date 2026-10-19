@@ -31,7 +31,7 @@ before(async () => {
   // Dentro de outubro/2026
   await criar({ descricao: 'Luz', categoriaId: contas, imovelId: cobertura.id, valorCentavos: 20000, vencimento: '2026-10-05', status: 'pago', dataPagamento: '2026-10-04' });
   await criar({ descricao: 'Água', categoriaId: contas, imovelId: serra.id, valorCentavos: 8000, vencimento: '2026-10-20' });
-  await criar({ descricao: 'Consulta', categoriaId: categorias.Parcelamentos, valorCentavos: 45000, vencimento: '2026-10-15', status: 'pago', dataPagamento: '2026-10-15' });
+  await criar({ descricao: 'Consulta', categoriaId: categorias.Outros, valorCentavos: 45000, vencimento: '2026-10-15', status: 'pago', dataPagamento: '2026-10-15' });
   // Venceu em setembro mas foi pago em outubro: conta como pago em outubro.
   await criar({ descricao: 'Gás', categoriaId: contas, imovelId: cobertura.id, valorCentavos: 3000, vencimento: '2026-09-28', status: 'pago', dataPagamento: '2026-10-02' });
   // Fora do período
@@ -70,8 +70,8 @@ test('agrupado por imóvel: pago, previsto e "Sem imóvel"', async () => {
 test('agrupado por categoria, na ordem das categorias', async () => {
   const r = await relatorio({ inicio: '2026-10-01', fim: '2026-10-31', agruparPor: 'categoria' });
   assert.deepEqual(r.itens, [
-    { id: categorias.Parcelamentos, nome: 'Parcelamentos', pagoCentavos: 45000, previstoCentavos: 0 },
     { id: categorias['Contas residenciais'], nome: 'Contas residenciais', pagoCentavos: 23000, previstoCentavos: 8000 },
+    { id: categorias.Outros, nome: 'Outros', pagoCentavos: 45000, previstoCentavos: 0 },
   ]);
   assert.equal(r.totalPagoCentavos, 68000);
 });

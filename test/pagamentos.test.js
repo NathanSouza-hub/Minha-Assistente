@@ -90,7 +90,7 @@ test('parcelamento cria N parcelas mensais, respeitando fim de mês, e devolve a
   const { body } = await criar(ana, {
     ...base(),
     descricao: 'Geladeira',
-    categoriaId: categorias.Parcelamentos,
+    categoriaId: categorias.Outros,
     valorCentavos: 50000,
     vencimento: '2027-01-31',
     parcelamento: { totalParcelas: 4 },
@@ -119,7 +119,7 @@ test('listagem filtra por período, status, categoria e imóvel, e só do própr
   const { body: imovel } = await request(app).post('/imoveis').set(sessao.auth).send({ nome: 'Serra' });
   await criar(sessao, { ...base(cats), vencimento: '2026-05-01' });
   await criar(sessao, { ...base(cats), vencimento: '2026-05-20', imovelId: imovel.id });
-  await criar(sessao, { ...base(cats), vencimento: '2026-06-01', categoriaId: cats.Parcelamentos });
+  await criar(sessao, { ...base(cats), vencimento: '2026-06-01', categoriaId: cats.Outros });
   await criar(sessao, { ...base(cats), vencimento: '2026-05-10', status: 'pago', dataPagamento: '2026-05-09' });
 
   const listar = async (query) =>
@@ -131,7 +131,7 @@ test('listagem filtra por período, status, categoria e imóvel, e só do própr
     ['2026-05-01', '2026-05-10', '2026-05-20'],
   );
   assert.equal((await listar({ status: 'pago' })).length, 1);
-  assert.equal((await listar({ categoriaId: cats.Parcelamentos })).length, 1);
+  assert.equal((await listar({ categoriaId: cats.Outros })).length, 1);
   assert.equal((await listar({ imovelId: imovel.id })).length, 1);
 
   const periodoInvertido = await request(app)

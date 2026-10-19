@@ -166,26 +166,25 @@ describe('abas de categoria', () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
     expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
-    expect(await cartao('Geladeira nova')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Parcelamentos', pressed: true })).toBeInTheDocument()
+    expect(await cartao('Conta de luz')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Contas residenciais', pressed: true })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Todas' })).not.toBeInTheDocument()
-    // Consultas e exames não são abas (migration 22): ficam em "Outros".
-    expect(screen.queryByRole('button', { name: 'Consultas' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Exames' })).not.toBeInTheDocument()
+    // Consultas, exames e parcelamentos não são abas (migration 22): ficam em "Outros".
+    for (const nome of ['Consultas', 'Exames', 'Parcelamentos']) {
+      expect(screen.queryByRole('button', { name: nome })).not.toBeInTheDocument()
+    }
 
     await usuario.click(screen.getByRole('button', { name: 'Outros' }))
     expect(await cartao('Exame de sangue')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('link', { name: /^Geladeira nova/ })).not.toBeInTheDocument())
+    expect(await cartao('Geladeira nova')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Conta de luz/ })).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
-
-    await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
-    expect(await screen.findByText('Nenhuma conta de outros em novembro de 2026')).toBeInTheDocument()
   })
 
   test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Geladeira nova')
+    await cartao('Conta de luz')
 
     await usuario.click(screen.getByRole('button', { name: 'Nova' }))
     await usuario.type(screen.getByLabelText('Nome da categoria'), 'outros{Enter}')
@@ -202,7 +201,7 @@ describe('abas de categoria', () => {
   test('conta nova aberta numa aba já vem com a categoria e volta para a aba', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Geladeira nova')
+    await cartao('Conta de luz')
     await usuario.click(screen.getByRole('button', { name: 'Outros' }))
     await cartao('Exame de sangue')
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
@@ -242,7 +241,7 @@ describe('formulário de pagamento', () => {
     renderizarApp('/pagamentos/novo')
     await usuario.type(await screen.findByLabelText('Descrição'), 'Sofá novo')
     await usuario.type(screen.getByLabelText('Valor'), '450,00')
-    await usuario.selectOptions(screen.getByLabelText('Categoria'), 'Parcelamentos')
+    await usuario.selectOptions(screen.getByLabelText('Categoria'), 'Outros')
     await usuario.click(screen.getByRole('radio', { name: /^Parcelado/ }))
     const parcelas = screen.getByLabelText('Quantas parcelas?')
     await usuario.clear(parcelas)
@@ -335,8 +334,10 @@ describe('contas residenciais', () => {
   test('os imóveis viram sub-abas e a conta nova já vem com o imóvel escolhido', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Geladeira nova')
+    await cartao('Conta de luz')
     // Fora da aba residencial, nada de sub-abas de imóvel
+    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
+    await cartao('Exame de sangue')
     expect(screen.queryByRole('group', { name: 'Imóveis' })).not.toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Contas residenciais' }))

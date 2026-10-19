@@ -100,7 +100,6 @@ export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
 
 // Mesmas categorias e ordem de src/modules/categorias/padrao.js: toda conta nova começa com elas.
 export const CATEGORIAS_PADRAO = [
-  'Parcelamentos',
   'Contas residenciais',
   'Outros',
 ]
@@ -241,7 +240,7 @@ function semear() {
       novoPagamento({
         ...base,
         descricao: 'Geladeira nova',
-        categoriaId: categoria('Parcelamentos'),
+        categoriaId: categoria('Outros'),
         valorCentavos: 39990,
         vencimento: hoje.plus({ months: n - 2, days: 8 }).toISODate()!,
         status: n === 1 ? 'pago' : 'pendente',
