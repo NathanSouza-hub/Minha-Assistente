@@ -166,27 +166,29 @@ describe('abas de categoria', () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
     expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
-    expect(await cartao('Consulta cardiologista')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Consultas', pressed: true })).toBeInTheDocument()
+    expect(await cartao('Geladeira nova')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Parcelamentos', pressed: true })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Todas' })).not.toBeInTheDocument()
+    // Consultas e exames não são abas (migration 22): ficam em "Outros".
+    expect(screen.queryByRole('button', { name: 'Consultas' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Exames' })).not.toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Exames' }))
+    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
     expect(await cartao('Exame de sangue')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('link', { name: /^Consulta cardiologista/ })).not.toBeInTheDocument())
-    expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('link', { name: /^Geladeira nova/ })).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Consultas' }))
     await usuario.click(screen.getByRole('button', { name: 'Próximo mês' }))
-    expect(await screen.findByText('Nenhuma conta de consultas em novembro de 2026')).toBeInTheDocument()
+    expect(await screen.findByText('Nenhuma conta de outros em novembro de 2026')).toBeInTheDocument()
   })
 
   test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Consulta cardiologista')
+    await cartao('Geladeira nova')
 
     await usuario.click(screen.getByRole('button', { name: 'Nova' }))
-    await usuario.type(screen.getByLabelText('Nome da categoria'), 'exames{Enter}')
+    await usuario.type(screen.getByLabelText('Nome da categoria'), 'outros{Enter}')
     expect(await screen.findByText('Você já tem uma categoria com esse nome.')).toBeInTheDocument()
 
     await usuario.clear(screen.getByLabelText('Nome da categoria'))
@@ -200,18 +202,18 @@ describe('abas de categoria', () => {
   test('conta nova aberta numa aba já vem com a categoria e volta para a aba', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Consulta cardiologista')
-    await usuario.click(screen.getByRole('button', { name: 'Exames' }))
+    await cartao('Geladeira nova')
+    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
     await cartao('Exame de sangue')
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
 
-    expect(await screen.findByLabelText('Categoria')).toHaveDisplayValue('Exames')
+    expect(await screen.findByLabelText('Categoria')).toHaveDisplayValue('Outros')
     await usuario.type(screen.getByLabelText('Descrição'), 'Raio X')
     await usuario.type(screen.getByLabelText('Valor'), '180')
     await usuario.click(screen.getByRole('button', { name: 'Criar pagamento' }))
 
     expect(await cartao('Raio X')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Exames', pressed: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
   })
 })
 
@@ -333,7 +335,7 @@ describe('contas residenciais', () => {
   test('os imóveis viram sub-abas e a conta nova já vem com o imóvel escolhido', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await cartao('Consulta cardiologista')
+    await cartao('Geladeira nova')
     // Fora da aba residencial, nada de sub-abas de imóvel
     expect(screen.queryByRole('group', { name: 'Imóveis' })).not.toBeInTheDocument()
 

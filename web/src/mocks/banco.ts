@@ -100,8 +100,6 @@ export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
 
 // Mesmas categorias e ordem de src/modules/categorias/padrao.js: toda conta nova começa com elas.
 export const CATEGORIAS_PADRAO = [
-  'Consultas',
-  'Exames',
   'Parcelamentos',
   'Contas residenciais',
   'Outros',
@@ -226,7 +224,7 @@ function semear() {
     novoPagamento({
       ...base,
       descricao: 'Consulta cardiologista',
-      categoriaId: categoria('Consultas'),
+      categoriaId: categoria('Outros'),
       valorCentavos: 45000,
       vencimento: dia(-6),
       status: 'pago',
@@ -235,7 +233,7 @@ function semear() {
     novoPagamento({
       ...base,
       descricao: 'Exame de sangue',
-      categoriaId: categoria('Exames'),
+      categoriaId: categoria('Outros'),
       valorCentavos: 18000,
       vencimento: dia(12),
     }),

@@ -160,7 +160,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 
 18. **Categorias de cada usuário** (migration 12; spec
     `docs/superpowers/specs/2026-10-14-contas-abas-cartoes-design.md`):
-    - O cadastro cria as 7 padrão (a 7ª, "Outros", veio na migration 16) (`src/modules/categorias/padrao.js`); não há mais seed. A
+    - O cadastro cria as 3 padrão — Parcelamentos, Contas residenciais e Outros ("Outros" veio na migration 16; "Consultas" e "Exames" saíram na migration 22, que moveu as contas e compras de cartão delas para "Outros") (`src/modules/categorias/padrao.js`); não há mais seed. A
       migration copiou as categorias globais para cada usuário e repontou as contas dele.
     - `GET /categorias-pagamento` → `[{ id, nome, ordem }]` por ordem. `POST { nome, ordem? }`
       (sem ordem vai para o fim) → `201`. `PUT /:id { nome?, ordem? }` (pelo menos um).

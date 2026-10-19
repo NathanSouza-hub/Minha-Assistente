@@ -121,3 +121,51 @@ test('"Salários" e "Honorários médicos" somem e as contas delas vão para "Ou
   assert.equal((await categoriaDaConta('Salário antigo da Ana', ['c.id'])).id, outrosAna.id);
   assert.deepEqual(await categoriaDaConta('Honorário antigo da Bia'), { nome: 'Outros', usuarioId: bia });
 });
+
+test('"Consultas" e "Exames" somem; contas e compras de cartão delas vão para "Outros"', async () => {
+  const REMOVER = '20261019000022_remover_consultas_exames.js';
+  const caio = await criarUsuario('caio-consultas@exemplo.com');
+  const davi = await criarUsuario('davi-consultas@exemplo.com');
+  const eva = await criarUsuario('eva-consultas@exemplo.com');
+  await db.migrate.down({ name: REMOVER });
+  // Caio tem "Outros"; Davi apagou a dele e tem uma compra de cartão em "Exames"; Eva apagou e
+  // não tem nada nessas categorias (não ganha "Outros").
+  const [consultasCaio, outrosCaio] = await db('categoriaPagamento')
+    .insert([
+      { usuarioId: caio, nome: 'Consultas', ordem: 1 },
+      { usuarioId: caio, nome: 'Outros', ordem: 2 },
+      { usuarioId: caio, nome: 'Exames', ordem: 3 },
+    ])
+    .returning('id');
+  const [examesDavi] = await db('categoriaPagamento')
+    .insert([
+      { usuarioId: davi, nome: 'Exames', ordem: 1 },
+      { usuarioId: davi, nome: 'Parcelamentos', ordem: 2 },
+    ])
+    .returning('id');
+  await db('categoriaPagamento').insert({ usuarioId: eva, nome: 'consultas', ordem: 1 });
+  await db('pagamento').insert(conta(caio, consultasCaio.id, 'Consulta antiga do Caio'));
+  const [cartao] = await db('cartao')
+    .insert({ usuarioId: davi, nome: 'Nubank', diaFechamento: 1, diaVencimento: 10 })
+    .returning('id');
+  await db('cartaoCompra').insert({
+    cartaoId: cartao.id,
+    descricao: 'Exame de sangue',
+    categoriaId: examesDavi.id,
+    valorTotalCentavos: 9000,
+    dataCompra: '2026-10-05',
+  });
+
+  await db.migrate.up({ name: REMOVER });
+
+  const nomes = (usuarioId) => db('categoriaPagamento').where({ usuarioId }).orderBy('ordem').pluck('nome');
+  assert.deepEqual(await nomes(caio), ['Outros']);
+  assert.deepEqual(await nomes(davi), ['Parcelamentos', 'Outros']);
+  assert.deepEqual(await nomes(eva), []);
+  assert.equal((await categoriaDaConta('Consulta antiga do Caio', ['c.id'])).id, outrosCaio.id);
+  const compra = await db('cartaoCompra as k')
+    .join('categoriaPagamento as c', 'c.id', 'k.categoriaId')
+    .where('k.descricao', 'Exame de sangue')
+    .first('c.nome', 'c.usuarioId');
+  assert.deepEqual(compra, { nome: 'Outros', usuarioId: davi });
+});

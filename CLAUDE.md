@@ -71,7 +71,7 @@ sempre inteiro em centavos.
 `criado_em`/`atualizado_em` e trigger), `donoUsuario`, `checkIn` para "enums" (`text` + `CHECK`
 chamado `<tabela>_<coluna>_check`). Migrations são histórico imutável: para mudar valores de um
 enum, crie uma nova migration que troca o CHECK. Índices de tabelas raiz começam por
-`usuario_id`. Categorias de pagamento são de cada usuário; as 7 padrão (com "Outros") são criadas no cadastro
+`usuario_id`. Categorias de pagamento são de cada usuário; as 3 padrão (Parcelamentos, Contas residenciais e Outros) são criadas no cadastro
 (`src/modules/categorias/padrao.js`).
 
 **Rate limit** (`middlewares/limitar.js`): os limitadores guardam o contador em memória e são
