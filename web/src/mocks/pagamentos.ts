@@ -89,7 +89,7 @@ const somar = (data: string, quantidade: number, unidade: 'months' | 'years') =>
     .toISODate()!
 
 /** Mesmo cálculo de garantirProxima() no back-end: a partir do início da série. */
-function garantirProxima(p: PagamentoMock) {
+export function garantirProxima(p: PagamentoMock) {
   if (p.recorrencia === 'nenhuma' || p.status !== 'pago') return
   if (banco.pagamentos.some((x) => x.recorrenciaOrigemId === p.id)) return
   let inicio = p

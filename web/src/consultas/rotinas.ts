@@ -1,7 +1,7 @@
 // Consultas e mutações da rotina.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { ajustarPainel, chavesHoje, invalidarPainel } from './hoje'
+import { invalidarPainel } from './hoje'
 import { agora, paraDataHoraISO } from '@/lib/datas'
 import type { Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
 
@@ -24,21 +24,18 @@ export const useTarefasDoDia = (data: string) =>
 export function useConcluirTarefa(data: string) {
   const cliente = useQueryClient()
   const chave = chavesRotina.doDia(data)
-  // A mesma tarefa aparece em Rotina e no painel Hoje: as duas telas mudam juntas.
-  const trocar = (rotinaId: string, mudar: (t: TarefaDoDia) => TarefaDoDia) => {
-    const aplicar = (lista: TarefaDoDia[]) => lista.map((t) => (t.rotinaId === rotinaId ? mudar(t) : t))
-    cliente.setQueryData<TarefaDoDia[]>(chave, (lista) => lista && aplicar(lista))
-    ajustarPainel(cliente, data, (p) => ({ ...p, rotina: aplicar(p.rotina) }))
-  }
+  // A tela Hoje mostra a mesma tarefa: ela é buscada de novo (onSettled).
+  const trocar = (rotinaId: string, mudar: (t: TarefaDoDia) => TarefaDoDia) =>
+    cliente.setQueryData<TarefaDoDia[]>(
+      chave,
+      (lista) => lista && lista.map((t) => (t.rotinaId === rotinaId ? mudar(t) : t)),
+    )
 
   return useMutation({
     mutationFn: ({ rotinaId, concluida }: { rotinaId: string; concluida: boolean }) =>
       api<TarefaDoDia>(`/rotinas/${rotinaId}/concluir`, { method: 'POST', corpo: { data, concluida } }),
     onMutate: async ({ rotinaId, concluida }) => {
-      await Promise.all([
-        cliente.cancelQueries({ queryKey: chave }),
-        cliente.cancelQueries({ queryKey: chavesHoje.dia(data) }),
-      ])
+      await cliente.cancelQueries({ queryKey: chave })
       const anterior = cliente.getQueryData<TarefaDoDia[]>(chave)
       trocar(rotinaId, (t) => ({ ...t, concluida, concluidaEm: concluida ? paraDataHoraISO(agora()) : null }))
       return { anterior, rotinaId, concluidaAntes: !concluida }

@@ -28,7 +28,7 @@ separadamente e depende do contrato de API descrito aqui.
 
 ```
 GET/POST /auth/cadastro (acrescentada) | POST /auth/login | GET /auth/me | PUT /auth/senha
-GET  /hoje
+GET  /hoje | PATCH /hoje/:id  (tarefas do dia, decisão 24)
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
 POST /pagamentos/:id/comprovantes | GET/DELETE /pagamentos/:id/comprovantes/:comprovanteId  (decisão 22)
@@ -115,11 +115,10 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     - `POST /rotinas/:id/concluir` `{ data?, concluida? }` responde o item; idempotente;
       `concluida: false` desfaz; dia fora de `diasSemana` → `400`.
 
-14. **Painel Hoje (etapa 8)**: `GET /hoje?data=` (padrão hoje) responde
-    `{ data, resumo, eventos, medicamentos, rotina, pagamentos: { vencidos, aVencer,
-    totalVencidoCentavos, totalAVencerCentavos } }`. Cada lista tem o mesmo formato do seu módulo;
-    `aVencer` = pendentes com vencimento do dia até 7 dias depois; `resumo` traz as contagens
-    (`eventos`, `remediosPendentes`, `tarefasPendentes`, `pagamentosVencidos`, `pagamentosAVencer`).
+14. **Painel Hoje (etapa 8)**: substituído pelas tarefas do dia (decisão 24). O painel agrupado
+    por módulo continua em `src/modules/hoje/service.js` (`painel()`), só para o resumo da manhã:
+    `{ data, resumo, eventos, medicamentos, rotina, pagamentos: { vencidos, aVencer, ... } }`, com
+    `aVencer` = pendentes com vencimento do dia até 7 dias depois.
 
 15. **Viagens (etapa 9)**:
     - Viagem traz `anexos: [{ id, nomeOriginal, mimeType, tamanhoBytes, criadoEm }]`; listagem
@@ -249,6 +248,34 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
       um formulário próprio em `/pagamentos/:id` (com a chave PIX para copiar); pessoas em
       `/equipe/novo` e `/equipe/:id`.
 
+24. **Tarefas do dia** (migration 21, `src/modules/hoje/tarefas.js`; tela Hoje): uma lista só com
+    o que ocorre no dia, cada item com ✓ (feito) e ✗ (não feito).
+    - `GET /hoje?data=` (padrão hoje) → `{ data, resumo: { programadas, concluidas, pendentes,
+      atrasadas }, tarefas: [{ id, categoria, titulo, detalhe, horario, status, link,
+      concluirNoFormulario }] }`, em ordem de `horario`; sem horário (dia todo) no fim. No mesmo
+      horário, a ordem das categorias e, dentro delas, a do módulo.
+    - Entram: remédios (um item por horário cadastrado, `detalhe` = a dose como foi digitada),
+      eventos (`radio`, `atividade`, `fisioterapia` pelo tipo; o resto `agenda`; recorrentes
+      expandidos; evento que começou em outro dia fica sem horário), compromissos do dia da
+      semana, viagens com ida ou volta no dia e contas com vencimento no dia (`detalhe` = valor ·
+      imóvel). Olhando hoje, entram também as contas vencidas antes e pendentes (`detalhe` termina em
+      "Venceu em dd/MM") e as vencidas antes que foram pagas hoje (para o ✓ poder ser desfeito).
+      Compras não entram: o item não tem data.
+    - `id` = `"<categoria>:<idItem>:<ocorrência>"`, ocorrência `AAAA-MM-DD` ou `AAAA-MM-DDTHH:MM`
+      (idItem: horário do remédio, evento, rotina, viagem ou pagamento). Títulos com inicial maiúscula.
+    - `status`: `feito`, `nao_feito`, `pendente` ou `atrasado` (pendente com horário — ou, sem
+      horário, a data — já passado, no fuso de São Paulo).
+    - `PATCH /hoje/:id` com `{ status: "feito" | "nao_feito" | "pendente" }` responde a tarefa.
+      `pendente` desfaz. A ocorrência é conferida recalculando o dia dela: de outro usuário ou que
+      não ocorre naquele dia → `404`; id fora do formato → `400`.
+    - O "feito" de remédio, compromisso e despesa fica no próprio módulo (`medicamento_registro`,
+      `rotina_conclusao`, `pagamento` pago com a data de hoje — o mesmo `pagar()` de `PATCH
+      /pagar`, que cria a próxima da série). Desfazer ou ✗ desmarca lá (a conta volta a pendente; a
+      próxima da série, se criada, fica). Em `tarefa_registro` ficam o ✗ deles e o ✓/✗ das outras
+      categorias; sem linha = pendente.
+    - Conta da equipe com valor a definir: `concluirNoFormulario: true` e o ✓ responde `400`
+      (o valor pago é informado no formulário da conta); o ✗ vale normalmente.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -256,7 +283,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 - `date` para datas sem hora (driver configurado para devolver string), `timestamptz` para
   instantes, `time` para hora do dia. Sessão do Postgres em `America/Sao_Paulo`.
 - Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, categoria_pagamento, pagamento, evento, rotina,
-  medicamento, viagem, compra_item, lembrete_envio, push_inscricao. Tabelas filhas (conclusões,
+  medicamento, viagem, compra_item, lembrete_envio, push_inscricao, tarefa_registro. Tabelas filhas (conclusões,
   horários, registros, anexos) herdam o dono pela tabela pai. Índices começam por `usuario_id`.
 - `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)` e `pagamento (categoria_id,
   usuario_id)` → `categoria_pagamento (id, usuario_id)`: FKs compostas impedem apontar para imóvel
@@ -288,6 +315,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | compra_item | nome, categoria?, quantidade?, comprado, comprado_em? | idx comprado |
 | lembrete_envio | origem_tipo, origem_id, ocorrencia, canal, agendado_para, enviado_em?, status, tentativas, erro? | unique (origem_tipo, origem_id, ocorrencia, agendado_para, canal); idx (status, agendado_para) |
 | push_inscricao | endpoint (unique), p256dh, auth, user_agent | |
+| tarefa_registro | usuario_id, categoria, item_id (sem FK), data_ocorrencia, horario?, status (feito, nao_feito) | unique nulls not distinct (usuario_id, categoria, item_id, data_ocorrencia, horario) |
 
 ## Lembretes
 

@@ -62,12 +62,14 @@ async function buscar(usuarioId, id, conexao = db) {
 }
 
 // Antes de listar, garante as contas da equipe do mês atual e do seguinte.
-async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId }) {
+// `dataPagamento` não é filtro da rota: a tela Hoje usa para achar as vencidas pagas no dia.
+async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId, dataPagamento }) {
   await garantirContas(db, usuarioId);
   const q = consulta(db, usuarioId).orderBy(ORDEM);
   if (inicio) q.where('p.vencimento', '>=', inicio);
   if (fim) q.where('p.vencimento', '<=', fim);
   if (status) q.where('p.status', status);
+  if (dataPagamento) q.where('p.dataPagamento', dataPagamento);
   if (categoriaId) q.where('p.categoriaId', categoriaId);
   if (imovelId) q.where('p.imovelId', imovelId);
   return q;
@@ -223,6 +225,18 @@ async function pagar(usuarioId, id, { dataPagamento, valorCentavos }) {
   });
 }
 
+// Volta a conta para pendente (desfazer o ✓ da tela Hoje). A próxima da série, se já foi criada,
+// fica: é o mesmo que editar a conta para pendente. Já pendente não muda nada.
+async function desfazerPagamento(usuarioId, id) {
+  return db.transaction(async (trx) => {
+    await buscar(usuarioId, id, trx);
+    await trx('pagamento')
+      .where({ id, usuarioId, status: 'pago' })
+      .update({ status: 'pendente', dataPagamento: null });
+    return buscar(usuarioId, id, trx);
+  });
+}
+
 async function remover(usuarioId, id) {
   await db.transaction(async (trx) => {
     const atual = await buscar(usuarioId, id, trx);
@@ -235,4 +249,13 @@ async function remover(usuarioId, id) {
   });
 }
 
-module.exports = { listar, buscar, criar, atualizar, pagar, remover, cancelarLembretesPendentes };
+module.exports = {
+  listar,
+  buscar,
+  criar,
+  atualizar,
+  pagar,
+  desfazerPagamento,
+  remover,
+  cancelarLembretesPendentes,
+};

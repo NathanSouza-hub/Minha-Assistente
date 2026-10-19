@@ -1,7 +1,7 @@
 // Consultas e mutações de remédios.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { ajustarPainel, chavesHoje, invalidarPainel } from './hoje'
+import { invalidarPainel } from './hoje'
 import { agora, paraDataHoraISO } from '@/lib/datas'
 import type { DoseDoDia, Medicamento, MedicamentoCorpo } from '@/lib/tipos'
 
@@ -35,21 +35,18 @@ export const useDosesDoDia = (data: string) =>
 export function useRegistrarDose(data: string) {
   const cliente = useQueryClient()
   const chave = chavesRemedios.doDia(data)
-  // A mesma dose aparece em Remédios e no painel Hoje: as duas telas mudam juntas.
-  const trocar = (horarioId: string, mudar: (d: DoseDoDia) => DoseDoDia) => {
-    const aplicar = (lista: DoseDoDia[]) => lista.map((d) => (d.horarioId === horarioId ? mudar(d) : d))
-    cliente.setQueryData<DoseDoDia[]>(chave, (lista) => lista && aplicar(lista))
-    ajustarPainel(cliente, data, (p) => ({ ...p, medicamentos: aplicar(p.medicamentos) }))
-  }
+  // A tela Hoje mostra a mesma dose: ela é buscada de novo (onSettled).
+  const trocar = (horarioId: string, mudar: (d: DoseDoDia) => DoseDoDia) =>
+    cliente.setQueryData<DoseDoDia[]>(
+      chave,
+      (lista) => lista && lista.map((d) => (d.horarioId === horarioId ? mudar(d) : d)),
+    )
 
   return useMutation({
     mutationFn: ({ horarioId, tomado }: { horarioId: string; tomado: boolean }) =>
       api<DoseDoDia>('/medicamentos/registros', { method: 'POST', corpo: { horarioId, data, tomado } }),
     onMutate: async ({ horarioId, tomado }) => {
-      await Promise.all([
-        cliente.cancelQueries({ queryKey: chave }),
-        cliente.cancelQueries({ queryKey: chavesHoje.dia(data) }),
-      ])
+      await cliente.cancelQueries({ queryKey: chave })
       const anterior = cliente.getQueryData<DoseDoDia[]>(chave)
       const tomadoAntes = !tomado
       trocar(horarioId, (d) => ({ ...d, tomado, tomadoEm: tomado ? paraDataHoraISO(agora()) : null }))

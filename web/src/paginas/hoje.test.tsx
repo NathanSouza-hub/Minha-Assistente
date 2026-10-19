@@ -1,21 +1,24 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
 import { entrarComoMaria, renderizarApp } from '@/test/renderizarApp'
-import { api } from '@/lib/api'
+import { api, API_URL } from '@/lib/api'
 import { salvarToken } from '@/lib/sessao'
 import type { Sessao } from '@/lib/tipos'
 
 const servidor = setupServer(...handlers)
 
+const relogio = (iso: string) => vi.setSystemTime(new Date(iso))
+
 beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 beforeEach(async () => {
-  // Terça, 13/10/2026, 08h. Dados de exemplo da Maria: fisioterapia 9h e consulta 15h; 4 doses
-  // (1 tomada); 4 tarefas (1 feita); condomínio vencido; luz e salário vencem nesta semana.
+  // Terça, 13/10/2026, 08h. Dados de exemplo da Maria: 4 doses (1 tomada), fisioterapia 9h e
+  // consulta 15h, 4 compromissos com hora e 1 sem (1 feito), condomínio vencido no dia 10.
   vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date('2026-10-13T08:00:00-03:00'))
+  relogio('2026-10-13T08:00:00-03:00')
   resetarBancoMock()
 })
 afterEach(() => {
@@ -25,70 +28,121 @@ afterEach(() => {
 })
 afterAll(() => servidor.close())
 
-const secao = (nome: string | RegExp) => screen.findByRole('region', { name: nome })
+const linhas = async () => within(await screen.findByRole('region', { name: 'Tarefas do dia' })).getAllByRole('listitem')
+const linhaDe = async (texto: string) => (await linhas()).find((l) => within(l).queryByText(texto))!
+const contador = (rotulo: string) =>
+  within(screen.getByRole('region', { name: 'Resumo do dia' })).getByText(rotulo).nextElementSibling?.textContent
 
-describe('painel Hoje', () => {
+describe('tela Hoje: tarefas do dia', () => {
   beforeEach(entrarComoMaria)
 
-  test('junta o dia: resumo, vencidas em destaque, compromissos, remédios, rotina e contas da semana', async () => {
+  test('uma lista só, em ordem de horário, com o resumo e o "dia todo" no fim', async () => {
     renderizarApp('/')
     expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
     expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
-    expect(
-      await screen.findByText('Para hoje: 2 agendamentos, 3 remédios para tomar e 3 compromissos.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Para hoje: 11 tarefas, 2 concluídas e 1 atrasada.')).toBeInTheDocument()
 
-    const vencidas = await secao('Conta vencida')
-    expect(within(vencidas).getByText('R$ 1.250,00 em atraso')).toBeInTheDocument()
-    expect(within(vencidas).getByText('Venceu há 3 dias')).toBeInTheDocument()
+    expect(contador('Programadas')).toBe('11')
+    expect(contador('Concluídas')).toBe('2')
+    expect(contador('Pendentes')).toBe('8')
+    expect(contador('Atrasadas')).toBe('1')
 
-    const agenda = await secao('Agendamentos')
-    expect(within(agenda).getByText('Fisioterapia')).toBeInTheDocument()
-    expect(within(agenda).getByRole('link', { name: /Entrar/ })).toBeInTheDocument()
+    const titulos = (await linhas()).map((l) => within(l).getByRole('link').querySelector('p')!.textContent)
+    expect(titulos.slice(0, 4)).toEqual(['Omeprazol', 'Losartana', 'Ler e-mails', 'Vitamina D'])
+    expect(titulos.slice(-2)).toEqual(['Regar as plantas', 'Condomínio'])
 
-    expect(within(await secao('Remédios')).getByText('1 de 4 tomados')).toBeInTheDocument()
-    expect(within(await secao('Compromissos')).getByText('1 de 4 feitos')).toBeInTheDocument()
+    // Dose sempre com a unidade; conta com valor, imóvel e o dia em que venceu.
+    expect(within(await linhaDe('Vitamina D')).getByText('1 gota de 50.000 UI')).toBeInTheDocument()
+    const condominio = await linhaDe('Condomínio')
+    expect(within(condominio).getByText('R$ 1.250,00 · Apartamento cobertura · Venceu em 10/10')).toBeInTheDocument()
+    expect(within(condominio).getByText('(atrasado)')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Dia todo' })).toBeInTheDocument()
 
-    const semana = await secao('Contas dos próximos 7 dias')
-    expect(within(semana).getByText('Conta de luz')).toBeInTheDocument()
-    expect(within(semana).getByText('Joana')).toBeInTheDocument()
-    expect(within(semana).getByText('R$ 2.038,90 no total')).toBeInTheDocument()
+    // Feito: ✓ preenchido e título riscado.
+    const omeprazol = await linhaDe('Omeprazol')
+    expect(within(omeprazol).getByRole('button', { name: 'Tomei: Omeprazol' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(omeprazol).getByText('Omeprazol')).toHaveClass('line-through')
   })
 
-  test('tudo marcável sem sair da tela, e o resumo acompanha', async () => {
-    const usuario = userEvent.setup()
+  test('horário que já passou fica em vermelho como atrasado', async () => {
+    relogio('2026-10-13T10:00:00-03:00')
     renderizarApp('/')
-    await usuario.click(await screen.findByRole('button', { name: 'Tomei Vitamina D' }))
-    expect(within(await secao('Remédios')).getByText('2 de 4 tomados')).toBeInTheDocument()
-
-    await usuario.click(screen.getByRole('checkbox', { name: /Ler mensagens do WhatsApp/ }))
-    expect(within(await secao('Compromissos')).getByText('2 de 4 feitos')).toBeInTheDocument()
-    expect(
-      await screen.findByText('Para hoje: 2 agendamentos, 2 remédios para tomar e 2 compromissos.'),
-    ).toBeInTheDocument()
-
-    await usuario.click(screen.getByRole('button', { name: 'Marcar Condomínio como pago' }))
-    expect(await screen.findByText('Condomínio marcado como pago.')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Conta vencida' })).not.toBeInTheDocument())
+    const fisio = await linhaDe('Fisioterapia')
+    expect(within(fisio).getByText('09:00')).toHaveClass('text-atraso')
+    expect(within(fisio).getByRole('button', { name: 'Fiz: Fisioterapia' })).toBeInTheDocument()
+    expect(contador('Atrasadas')).toBe('5')
   })
 
-  test('marcar no painel vale também na tela de Remédios', async () => {
+  test('✓ no remédio vale na tela de Remédios; tocar de novo desfaz', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/')
-    await usuario.click(await screen.findByRole('button', { name: 'Tomei Vitamina D' }))
-    await screen.findByText('2 de 4 tomados')
-    await usuario.click(screen.getByRole('link', { name: 'Ver remédios' }))
+    const tomei = within(await linhaDe('Vitamina D')).getByRole('button', { name: 'Tomei: Vitamina D' })
+    await usuario.click(tomei)
+    expect(tomei).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(contador('Concluídas')).toBe('3'))
+
+    await usuario.click(tomei)
+    await waitFor(() => expect(tomei).toHaveAttribute('aria-pressed', 'false'))
+    expect(contador('Concluídas')).toBe('2')
+
+    await usuario.click(tomei)
+    await waitFor(() => expect(contador('Concluídas')).toBe('3'))
+    await usuario.click(screen.getAllByRole('link', { name: /Remédios/ })[0])
     expect(await screen.findByText('2 de 4 doses tomadas')).toBeInTheDocument()
+  })
+
+  test('✓ na conta marca como paga (como "Marcar como pago"); ✗ marca como não paga', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/')
+    const condominio = await linhaDe('Condomínio')
+    await usuario.click(within(condominio).getByRole('button', { name: 'Paguei: Condomínio' }))
+    await waitFor(() => expect(contador('Atrasadas')).toBe('0'))
+    const contas = await api<{ descricao: string; status: string }[]>('/pagamentos', { query: { fim: '2026-10-10' } })
+    expect(contas.find((p) => p.descricao === 'Condomínio')?.status).toBe('pago')
+
+    // Paga hoje, continua na lista (e pode ser desfeita).
+    const naoPaguei = within(await linhaDe('Condomínio')).getByRole('button', { name: 'Não paguei: Condomínio' })
+    await usuario.click(naoPaguei)
+    await waitFor(() => expect(naoPaguei).toHaveAttribute('aria-pressed', 'true'))
+    const depois = await api<{ descricao: string; status: string }[]>('/pagamentos', { query: { fim: '2026-10-10' } })
+    expect(depois.find((p) => p.descricao === 'Condomínio')?.status).toBe('pendente')
+  })
+
+  test('se a API recusar, a marcação volta atrás', async () => {
+    servidor.use(
+      http.patch(`${API_URL}/hoje/:id`, () =>
+        HttpResponse.json({ erro: { codigo: 'ERRO_INTERNO', mensagem: 'Falhou.' } }, { status: 500 }),
+      ),
+    )
+    const usuario = userEvent.setup()
+    renderizarApp('/')
+    const naoFiz = within(await linhaDe('Regar as plantas')).getByRole('button', { name: 'Não fiz: Regar as plantas' })
+    await usuario.click(naoFiz)
+    expect(await screen.findByText('Falhou.')).toBeInTheDocument()
+    await waitFor(() => expect(naoFiz).toHaveAttribute('aria-pressed', 'false'))
+  })
+
+  test('seletor de data: outro dia, sem as contas vencidas antes, e volta para hoje', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/')
+    await linhaDe('Condomínio')
+    await usuario.click(screen.getByRole('button', { name: 'Próximo dia' }))
+    expect(await screen.findByText(/^Amanhã, 14 de outubro/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Condomínio')).not.toBeInTheDocument())
+    expect(await screen.findByText(/^Neste dia:/)).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Voltar para hoje' }))
+    expect(await linhaDe('Condomínio')).toBeInTheDocument()
   })
 })
 
-test('conta nova, sem nada: "Dia livre"', async () => {
+test('conta nova, sem nada: "Nada programado para hoje."', async () => {
   const { token } = await api<Sessao>('/auth/cadastro', {
     method: 'POST',
     corpo: { nome: 'Pessoa Nova', email: 'nova@exemplo.com', senha: 'senha-da-pessoa' },
   })
   salvarToken(token)
   renderizarApp('/')
-  expect(await screen.findByText('Dia livre')).toBeInTheDocument()
+  expect(await screen.findByText('Nada programado para hoje.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Novo agendamento' })).toBeInTheDocument()
 })

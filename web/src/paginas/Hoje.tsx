@@ -1,30 +1,16 @@
-import type { ReactNode } from 'react'
-import {
-  CalendarDotsIcon,
-  CaretRightIcon,
-  CheckSquareIcon,
-  PillIcon,
-  SunIcon,
-  WalletIcon,
-  WarningCircleIcon,
-  type Icon,
-} from '@phosphor-icons/react'
-import { Link } from 'react-router'
-import type { Area } from '@/app/navegacao'
+import { SunIcon } from '@phosphor-icons/react'
+import { Link, useSearchParams } from 'react-router'
 import { useSessao } from '@/app/useSessao'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { NavegadorDia } from '@/components/NavegadorDia'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { usePainelHoje } from '@/consultas/hoje'
+import { useTarefasHoje } from '@/consultas/hoje'
 import { agora, dataPorExtenso, hojeISO } from '@/lib/datas'
-import { formatarCentavos } from '@/lib/dinheiro'
-import type { PainelHoje } from '@/lib/tipos'
+import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
-import { ItemEvento } from '@/paginas/agenda/ItemEvento'
-import { ItemPagamento } from '@/paginas/pagamentos/ItemPagamento'
-import { ItemDose } from '@/paginas/remedios/ItemDose'
-import { ItemTarefa } from '@/paginas/rotina/ItemTarefa'
+import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
 
 /** "Bom dia" até o meio-dia, "Boa tarde" até as 18h, "Boa noite" depois (e de madrugada). */
 function saudacao(hora: number) {
@@ -33,7 +19,7 @@ function saudacao(hora: number) {
   return 'Boa noite'
 }
 
-/** "Bom dia, Débora", a data por extenso e o resumo do dia, na capa. */
+/** "Bom dia, Maria", a data por extenso e o resumo do dia, na capa. */
 function CabecalhoHoje({ resumo }: { resumo: string | null }) {
   const { usuario } = useSessao()
   const hoje = agora()
@@ -56,238 +42,129 @@ function CabecalhoHoje({ resumo }: { resumo: string | null }) {
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
-/** "2 agendamentos, 3 remédios e 1 compromisso para hoje." */
-function frase(r: PainelHoje['resumo']) {
+/** "Para hoje: 9 tarefas, 2 concluídas e 3 atrasadas." */
+function frase(r: TarefasHoje['resumo'], ehHoje: boolean) {
+  if (r.programadas === 0) return null
   const partes = [
-    r.eventos && plural(r.eventos, 'agendamento', 'agendamentos'),
-    r.remediosPendentes && plural(r.remediosPendentes, 'remédio para tomar', 'remédios para tomar'),
-    r.tarefasPendentes && plural(r.tarefasPendentes, 'compromisso', 'compromissos'),
+    plural(r.programadas, 'tarefa', 'tarefas'),
+    r.concluidas > 0 && plural(r.concluidas, 'concluída', 'concluídas'),
+    r.atrasadas > 0 && plural(r.atrasadas, 'atrasada', 'atrasadas'),
   ].filter(Boolean) as string[]
-  if (partes.length === 0) return null
   const lista = partes.length === 1 ? partes[0] : `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}`
-  return `Para hoje: ${lista}.`
-}
-
-/** Grupo do dia: selo da área, título, andamento ("1 de 4 tomados") e o atalho para a área. */
-function Secao({
-  id,
-  area,
-  icone: Icone,
-  titulo,
-  detalhe,
-  link,
-  children,
-}: {
-  id: string
-  area: Area
-  icone: Icon
-  titulo: string
-  detalhe?: ReactNode
-  link: { para: string; rotulo: string }
-  children: ReactNode
-}) {
-  return (
-    <section aria-labelledby={id} className={cn('flex flex-col gap-1', `area-${area}`)}>
-      <div className="flex items-center gap-3">
-        <span className="selo-area size-11" aria-hidden>
-          <Icone className="size-6" weight="fill" />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4">
-          <h2 id={id} className="text-xl font-bold">
-            {titulo}
-          </h2>
-          {detalhe && <p className="text-base text-muted-foreground">{detalhe}</p>}
-        </div>
-      </div>
-      {children}
-      <Link
-        to={link.para}
-        className="-mx-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 font-semibold text-area hover:bg-area-fundo/60"
-      >
-        {link.rotulo}
-        <CaretRightIcon className="size-5" weight="bold" aria-hidden />
-      </Link>
-    </section>
-  )
+  return `${ehHoje ? 'Para hoje' : 'Neste dia'}: ${lista}.`
 }
 
 export function Hoje() {
-  const data = hojeISO()
-  const consulta = usePainelHoje(data)
+  const [params, setParams] = useSearchParams()
+  const data = params.get('data') ?? hojeISO()
+  const ehHoje = data === hojeISO()
+  const consulta = useTarefasHoje(data)
+  const mudarDia = (novo: string) => setParams(novo === hojeISO() ? {} : { data: novo }, { replace: true })
 
   return (
     <Pagina
       titulo="Hoje"
-      cabecalho={<CabecalhoHoje resumo={consulta.data ? frase(consulta.data.resumo) : null} />}
+      cabecalho={<CabecalhoHoje resumo={consulta.data ? frase(consulta.data.resumo, ehHoje) : null} />}
     >
-      {consulta.isPending ? (
-        <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-8">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="flex flex-col gap-3">
-              <Skeleton className="h-11 w-1/2" />
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-            </div>
-          ))}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <NavegadorDia data={data} aoMudar={mudarDia} />
+          <label className="flex items-center justify-center gap-3 text-base text-muted-foreground">
+            Ir para o dia
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => e.target.value && mudarDia(e.target.value)}
+              className="min-h-11 rounded-lg border border-input bg-folha px-3 text-base text-foreground"
+            />
+          </label>
         </div>
-      ) : consulta.isError ? (
-        <EstadoVazio
-          icone={SunIcon}
-          titulo="Não foi possível carregar o seu dia"
-          acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
-        >
-          Verifique a internet e tente de novo.
-        </EstadoVazio>
-      ) : (
-        <Painel painel={consulta.data} />
-      )}
+
+        {consulta.isPending ? (
+          <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-4">
+            <Skeleton className="h-24" />
+            {[1, 2, 3, 4].map((n) => (
+              <Skeleton key={n} className="h-16" />
+            ))}
+          </div>
+        ) : consulta.isError ? (
+          <EstadoVazio
+            icone={SunIcon}
+            titulo="Não foi possível carregar o seu dia"
+            acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
+          >
+            Verifique a internet e tente de novo.
+          </EstadoVazio>
+        ) : (
+          <TarefasDoDia dia={consulta.data} ehHoje={ehHoje} />
+        )}
+      </div>
     </Pagina>
   )
 }
 
-function Painel({ painel }: { painel: PainelHoje }) {
-  const { eventos, medicamentos, rotina, pagamentos } = painel
-  const tomados = medicamentos.filter((m) => m.tomado).length
-  const feitas = rotina.filter((t) => t.concluida).length
-  const nadaNoDia =
-    eventos.length +
-      medicamentos.length +
-      rotina.length +
-      pagamentos.vencidos.length +
-      pagamentos.aVencer.length ===
-    0
+/** Os quatro números do dia, cada um na sua cor. */
+function ResumoDia({ resumo }: { resumo: TarefasHoje['resumo'] }) {
+  const contadores = [
+    { rotulo: 'Programadas', valor: resumo.programadas, cor: 'area-viagens text-area bg-area-fundo' },
+    { rotulo: 'Concluídas', valor: resumo.concluidas, cor: 'text-ok bg-ok-fundo' },
+    { rotulo: 'Pendentes', valor: resumo.pendentes, cor: 'area-compromissos text-area bg-area-fundo' },
+    { rotulo: 'Atrasadas', valor: resumo.atrasadas, cor: 'text-atraso bg-atraso-fundo' },
+  ]
+  return (
+    <section aria-label="Resumo do dia">
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        {contadores.map((c) => (
+          <div key={c.rotulo} className={cn('flex flex-col rounded-xl px-4 py-3', c.cor)}>
+            <dt className="text-base font-semibold">{c.rotulo}</dt>
+            <dd className="text-3xl leading-tight font-[750] tabular-nums">{c.valor}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
 
-  if (nadaNoDia) {
+function TarefasDoDia({ dia, ehHoje }: { dia: TarefasHoje; ehHoje: boolean }) {
+  if (dia.tarefas.length === 0) {
     return (
       <EstadoVazio
         icone={SunIcon}
-        titulo="Dia livre"
+        titulo={ehHoje ? 'Nada programado para hoje.' : 'Nada programado para este dia.'}
         acao={
           <Button asChild>
             <Link to="/agenda/novo">Novo agendamento</Link>
           </Button>
         }
-      >
-        Nenhum agendamento, remédio, compromisso ou conta para hoje. Aproveite!
-      </EstadoVazio>
+      />
     )
   }
 
-  return (
-    <div className="flex flex-col gap-10">
-      {pagamentos.vencidos.length > 0 && <ContasVencidas pagamentos={pagamentos} />}
-
-      <Secao
-        id="hoje-agenda"
-        area="agenda"
-        icone={CalendarDotsIcon}
-        titulo="Agendamentos"
-        link={{ para: '/agenda', rotulo: 'Ver agenda' }}
-      >
-        {eventos.length ? (
-          <ul className="flex flex-col divide-y divide-linha">
-            {eventos.map((e) => (
-              <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} />
-            ))}
-          </ul>
-        ) : (
-          <p className="py-3 text-muted-foreground">Nada marcado para hoje.</p>
-        )}
-      </Secao>
-
-      {medicamentos.length > 0 && (
-        <Secao
-          id="hoje-remedios"
-          area="remedios"
-          icone={PillIcon}
-          titulo="Remédios"
-          detalhe={
-            tomados === medicamentos.length
-              ? 'Tudo tomado.'
-              : `${tomados} de ${medicamentos.length} ${medicamentos.length === 1 ? 'tomado' : 'tomados'}`
-          }
-          link={{ para: '/remedios', rotulo: 'Ver remédios' }}
-        >
-          <ul className="flex flex-col divide-y divide-linha">
-            {medicamentos.map((d) => (
-              <ItemDose key={d.horarioId} dose={d} futuro={false} />
-            ))}
-          </ul>
-        </Secao>
-      )}
-
-      {rotina.length > 0 && (
-        <Secao
-          id="hoje-rotina"
-          area="compromissos"
-          icone={CheckSquareIcon}
-          titulo="Compromissos"
-          detalhe={
-            feitas === rotina.length
-              ? 'Todos feitos.'
-              : `${feitas} de ${rotina.length} ${rotina.length === 1 ? 'feito' : 'feitos'}`
-          }
-          link={{ para: '/rotina', rotulo: 'Ver compromissos' }}
-        >
-          <ul className="flex flex-col divide-y divide-linha">
-            {rotina.map((t) => (
-              <ItemTarefa key={t.rotinaId} tarefa={t} desabilitada={false} />
-            ))}
-          </ul>
-        </Secao>
-      )}
-
-      {pagamentos.aVencer.length > 0 && (
-        <Secao
-          id="hoje-a-vencer"
-          area="contas"
-          icone={WalletIcon}
-          titulo="Contas dos próximos 7 dias"
-          detalhe={`${formatarCentavos(pagamentos.totalAVencerCentavos)} no total`}
-          link={{ para: '/despesas', rotulo: 'Ver despesas' }}
-        >
-          <ul className="flex flex-col divide-y divide-linha">
-            {pagamentos.aVencer.map((p) => (
-              <ItemPagamento key={p.id} pagamento={p} />
-            ))}
-          </ul>
-        </Secao>
-      )}
-    </div>
+  const comHorario = dia.tarefas.filter((t) => t.horario)
+  const diaTodo = dia.tarefas.filter((t) => !t.horario)
+  const lista = (tarefas: TarefaHoje[]) => (
+    <ul className="flex flex-col divide-y divide-linha">
+      {tarefas.map((t) => (
+        <LinhaTarefa key={t.id} tarefa={t} data={dia.data} />
+      ))}
+    </ul>
   )
-}
 
-/** Contas em atraso vêm primeiro, numa folha vinho-clara: é o único aviso do dia. */
-function ContasVencidas({ pagamentos }: { pagamentos: PainelHoje['pagamentos'] }) {
-  const titulo = pagamentos.vencidos.length === 1 ? 'Conta vencida' : 'Contas vencidas'
   return (
-    <section
-      aria-labelledby="hoje-vencidas"
-      className="-mx-4 flex flex-col gap-1 bg-atraso-fundo px-4 pt-4 pb-2 sm:mx-0 sm:rounded-xl"
-    >
-      <div className="flex items-center gap-3">
-        <WarningCircleIcon className="size-8 shrink-0 text-atraso" weight="fill" aria-hidden />
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4">
-          <h2 id="hoje-vencidas" className="text-xl font-bold text-atraso">
-            {titulo}
-          </h2>
-          <p className="font-semibold text-atraso">
-            {formatarCentavos(pagamentos.totalVencidoCentavos)} em atraso
-          </p>
-        </div>
-      </div>
-      <ul className="flex flex-col divide-y divide-atraso/20">
-        {pagamentos.vencidos.map((p) => (
-          <ItemPagamento key={p.id} pagamento={p} />
-        ))}
-      </ul>
-      <Link
-        to="/despesas?status=pendente"
-        className="-mx-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 font-semibold text-atraso hover:bg-atraso/8"
-      >
-        Ver despesas
-        <CaretRightIcon className="size-5" weight="bold" aria-hidden />
-      </Link>
-    </section>
+    <div className="flex flex-col gap-6">
+      <ResumoDia resumo={dia.resumo} />
+      <section aria-labelledby="hoje-tarefas" className="flex flex-col gap-1">
+        <h2 id="hoje-tarefas" className="text-xl font-bold">
+          Tarefas do dia
+        </h2>
+        {comHorario.length > 0 && lista(comHorario)}
+        {diaTodo.length > 0 && (
+          <>
+            <h3 className="mt-4 text-base font-bold tracking-wide text-muted-foreground uppercase">Dia todo</h3>
+            {lista(diaTodo)}
+          </>
+        )}
+      </section>
+    </div>
   )
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { api, baixarArquivo } from '@/lib/api'
 import { salvarNoAparelho } from '@/lib/arquivos'
 import type { AnexoViagem, Viagem, ViagemCorpo } from '@/lib/tipos'
+import { invalidarPainel } from './hoje'
 
 export const chavesViagens = {
   todos: ['viagens'] as const,
@@ -47,7 +48,7 @@ export function useSalvarViagem() {
     meta: { semAviso: true },
     onSuccess: (salva) => {
       guardar(cliente, salva)
-      return cliente.invalidateQueries({ queryKey: chavesViagens.lista })
+      return Promise.all([cliente.invalidateQueries({ queryKey: chavesViagens.lista }), invalidarPainel(cliente)])
     },
   })
 }
@@ -60,7 +61,7 @@ export function useExcluirViagem() {
       // Sai do cache antes de recarregar, para a tela ainda aberta não buscar de novo (404).
       cliente.removeQueries({ queryKey: chavesViagens.item(id) })
       cliente.setQueryData<Viagem[]>(chavesViagens.lista, (lista) => lista?.filter((v) => v.id !== id))
-      return cliente.invalidateQueries({ queryKey: chavesViagens.lista })
+      return Promise.all([cliente.invalidateQueries({ queryKey: chavesViagens.lista }), invalidarPainel(cliente)])
     },
   })
 }

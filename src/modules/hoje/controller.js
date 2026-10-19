@@ -1,7 +1,11 @@
-const service = require('./service');
+const tarefas = require('./tarefas');
 
-async function painel(req, res) {
-  res.json(await service.painel(req.usuario.id, req.validado.query));
+async function listar(req, res) {
+  res.json(await tarefas.listar(req.usuario.id, req.validado.query));
 }
 
-module.exports = { painel };
+async function marcar(req, res) {
+  res.json(await tarefas.marcar(req.usuario.id, req.validado.params.id, req.validado.body));
+}
+
+module.exports = { listar, marcar };

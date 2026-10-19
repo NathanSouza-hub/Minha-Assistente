@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { deDataISO, FUSO, hojeISO, paraDataHoraISO } from '@/lib/datas'
 import type {
   CartaoCorpo,
+  CategoriaTarefa,
   CategoriaPagamento,
   CompraCartaoCorpo,
   DiaPagamento,
@@ -141,6 +142,15 @@ export const banco = {
   registrosRemedio: [] as { horarioId: string; data: string; tomadoEm: string }[],
   rotinas: [] as RotinaMock[],
   conclusoesRotina: [] as { rotinaId: string; data: string; concluidaEm: string }[],
+  /** tarefa_registro: o ✓/✗ da tela Hoje que não fica na própria área. */
+  registrosTarefa: [] as {
+    usuarioId: string
+    categoria: CategoriaTarefa
+    itemId: string
+    dataOcorrencia: string
+    horario: string | null
+    status: 'feito' | 'nao_feito'
+  }[],
   viagens: [] as ViagemMock[],
   anexosViagem: [] as AnexoViagemMock[],
   comprovantes: [] as ComprovanteMock[],
@@ -510,6 +520,7 @@ export function resetarBancoMock() {
   banco.registrosRemedio = []
   banco.rotinas.length = 0
   banco.conclusoesRotina = []
+  banco.registrosTarefa = []
   banco.viagens.length = 0
   banco.anexosViagem.length = 0
   banco.comprovantes.length = 0

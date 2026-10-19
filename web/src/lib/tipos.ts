@@ -284,28 +284,45 @@ export type TarefaDoDia = {
   concluidaEm: string | null
 }
 
-/** GET /hoje: cada lista no mesmo formato do seu módulo. */
-export type PainelHoje = {
-  data: string
-  resumo: {
-    eventos: number
-    remediosPendentes: number
-    tarefasPendentes: number
-    pagamentosVencidos: number
-    pagamentosAVencer: number
-  }
-  eventos: Evento[]
-  medicamentos: DoseDoDia[]
-  rotina: TarefaDoDia[]
-  pagamentos: {
-    /** Pendentes com vencimento antes do dia. */
-    vencidos: Pagamento[]
-    /** Pendentes que vencem do dia até 7 dias depois. */
-    aVencer: Pagamento[]
-    totalVencidoCentavos: number
-    totalAVencerCentavos: number
-  }
+/** Origem de cada tarefa do dia (rádio, atividade e fisioterapia são agendamentos daquele tipo). */
+export type CategoriaTarefa =
+  | 'remedio'
+  | 'despesa'
+  | 'agenda'
+  | 'compromisso'
+  | 'radio'
+  | 'viagem'
+  | 'atividade'
+  | 'fisioterapia'
+
+/** `atrasado` = pendente com horário (ou vencimento) já passado. */
+export type StatusTarefa = 'pendente' | 'feito' | 'nao_feito' | 'atrasado'
+
+export type TarefaHoje = {
+  /** "<categoria>:<idItem>:<ocorrência>"; vai no PATCH /hoje/:id. */
+  id: string
+  categoria: CategoriaTarefa
+  titulo: string
+  /** Ex.: "50 mg" ou "R$ 3.300,00 · Casa da Serra". */
+  detalhe: string | null
+  /** "08:00"; null = dia todo. */
+  horario: string | null
+  status: StatusTarefa
+  /** Rota do item no app. */
+  link: string
+  /** Conta da equipe com valor a definir: o ✓ é dado no formulário da conta, com o valor. */
+  concluirNoFormulario: boolean
 }
+
+/** GET /hoje: as tarefas do dia numa lista só, em ordem de horário ("dia todo" no fim). */
+export type TarefasHoje = {
+  data: string
+  resumo: { programadas: number; concluidas: number; pendentes: number; atrasadas: number }
+  tarefas: TarefaHoje[]
+}
+
+/** PATCH /hoje/:id. "pendente" desfaz. */
+export type MarcacaoTarefa = 'feito' | 'nao_feito' | 'pendente'
 
 // ---- Viagens (etapa 9 do back-end) ----
 

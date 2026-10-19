@@ -1,4 +1,4 @@
-// Painel do dia: junta o que já existe nos outros módulos, com as mesmas regras.
+// Painel do dia agrupado por módulo (usado pelo resumo da manhã). A tela Hoje usa ./tarefas.js.
 const { DateTime } = require('luxon');
 const { hoje } = require('../../lib/tempo');
 const eventos = require('../eventos/service');

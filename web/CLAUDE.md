@@ -53,11 +53,14 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Painel Hoje** (`GET /hoje`, `consultas/hoje.ts`) reaproveita os itens das áreas (`ItemEvento`,
-  `ItemDose`, `ItemTarefa`, `ItemPagamento`). As marcações otimistas de dose e tarefa mudam as duas
-  caches (a da área e a do painel, via `ajustarPainel`) e toda mutação de compromisso, remédio,
-  rotina ou pagamento chama `invalidarPainel`. Ao criar uma área nova que apareça no painel, faça o
-  mesmo.
+- **Hoje = tarefas do dia** (`GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
+  `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
+  uma lista só, já normalizada pelo back-end, com ✓/✗ por linha (o texto de cada categoria em
+  `CATEGORIAS` de `LinhaTarefa`). `useMarcarTarefa` é otimista (linha e resumo) e, ao terminar a
+  última marcação, invalida tudo (o ✓ de remédio, compromisso e conta vale nas áreas). A data fica
+  em `?data=`. Toda mutação de agendamento, remédio, compromisso, viagem ou conta chama
+  `invalidarPainel`; ao criar uma área nova que apareça em Hoje, faça o mesmo (e inclua no
+  `tarefas.js` do back e no `mocks/hoje.ts`).
 - **Viagens**: anexos só existem numa viagem já salva — o cadastro leva para `/viagens/:id`, onde
   se anexa. Upload por `FormData` (`useEnviarAnexo`, um arquivo por vez; o limite de 10 MB é checado
   antes de enviar). Download por `baixarArquivo()` de `src/lib/api.ts` (um `<a href>` comum não
