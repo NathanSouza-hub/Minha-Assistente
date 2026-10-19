@@ -127,6 +127,8 @@ export const agoraISO = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 
 export const banco = {
   usuarios: new Map<string, UsuarioMock>(),
+  /** CADASTRO_ABERTO do back-end; os testes fecham para ver o "peça a quem cuida do app". */
+  cadastroAberto: true,
   imoveis: [] as ImovelMock[],
   categorias: [] as CategoriaMock[],
   pagamentos: [] as PagamentoMock[],
@@ -495,6 +497,7 @@ function semearCompras() {
 
 export function resetarBancoMock() {
   banco.usuarios.clear()
+  banco.cadastroAberto = true
   banco.imoveis.length = 0
   banco.categorias.length = 0
   banco.pagamentos.length = 0

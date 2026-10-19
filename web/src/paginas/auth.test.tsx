@@ -132,3 +132,27 @@ describe('cadastro', () => {
     expect(await screen.findByText('Nome longo demais.')).toBeInTheDocument()
   })
 })
+
+describe('cadastro fechado', () => {
+  const fecharCadastro = () =>
+    servidor.use(http.get(`${API_URL}/auth/cadastro`, () => HttpResponse.json({ aberto: false })))
+
+  test('com o cadastro aberto, entrar oferece criar conta', async () => {
+    renderizarApp('/entrar')
+    expect(await screen.findByRole('link', { name: 'Criar conta' })).toHaveAttribute('href', '/cadastro')
+  })
+
+  test('sem cadastro aberto, entrar não oferece criar conta', async () => {
+    fecharCadastro()
+    renderizarApp('/entrar')
+    expect(await screen.findByText('Ainda não tem conta? Peça a quem cuida do app para criar a sua.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Criar conta' })).not.toBeInTheDocument()
+  })
+
+  test('a tela de cadastro explica que está fechado, sem formulário', async () => {
+    fecharCadastro()
+    renderizarApp('/cadastro')
+    expect(await screen.findByText(/O cadastro de contas novas está fechado/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument()
+  })
+})

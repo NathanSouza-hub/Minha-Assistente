@@ -19,10 +19,15 @@ const esquema = z.object({
     .string()
     .default('')
     .refine((v) => v === '' || /^(mailto:|https:\/\/)/.test(v), 'use mailto:seu@email ou uma URL https://'),
+  // Cadastro de contas novas pelo app. Sem a variável: fechado em produção, aberto no resto.
+  CADASTRO_ABERTO: z.enum(['true', 'false']).optional(),
 }).refine((v) => Boolean(v.VAPID_PUBLIC_KEY) === Boolean(v.VAPID_PRIVATE_KEY) && (!v.VAPID_PUBLIC_KEY || v.VAPID_SUBJECT), {
   message: 'defina VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT juntas (ou nenhuma)',
   path: ['VAPID_PUBLIC_KEY'],
-});
+}).transform((v) => ({
+  ...v,
+  CADASTRO_ABERTO: v.CADASTRO_ABERTO === undefined ? v.NODE_ENV !== 'production' : v.CADASTRO_ABERTO === 'true',
+}));
 
 const resultado = esquema.safeParse(process.env);
 

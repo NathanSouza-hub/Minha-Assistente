@@ -20,14 +20,14 @@ separadamente e depende do contrato de API descrito aqui.
 - Dinheiro: inteiro em centavos (`15990` = R$ 159,90).
 - Erros: `{ "erro": { "codigo": "STRING", "mensagem": "texto" } }`.
 - Listagens devolvem array direto, sem paginação (volume de uma pessoa).
-- Todas as rotas exceto `POST /auth/cadastro` e `POST /auth/login` exigem
+- Todas as rotas exceto `GET`/`POST /auth/cadastro` e `POST /auth/login` exigem
   `Authorization: Bearer <jwt>`. Toda consulta é filtrada pelo usuário do token; recurso de
   outro usuário responde `404` (não revela que existe).
 
 ## Rotas
 
 ```
-POST /auth/cadastro (acrescentada, aberta) | POST /auth/login | GET /auth/me | PUT /auth/senha
+GET/POST /auth/cadastro (acrescentada) | POST /auth/login | GET /auth/me | PUT /auth/senha
 GET  /hoje
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
@@ -71,8 +71,11 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
    próxima (mês/ano seguinte) ligada por `recorrencia_origem_id`.
 8. **Lembretes de evento em lista**: `lembretesMinutosAntes: [1080, 120]` (ex.: véspera e 2h
    antes); `[]` = sem lembrete. Até 5 valores positivos, sem repetição.
-9. **Multiusuário**: cadastro aberto (`POST /auth/cadastro` com `{ nome, email, senha }`, devolve
-   o token como o login). Imóveis e categorias são de cada usuário (CRUD em `/imoveis` e
+9. **Multiusuário**: cadastro pelo app (`POST /auth/cadastro` com `{ nome, email, senha }`, devolve
+   o token como o login) só com `CADASTRO_ABERTO=true`; sem a variável, fica fechado em produção
+   e aberto no resto. Fechado, responde `403 CADASTRO_FECHADO` e as contas são criadas pelo
+   administrador (`src/cli/criar-conta.js`, com senha temporária). `GET /auth/cadastro` devolve
+   `{ aberto }` para o front esconder o "Criar conta". Imóveis e categorias são de cada usuário (CRUD em `/imoveis` e
    `/categorias-pagamento`, decisão 18). Apagar um imóvel usado por pagamentos responde
    `409 REFERENCIA_INVALIDA`.
 

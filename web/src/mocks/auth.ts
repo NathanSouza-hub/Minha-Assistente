@@ -17,7 +17,12 @@ const publico = ({ senha: _senha, ...usuario }: UsuarioMock): Usuario => usuario
 export const handlersAuth = [
   http.get(`${API_URL}/saude`, () => HttpResponse.json({ status: 'ok', banco: 'ok' })),
 
+  http.get(`${API_URL}/auth/cadastro`, () => HttpResponse.json({ aberto: banco.cadastroAberto })),
+
   http.post(`${API_URL}/auth/cadastro`, async ({ request }) => {
+    if (!banco.cadastroAberto) {
+      return erro(403, 'CADASTRO_FECHADO', 'O cadastro de contas novas está fechado. Peça a quem cuida do app para criar a sua.')
+    }
     const { nome, email, senha } = (await request.json()) as Record<string, string>
     const chave = email?.trim().toLowerCase()
     if (!nome?.trim() || !chave || !senha || senha.length < 8) {

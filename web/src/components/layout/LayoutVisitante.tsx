@@ -30,7 +30,7 @@ export function LayoutVisitante({ titulo, subtitulo, children, rodape, ilustraca
         <div aria-hidden className="h-1.5 bg-hoje" />
         <main className="flex flex-1 flex-col px-4 pt-7 pb-8 md:px-8">
           {children}
-          <div className="mt-8 border-t pt-6 text-lg">{rodape}</div>
+          {rodape && <div className="mt-8 border-t pt-6 text-lg">{rodape}</div>}
         </main>
       </div>
     </div>

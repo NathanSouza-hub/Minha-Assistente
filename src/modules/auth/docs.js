@@ -6,6 +6,14 @@ const LIMITE = { 429: 'Muitas tentativas a partir deste IP (LIMITE_TENTATIVAS)' 
 module.exports = {
   paths: {
     '/auth/cadastro': {
+      get: {
+        tags: ['Auth'],
+        summary: 'Diz se o cadastro pelo app está aberto (CADASTRO_ABERTO)',
+        security: [],
+        responses: {
+          200: respostaJson('Situação do cadastro', esquemas.situacaoCadastro),
+        },
+      },
       post: {
         tags: ['Auth'],
         summary: 'Cria uma conta e já devolve o token',
@@ -15,6 +23,7 @@ module.exports = {
           201: respostaJson('Conta criada', esquemas.sessao),
           ...respostasErro({
             400: 'Dados inválidos (VALIDACAO)',
+            403: 'Cadastro fechado; contas novas pelo administrador (CADASTRO_FECHADO)',
             409: 'E-mail já cadastrado (EMAIL_EM_USO)',
             ...LIMITE,
           }),

@@ -205,3 +205,30 @@ test('redefinir senha (comando do administrador) gera temporária e encerra as s
 
   await assert.rejects(redefinirSenha('ninguem@exemplo.com'), { codigo: 'NAO_ENCONTRADO' });
 });
+
+test('cadastro fechado: 403 CADASTRO_FECHADO e GET /auth/cadastro diz que está fechado', async () => {
+  const fechado = criarApp({ cadastroAberto: false });
+  const res = await request(fechado)
+    .post('/auth/cadastro')
+    .send({ nome: 'Intrusa', email: 'intrusa@exemplo.com', senha: 'uma-senha-forte' })
+    .expect(403);
+  assert.equal(res.body.erro.codigo, 'CADASTRO_FECHADO');
+  assert.equal(await db('usuario').where({ email: 'intrusa@exemplo.com' }).first(), undefined);
+
+  assert.deepEqual((await request(fechado).get('/auth/cadastro').expect(200)).body, { aberto: false });
+  assert.deepEqual((await request(app).get('/auth/cadastro').expect(200)).body, { aberto: true });
+});
+
+test('criar conta (comando do administrador) gera senha temporária e as categorias padrão', async () => {
+  const { criarConta } = require('../src/modules/auth/service');
+
+  const { usuario, senha } = await criarConta({ nome: ' Débora ', email: ' Debora@Exemplo.com ' });
+  assert.equal(usuario.nome, 'Débora');
+  assert.equal(usuario.email, 'debora@exemplo.com');
+  assert.match(senha, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+  assert.ok((await db('categoriaPagamento').where({ usuarioId: usuario.id })).length > 0);
+  await request(app).post('/auth/login').send({ email: 'debora@exemplo.com', senha }).expect(200);
+
+  await assert.rejects(criarConta({ nome: 'Outra', email: 'debora@exemplo.com' }), { codigo: 'EMAIL_EM_USO' });
+  await assert.rejects(criarConta({ nome: 'Sem e-mail', email: 'nao-e-email' }), { name: 'ZodError' });
+});

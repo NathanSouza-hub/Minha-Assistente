@@ -153,6 +153,19 @@ git archive HEAD | ssh deploy@IP_DO_SERVIDOR \
 As migrations novas rodam sozinhas quando a API sobe. Os aparelhos recebem o app novo na
 próxima vez que abrirem (o service worker se atualiza sozinho).
 
+### Criar a conta de alguém
+
+O cadastro pelo app fica fechado em produção (`CADASTRO_ABERTO=false`). Para criar uma conta,
+rode no servidor e passe a senha temporária à pessoa (ela troca depois em Mais → Trocar senha):
+
+```bash
+cd /opt/minha-assistente
+docker compose exec api node src/cli/criar-conta.js email@da.pessoa "Nome da Pessoa"
+```
+
+Para reabrir o cadastro pelo app, ponha `CADASTRO_ABERTO=true` no `.env` e rode
+`docker compose up -d api`.
+
 ### Alguém esqueceu a senha
 
 Enquanto não há redefinição por e-mail, gere uma senha temporária no servidor e passe à pessoa

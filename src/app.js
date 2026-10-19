@@ -23,7 +23,8 @@ const { rotasViagens } = require('./modules/viagens/routes');
 const { rotasCompras } = require('./modules/compras/routes');
 const { rotasNotificacoes } = require('./modules/notificacoes/routes');
 
-function criarApp() {
+/** `cadastroAberto`: os testes trocam sem mexer no ambiente (padrão: CADASTRO_ABERTO). */
+function criarApp({ cadastroAberto = env.CADASTRO_ABERTO } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
@@ -46,7 +47,7 @@ function criarApp() {
     res.json({ status: 'ok', banco: 'ok' });
   });
 
-  app.use('/auth', rotasAuth());
+  app.use('/auth', rotasAuth({ cadastroAberto }));
 
   // Módulos protegidos: tudo abaixo exige token e filtra pelo usuário.
   app.use('/imoveis', autenticar, rotasImoveis());

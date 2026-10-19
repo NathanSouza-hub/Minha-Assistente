@@ -22,6 +22,7 @@ node --test test/auth.test.js                     # um arquivo
 node --test --test-name-pattern="409" test/auth.test.js   # um teste pelo nome
 npm run migrate:reset         # desfaz tudo e reaplica as migrations (APAGA os dados locais)
 npm run senha:redefinir -- email  # senha temporária para quem esqueceu (encerra as sessões)
+npm run conta:criar -- email "Nome"  # conta nova com senha temporária (cadastro fechado em produção)
 ```
 
 **Deploy**: VPS com Docker Compose (`docker-compose.prod.yml`: Postgres + API + Caddy com HTTPS

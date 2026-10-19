@@ -40,6 +40,8 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # Contas novas só pelo comando do administrador (docs/deploy.md). "true" reabre o cadastro.
+      CADASTRO_ABERTO: ${CADASTRO_ABERTO:-false}
     volumes:
       - anexos:/app/uploads
 

@@ -47,4 +47,6 @@ const usuario = z.object({
 
 const sessao = z.object({ token: z.string(), usuario });
 
-module.exports = { cadastro, login, trocaSenha, usuario, sessao };
+const situacaoCadastro = z.object({ aberto: z.boolean() }).meta({ example: { aberto: false } });
+
+module.exports = { cadastro, login, trocaSenha, usuario, sessao, situacaoCadastro };

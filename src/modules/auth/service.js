@@ -4,6 +4,7 @@ const db = require('../../config/db');
 const token = require('../../lib/token');
 const { AppError } = require('../../lib/erros');
 const { criarPadrao } = require('../categorias/padrao');
+const esquemas = require('./schema');
 
 const CUSTO_BCRYPT = 12;
 
@@ -99,6 +100,18 @@ async function redefinirSenha(email) {
   return { usuario: publico(usuario), senha };
 }
 
+/**
+ * Conta criada pelo administrador (cadastro fechado): mesma validação e categorias do cadastro,
+ * com uma senha temporária que a pessoa troca em Mais → Trocar senha. Usado por
+ * `src/cli/criar-conta.js`.
+ */
+async function criarConta({ nome, email }) {
+  const senha = senhaTemporaria();
+  const dados = esquemas.cadastro.parse({ nome, email, senha });
+  const { usuario } = await cadastrar(dados);
+  return { usuario, senha };
+}
+
 /** Para `autenticar`: o usuário público e a versão de sessão que vale hoje. */
 async function buscarParaSessao(id) {
   const linha = await db('usuario').select([...CAMPOS_PUBLICOS, 'versaoSessao']).where({ id }).first();
@@ -107,4 +120,4 @@ async function buscarParaSessao(id) {
   return { usuario, versaoSessao };
 }
 
-module.exports = { cadastrar, entrar, trocarSenha, redefinirSenha, buscarParaSessao };
+module.exports = { cadastrar, entrar, trocarSenha, redefinirSenha, criarConta, buscarParaSessao };
