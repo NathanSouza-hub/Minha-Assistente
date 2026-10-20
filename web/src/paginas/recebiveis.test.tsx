@@ -64,7 +64,8 @@ describe('Recebíveis', () => {
     await usuario.type(valor, '1.500,00')
     await usuario.click(screen.getByRole('button', { name: 'Registrar recebimento' }))
     expect(await within(situacao).findByText('Recebido em parte')).toBeInTheDocument()
-    expect(screen.getByLabelText('Valor recebido')).toHaveValue('3.500,00')
+    // O campo volta com o que falta logo depois de a situação mudar.
+    await vi.waitFor(() => expect(screen.getByLabelText('Valor recebido')).toHaveValue('3.500,00'))
 
     await usuario.click(screen.getByRole('button', { name: 'Registrar recebimento' }))
     // A situação é a linha de cima (<p>); "Recebido" também é o rótulo da coluna de valores (<dt>).
