@@ -3,8 +3,9 @@ import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
 import { toast } from 'sonner'
 
-// Telas carregadas sob demanda (lazy) podem passar de 1 s com a suíte inteira rodando em paralelo.
-configure({ asyncUtilTimeout: 3000 })
+// Telas carregadas sob demanda (lazy) podem passar de 1 s com a suíte inteira rodando em paralelo;
+// com a barra lateral e o menu da área a mais em cada tela, 3 s às vezes não bastava no CI.
+configure({ asyncUtilTimeout: 5000 })
 
 // Roda os testes no fuso do Brasil, onde `new Date("2026-10-13")` mostra o dia anterior.
 process.env.TZ = 'America/Sao_Paulo'

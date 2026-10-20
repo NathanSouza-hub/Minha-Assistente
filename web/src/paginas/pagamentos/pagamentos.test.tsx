@@ -147,7 +147,7 @@ describe('navegação', () => {
       'Finanças',
       'Agenda',
       'Saúde',
-      'Compromissos',
+      'Lembretes', // a área Compromissos; o nome completo não cabe na barra
     ])
     await usuario.click(within(barra).getByRole('link', { name: 'Finanças' }))
     const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
