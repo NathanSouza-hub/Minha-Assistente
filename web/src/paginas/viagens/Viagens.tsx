@@ -86,7 +86,7 @@ function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
   const ida = deDataISO(v.ida)
   return (
     <li>
-      <Link to={`/viagens/${v.id}`} className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-areia/70">
+      <Link to={`/viagens/${v.id}`} className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-suave/70">
         {/* Canhoto da passagem: dia e mês da ida. Em viagem, na cor cheia da área. */}
         <span
           aria-hidden
@@ -94,7 +94,7 @@ function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
             'flex w-14 shrink-0 flex-col items-center rounded-lg py-1.5 leading-none tabular-nums',
             fase === 'agora' && 'bg-area text-folha',
             fase === 'proxima' && 'bg-area-fundo text-area',
-            fase === 'passada' && 'bg-areia text-muted-foreground',
+            fase === 'passada' && 'bg-suave text-muted-foreground',
           )}
         >
           <span className="text-2xl font-bold">{ida.day}</span>
@@ -108,7 +108,7 @@ function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
           {(texto || v.anexos.length > 0) && (
             <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
               {texto && (
-                <span className={cn('font-semibold', fase === 'agora' ? 'text-terracota' : 'text-area')}>{texto}</span>
+                <span className={cn('font-semibold', fase === 'agora' ? 'text-primary' : 'text-area')}>{texto}</span>
               )}
               {v.anexos.length > 0 && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">

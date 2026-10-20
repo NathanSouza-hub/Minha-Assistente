@@ -31,7 +31,7 @@ export function LayoutApp() {
   )
 }
 
-/** Computador: a "lombada" da agenda, em petróleo como o cabeçalho; o item aberto fica mais escuro. */
+/** Computador: barra lateral azul como o cabeçalho; o item aberto fica num azul mais profundo. */
 function BarraLateral() {
   return (
     <aside className="capa sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto px-3 py-6 md:flex">
@@ -65,14 +65,14 @@ function LinkLateral({ item }: { item: ItemNavegacao }) {
       end={item.rota === '/'}
       className={({ isActive }) =>
         cn(
-          'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-petroleo-claro hover:bg-petroleo-escuro/60 hover:text-folha',
-          isActive && 'bg-petroleo-escuro text-folha',
+          'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-azul-claro hover:bg-azul-profundo/60 hover:text-folha',
+          isActive && 'bg-azul-profundo text-folha',
         )
       }
     >
       {({ isActive }) => (
         <>
-          {/* Fita terracota, como o marcador de página de uma agenda. */}
+          {/* Fita azul-céu do item ativo. */}
           {isActive && <span aria-hidden className="absolute inset-y-2 left-0 w-1 rounded-full bg-hoje" />}
           <Icone className="size-6 shrink-0" weight={isActive ? 'fill' : 'regular'} aria-hidden />
           {item.rotulo}
@@ -85,7 +85,7 @@ function LinkLateral({ item }: { item: ItemNavegacao }) {
 // No celular, as áreas secundárias são abertas pelo "Mais", que fica marcado nelas.
 const rotasDoMais = [...navegacaoSecundaria, ...navegacaoConfiguracoes].map((item) => item.rota)
 
-/** Celular: folha creme presa embaixo; o item ativo ganha o ícone cheio na cor da área. */
+/** Celular: barra branca presa embaixo; o item ativo ganha o ícone cheio na cor da área e a fita azul. */
 function BarraInferior() {
   const { pathname } = useLocation()
   const emAreaDoMais = rotasDoMais.some((rota) => pathname.startsWith(rota))
@@ -113,7 +113,7 @@ function BarraInferior() {
                 {({ isActive }) => (
                   <>
                     {marcar(isActive) && (
-                      <span aria-hidden className="absolute top-0 h-1 w-10 rounded-b-full bg-hoje" />
+                      <span aria-hidden className="absolute top-0 h-1 w-10 rounded-b-full bg-primary" />
                     )}
                     <span
                       className={cn(

@@ -9,7 +9,7 @@ type Props = {
   ilustracao?: ReactNode
 }
 
-/** Moldura das telas de entrar e criar conta: a capa petróleo com a marca e o formulário no papel. */
+/** Moldura das telas de entrar e criar conta: a capa azul com a marca e o formulário no fundo claro. */
 export function LayoutVisitante({ titulo, subtitulo, children, rodape, ilustracao }: Props) {
   useEffect(() => {
     document.title = `${titulo} · Minha Assistente`

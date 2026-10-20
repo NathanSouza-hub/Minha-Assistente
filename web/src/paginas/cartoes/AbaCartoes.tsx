@@ -109,8 +109,8 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
                 className={cn(
                   'rounded-full px-3 py-1 font-semibold',
                   fatura.situacao === 'paga' && 'bg-ok-fundo text-ok',
-                  fatura.situacao === 'fechada' && 'bg-terracota-clara text-terracota',
-                  fatura.situacao === 'aberta' && 'bg-areia',
+                  fatura.situacao === 'fechada' && 'bg-alerta-fundo text-alerta',
+                  fatura.situacao === 'aberta' && 'bg-suave',
                 )}
               >
                 {textoSituacao[fatura.situacao]}
@@ -145,7 +145,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
                 <li key={`${p.compraId}-${p.parcela}`}>
                   <Link
                     to={`/cartoes/${cartao.id}/compras/${p.compraId}`}
-                    className="-mx-2 my-1 flex items-start justify-between gap-3 rounded-lg px-2 py-3 hover:bg-areia/70"
+                    className="-mx-2 my-1 flex items-start justify-between gap-3 rounded-lg px-2 py-3 hover:bg-suave/70"
                   >
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="text-lg leading-snug font-bold">{p.descricao}</span>
@@ -157,7 +157,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
                       <span className="text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
                       {p.totalParcelas > 1 && (
                         <span
-                          className="rounded-full bg-areia px-2.5 font-semibold tabular-nums"
+                          className="rounded-full bg-suave px-2.5 font-semibold tabular-nums"
                           aria-label={`parcela ${p.parcela} de ${p.totalParcelas}`}
                         >
                           {p.parcela}/{p.totalParcelas}
@@ -251,7 +251,7 @@ export function AbaCartoes() {
           <li className="snap-start p-1">
             <Link
               to="/cartoes/novo"
-              className="flex aspect-[1.586] w-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-input font-semibold text-area hover:bg-areia"
+              className="flex aspect-[1.586] w-40 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-input font-semibold text-area hover:bg-suave"
             >
               <PlusIcon weight="bold" className="size-7" aria-hidden />
               Novo cartão

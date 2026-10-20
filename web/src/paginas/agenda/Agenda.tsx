@@ -202,8 +202,8 @@ function FaixaSemana({
                 aberto
                   ? 'bg-primary text-primary-foreground shadow-folha'
                   : dia === hoje
-                    ? 'bg-terracota-clara text-terracota'
-                    : 'hover:bg-areia',
+                    ? 'bg-secondary text-primary ring-2 ring-primary/30'
+                    : 'hover:bg-suave',
               )}
             >
               <span className="text-[0.8rem] leading-none font-semibold first-letter:uppercase">{semana}</span>
@@ -226,8 +226,8 @@ function FaixaSemana({
 export function CabecalhoDia({ dia }: { dia: string }) {
   const hoje = dia === hojeISO()
   return (
-    <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-terracota')}>
-      {hoje && <span aria-hidden className="h-5 w-1.5 rounded-full bg-hoje" />}
+    <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-primary')}>
+      {hoje && <span aria-hidden className="h-5 w-1.5 rounded-full bg-primary" />}
       {rotuloDoDia(dia)}
     </h3>
   )

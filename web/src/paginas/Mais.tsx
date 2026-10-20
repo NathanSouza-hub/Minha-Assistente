@@ -11,7 +11,7 @@ function Lista({ itens }: { itens: ItemNavegacao[] }) {
         <li key={rota} className={`area-${area} py-1`}>
           <Link
             to={rota}
-            className="-mx-2 flex min-h-16 items-center gap-4 rounded-lg px-2 text-lg font-semibold hover:bg-areia/70"
+            className="-mx-2 flex min-h-16 items-center gap-4 rounded-lg px-2 text-lg font-semibold hover:bg-suave/70"
           >
             <span className="selo-area size-11" aria-hidden>
               <Icone className="size-6" weight="fill" />

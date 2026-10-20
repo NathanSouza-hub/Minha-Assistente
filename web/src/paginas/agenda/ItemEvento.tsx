@@ -21,7 +21,7 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
     <li className={cn('flex flex-col gap-3 py-3', `area-${area}`)}>
       <Link
         to={`/agenda/${e.id}${voltar ? `?voltar=${encodeURIComponent(voltar)}` : ''}`}
-        className="-mx-2 grid grid-cols-[5.5rem_1fr] gap-3 rounded-lg px-2 py-1 hover:bg-areia/70"
+        className="-mx-2 grid grid-cols-[5.5rem_1fr] gap-3 rounded-lg px-2 py-1 hover:bg-suave/70"
       >
         <span className={cn('flex flex-col border-l-4 border-area pl-2.5', passou && 'border-area/40 text-muted-foreground')}>
           <span className="text-xl font-bold tabular-nums">{horaDe(e.inicio)}</span>
@@ -32,7 +32,7 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
             {e.titulo}
           </span>
           {acontecendo && (
-            <strong className="self-start rounded-full bg-terracota-clara px-2.5 text-base font-semibold text-terracota">
+            <strong className="self-start rounded-full bg-secondary px-2.5 text-base font-semibold text-primary">
               Acontecendo agora
             </strong>
           )}

@@ -75,7 +75,7 @@ export function DetalheViagem() {
         <dl className="flex flex-col divide-y divide-linha">
           <Detalhe rotulo="Quando" icone={CalendarDotsIcon}>
             <dd className="text-lg font-semibold">{descreverPeriodo(v.ida, v.volta)}</dd>
-            {texto && <dd className={cn('font-semibold', fase === 'agora' ? 'text-terracota' : 'text-area')}>{texto}</dd>}
+            {texto && <dd className={cn('font-semibold', fase === 'agora' ? 'text-primary' : 'text-area')}>{texto}</dd>}
           </Detalhe>
           {detalhes.map(
             ([rotulo, valor, icone]) =>

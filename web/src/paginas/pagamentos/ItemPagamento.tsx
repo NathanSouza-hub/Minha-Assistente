@@ -44,7 +44,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
         <span className="flex items-start justify-between gap-3">
           <span className="text-lg leading-snug font-bold">{p.descricao}</span>
           {aDefinir ? (
-            <span className="shrink-0 rounded-full bg-terracota-clara px-2.5 font-semibold text-terracota">A definir</span>
+            <span className="shrink-0 rounded-full bg-alerta-fundo px-2.5 font-semibold text-alerta">A definir</span>
           ) : (
             <span className="shrink-0 text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos!)}</span>
           )}
@@ -64,7 +64,7 @@ export function ItemPagamento({ pagamento: p }: { pagamento: Pagamento }) {
           )}
           {p.parcelaTotal && (
             <span
-              className="rounded-full bg-areia px-2.5 font-semibold tabular-nums"
+              className="rounded-full bg-suave px-2.5 font-semibold tabular-nums"
               aria-label={`parcela ${p.parcelaAtual} de ${p.parcelaTotal}`}
             >
               {p.parcelaAtual}/{p.parcelaTotal}

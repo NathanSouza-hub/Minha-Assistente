@@ -8,15 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Principal: petróleo sólido (dentro da `.capa` vira creme com texto petróleo).
+        // Principal: azul sólido (dentro da `.capa` vira branco com texto azul).
         default: "bg-primary text-primary-foreground shadow-folha hover:bg-[color-mix(in_oklch,var(--primary),black_14%)]",
-        // De apoio: contorno petróleo sobre o papel.
+        // De apoio: contorno azul sobre o fundo.
         outline:
           "border-primary/45 bg-transparent text-primary hover:bg-primary/8 aria-expanded:bg-primary/8",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_6%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        // Destaque quente (ex.: "Pagar"): terracota.
-        quente: "bg-terracota text-folha shadow-folha hover:bg-[color-mix(in_oklch,var(--terracota),black_14%)]",
+        // Confirmação (ex.: "Pagar", "Recebi"): verde.
+        confirmar: "bg-ok text-folha shadow-folha hover:bg-[color-mix(in_oklch,var(--ok),black_14%)]",
         ghost:
           "hover:bg-foreground/6 hover:text-foreground aria-expanded:bg-foreground/6 aria-expanded:text-foreground",
         destructive:

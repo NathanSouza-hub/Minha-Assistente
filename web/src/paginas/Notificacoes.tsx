@@ -143,7 +143,7 @@ type Tom = 'area' | 'ok' | 'apagado' | 'atraso'
 const TONS: Record<Tom, string> = {
   area: 'bg-area-fundo text-area',
   ok: 'bg-ok-fundo text-ok',
-  apagado: 'bg-areia text-muted-foreground',
+  apagado: 'bg-suave text-muted-foreground',
   atraso: 'bg-atraso-fundo text-atraso',
 }
 

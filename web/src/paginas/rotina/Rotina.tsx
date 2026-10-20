@@ -170,13 +170,13 @@ function TodasAsTarefas() {
     <ul className="flex flex-col divide-y divide-linha" aria-label="Todos os compromissos">
       {rotinas.map((r) => (
         <li key={r.id}>
-          <Link to={`/rotina/${r.id}`} className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-areia/70">
+          <Link to={`/rotina/${r.id}`} className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-suave/70">
             <span className="flex items-center justify-between gap-3">
               <span className={cn('text-lg font-semibold', !r.ativo && 'text-muted-foreground')}>
                 {r.titulo}
               </span>
               {!r.ativo && (
-                <span className="rounded-full bg-areia px-2.5 font-semibold text-muted-foreground">Pausado</span>
+                <span className="rounded-full bg-suave px-2.5 font-semibold text-muted-foreground">Pausado</span>
               )}
             </span>
             <span className="text-base text-muted-foreground">

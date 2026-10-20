@@ -43,7 +43,7 @@ export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; 
   return (
     <div className="overflow-x-auto rounded-2xl bg-folha shadow-folha">
       <table className="w-full border-collapse text-left" aria-label={rotulo}>
-        <thead className="bg-areia text-base text-muted-foreground">
+        <thead className="bg-suave text-base text-muted-foreground">
           <tr>
             <th scope="col" className="px-2.5 py-2 font-semibold">
               Descrição
@@ -105,7 +105,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
   return (
     <tr className="border-t border-linha align-middle">
       <td className="px-2.5 py-2">
-        <Link to={enderecoDe(p)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-areia/70">
+        <Link to={enderecoDe(p)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-suave/70">
           <span className="flex items-center gap-1.5 leading-snug font-bold">
             {p.descricao}
             {p.totalComprovantes > 0 && (
@@ -120,7 +120,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
       </td>
       <td className="px-2.5 py-2 text-right whitespace-nowrap tabular-nums">
         {aDefinir ? (
-          <span className="rounded-full bg-terracota-clara px-2.5 font-semibold text-terracota">A definir</span>
+          <span className="rounded-full bg-alerta-fundo px-2.5 font-semibold text-alerta">A definir</span>
         ) : (
           <span className="font-bold">{formatarCentavos(p.valorCentavos!)}</span>
         )}

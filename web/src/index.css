@@ -30,20 +30,20 @@
 
   --color-papel: var(--papel);
   --color-folha: var(--folha);
-  --color-areia: var(--areia);
+  --color-suave: var(--suave);
   --color-linha: var(--linha);
-  --color-petroleo: var(--tinta);
-  --color-petroleo-escuro: var(--petroleo-escuro);
-  --color-petroleo-claro: var(--petroleo-claro);
-  --color-terracota: var(--terracota);
-  --color-terracota-viva: var(--terracota-viva);
-  --color-terracota-clara: var(--terracota-clara);
-  --color-terracota-marca: var(--terracota-marca);
+  --color-azul: var(--azul);
+  --color-azul-capa: var(--azul-capa);
+  --color-azul-profundo: var(--azul-profundo);
+  --color-azul-claro: var(--azul-claro);
+  --color-azul-fundo: var(--azul-fundo);
+  --color-alerta: var(--alerta);
+  --color-alerta-fundo: var(--alerta-fundo);
   --color-ok: var(--ok);
   --color-ok-fundo: var(--ok-fundo);
-  /* Marca o que é de hoje e o item ativo (a "fita" marcadora): terracota. */
+  /* Fita do item ativo sobre a capa azul (barra lateral, tela de entrar): azul-céu. */
   --color-hoje: var(--hoje);
-  /* Atrasado/vencido: vinho, para não se confundir com a terracota. */
+  /* Atrasado/vencido: vermelho, sempre com texto ou ícone junto. */
   --color-atraso: var(--atraso);
   --color-atraso-fundo: var(--atraso-fundo);
   /* Cor da área da tela aberta (definida pelo layout a partir da rota). */
@@ -59,28 +59,28 @@
   --radius-xl: calc(var(--radius) * 1.3);
   --radius-2xl: calc(var(--radius) * 1.7);
 
-  /* Sombra quente e baixa: separa sem precisar de borda cinza. */
-  --shadow-folha: 0 1px 2px rgb(43 36 32 / 0.06), 0 4px 12px rgb(43 36 32 / 0.05);
-  --shadow-barra: 0 -1px 2px rgb(43 36 32 / 0.05), 0 -6px 16px rgb(43 36 32 / 0.06);
+  /* Cartão: contorno de 1px quase invisível + sombra azulada baixa (borda discreta, sem cinza). */
+  --shadow-folha: 0 0 0 1px rgb(22 35 58 / 0.06), 0 1px 2px rgb(22 35 58 / 0.05), 0 6px 16px rgb(22 35 58 / 0.06);
+  --shadow-barra: 0 -1px 0 rgb(22 35 58 / 0.06), 0 -6px 16px rgb(22 35 58 / 0.06);
 }
 
-/* Agenda de couro numa mesa de madeira: capa azul-petróleo, folhas creme, marcador terracota.
-   Guia completo (e contrastes medidos) em docs/identidade-visual.md. */
 :root {
-  --papel: #f7f1e8;
-  --folha: #fffcf7;
-  --areia: #efe6d8;
-  --linha: #e2d6c4;
-  --grafite: #2b2420;
-  --tinta: #0e4a5a;
-  --petroleo-escuro: #0a3642;
-  --petroleo-claro: #bfd6d9;
-  --terracota: #9a4527;
-  --terracota-viva: #c2603a;
-  --terracota-clara: #f6ddd0;
-  --terracota-marca: #ee9068;
+  /* Azul moderno sobre branco e azul muito claro. Guia e contrastes medidos em
+     docs/identidade-visual.md. */
+  --papel: #f4f7fc;
+  --folha: #ffffff;
+  --suave: #eaf0f8;
+  --linha: #dbe3ef;
+  --grafite: #16233a;
+  --azul: #1f4fd1;
+  --azul-capa: #1b3fae;
+  --azul-profundo: #142f86;
+  --azul-claro: #c7d6fb;
+  --azul-fundo: #e3ebfd;
+  --alerta: #9a4a07;
+  --alerta-fundo: #fdecd3;
   --ok: #2f6b45;
-  --ok-fundo: #ddebdd;
+  --ok-fundo: #ddefe2;
 
   --background: var(--papel);
   --foreground: var(--grafite);
@@ -88,48 +88,48 @@
   --card-foreground: var(--grafite);
   --popover: var(--folha);
   --popover-foreground: var(--grafite);
-  --primary: var(--tinta);
+  --primary: var(--azul);
   --primary-foreground: var(--folha);
-  --secondary: #dcebec;
-  --secondary-foreground: var(--tinta);
-  --muted: var(--areia);
-  --muted-foreground: #6b5d50;
-  --accent: var(--areia);
+  --secondary: var(--azul-fundo);
+  --secondary-foreground: var(--azul-capa);
+  --muted: var(--suave);
+  --muted-foreground: #55657d;
+  --accent: var(--suave);
   --accent-foreground: var(--grafite);
-  --destructive: #9e1f2c;
+  --destructive: #c0262d;
   --border: var(--linha);
-  --input: #8a7968;
-  --ring: var(--tinta);
-  --hoje: var(--terracota-viva);
-  --atraso: #9e1f2c;
-  --atraso-fundo: #f5dcdc;
-  --serie-pago: var(--tinta);
-  --serie-previsto: var(--terracota-viva);
+  --input: #7d8ba1;
+  --ring: var(--azul);
+  --hoje: #7cc0ff;
+  --atraso: #c0262d;
+  --atraso-fundo: #fde2e2;
+  --serie-pago: var(--azul);
+  --serie-previsto: #c2620a;
   --radius: 0.875rem;
 
-  /* Áreas: tinta (ícone, fita) + fundo claro (selo). Contraste entre os dois ≥ 4,8:1. */
-  --area-agenda: #0e4a5a;
-  --area-agenda-fundo: #dcebec;
-  --area-contas: #9a4527;
-  --area-contas-fundo: #f6ddd0;
+  /* Áreas: tinta (ícone, fita) + fundo claro (selo). Contraste entre os dois ≥ 4,5:1. */
+  --area-agenda: var(--azul);
+  --area-agenda-fundo: var(--azul-fundo);
+  --area-contas: #0f766e;
+  --area-contas-fundo: #d5f0ec;
   --area-remedios: #2f6b45;
-  --area-remedios-fundo: #ddebdd;
+  --area-remedios-fundo: #ddefe2;
   --area-compromissos: #8a5a00;
   --area-compromissos-fundo: #f6e7c6;
-  --area-viagens: #2d5c8a;
-  --area-viagens-fundo: #dce6f2;
+  --area-viagens: #0369a1;
+  --area-viagens-fundo: #dbeefa;
   --area-compras: #7a3f6b;
   --area-compras-fundo: #f0ddea;
-  --area-radio: #4a4a8c;
-  --area-radio-fundo: #e3e2f3;
+  --area-radio: #5b3fc4;
+  --area-radio-fundo: #e8e2fb;
   --area-atividade: #4f6b1f;
   --area-atividade-fundo: #e6edd3;
   --area-fisioterapia: #3b5f73;
   --area-fisioterapia-fundo: #dde8ee;
-  --area-hoje: var(--terracota);
-  --area-hoje-fundo: var(--terracota-clara);
-  --area-geral: var(--tinta);
-  --area-geral-fundo: #dcebec;
+  --area-hoje: var(--azul);
+  --area-hoje-fundo: var(--azul-fundo);
+  --area-geral: var(--azul);
+  --area-geral-fundo: var(--azul-fundo);
 
   --area: var(--area-geral);
   --area-fundo: var(--area-geral-fundo);
@@ -173,20 +173,21 @@
 
 @layer components {
   /* Superfície da capa (cabeçalho, barra lateral): dentro dela as cores se invertem, então
-     `text-primary`, `text-muted-foreground` e o botão padrão continuam legíveis sobre o petróleo. */
+     `text-primary`, `text-muted-foreground` e o botão padrão continuam legíveis sobre o azul. */
   .capa {
     --foreground: var(--folha);
-    --muted-foreground: var(--petroleo-claro);
+    --muted-foreground: var(--azul-claro);
     --primary: var(--folha);
-    --primary-foreground: var(--tinta);
-    --secondary: var(--petroleo-escuro);
+    --primary-foreground: var(--azul-capa);
+    --secondary: var(--azul-profundo);
     --secondary-foreground: var(--folha);
-    --muted: var(--petroleo-escuro);
-    --accent: var(--petroleo-escuro);
+    --muted: var(--azul-profundo);
+    --accent: var(--azul-profundo);
     --accent-foreground: var(--folha);
-    --border: rgb(255 252 247 / 0.22);
+    --border: rgb(255 255 255 / 0.22);
     --ring: var(--folha);
-    background-color: var(--tinta);
+    /* Leve degradê diagonal: dá profundidade sem mudar o contraste (as duas pontas passam de 7:1). */
+    background: linear-gradient(135deg, var(--azul-capa), color-mix(in oklch, var(--azul-capa), var(--azul) 45%));
     color: var(--folha);
   }
 

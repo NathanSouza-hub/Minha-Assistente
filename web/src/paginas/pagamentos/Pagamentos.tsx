@@ -56,7 +56,7 @@ function Abas({
               onClick={() => aoMudar(aba.id)}
               className={cn(
                 'min-h-11 rounded-full px-4 font-semibold whitespace-nowrap',
-                ativa === aba.id ? 'bg-area text-folha' : 'bg-areia hover:bg-linha',
+                ativa === aba.id ? 'bg-area text-folha' : 'bg-suave hover:bg-linha',
               )}
             >
               {aba.nome}
@@ -66,7 +66,7 @@ function Abas({
             type="button"
             aria-expanded={criando}
             onClick={() => setCriando((v) => !v)}
-            className="flex min-h-11 items-center gap-1 rounded-full border-2 border-dashed border-input px-4 font-semibold whitespace-nowrap text-area hover:bg-areia"
+            className="flex min-h-11 items-center gap-1 rounded-full border-2 border-dashed border-input px-4 font-semibold whitespace-nowrap text-area hover:bg-suave"
           >
             <PlusIcon className="size-5" weight="bold" aria-hidden />
             Nova
@@ -219,7 +219,7 @@ function ContasDaCategoria({
                   onClick={() => mudar({ imovel: i.id })}
                   className={cn(
                     'min-h-11 rounded-lg border-2 px-3 font-semibold whitespace-nowrap',
-                    imovelId === i.id ? 'border-area bg-area-fundo text-area' : 'border-transparent bg-areia hover:bg-linha',
+                    imovelId === i.id ? 'border-area bg-area-fundo text-area' : 'border-transparent bg-suave hover:bg-linha',
                   )}
                 >
                   {i.nome}

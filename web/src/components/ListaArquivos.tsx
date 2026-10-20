@@ -97,7 +97,7 @@ export function ListaArquivos({ titulo, descricao, arquivos, maximo, textos: t, 
       )}
 
       {enviando ? (
-        <p role="status" className="rounded-xl bg-areia p-4 font-semibold">
+        <p role="status" className="rounded-xl bg-suave p-4 font-semibold">
           Enviando {enviando}…
         </p>
       ) : vagas > 0 ? (

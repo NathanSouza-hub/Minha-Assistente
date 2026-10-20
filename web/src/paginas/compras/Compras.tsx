@@ -206,7 +206,7 @@ function LinhaItem({ item: i }: { item: ItemCompra }) {
         role="checkbox"
         aria-checked={i.comprado}
         onClick={() => marcar.mutate({ id: i.id, comprado: !i.comprado })}
-        className="-ml-2 flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-areia/70 focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="-ml-2 flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-suave/70 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <span
           aria-hidden
@@ -229,7 +229,7 @@ function LinhaItem({ item: i }: { item: ItemCompra }) {
       <Link
         to={`/compras/${i.id}`}
         aria-label={`Editar ${i.nome}`}
-        className="-mr-2 grid size-12 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-areia hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="-mr-2 grid size-12 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-suave hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <PencilSimpleIcon className="size-6" aria-hidden />
       </Link>

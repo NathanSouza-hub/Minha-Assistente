@@ -17,8 +17,8 @@ type Props = {
 }
 
 /**
- * Moldura de toda tela: cabeçalho na "capa" petróleo (por trás da barra de status do celular),
- * a fita fina na cor da área e o conteúdo direto no papel creme. Dentro do cabeçalho as cores
+ * Moldura de toda tela: cabeçalho na "capa" azul (por trás da barra de status do celular),
+ * a fita fina na cor da área e o conteúdo direto no fundo azul-claríssimo. Dentro do cabeçalho as cores
  * se invertem (`.capa`), então links `text-primary` e botões padrão continuam legíveis.
  */
 export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Props) {

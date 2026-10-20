@@ -16,7 +16,7 @@ export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; d
         disabled={desabilitada}
         onClick={() => concluir.mutate({ rotinaId: t.rotinaId, concluida: !t.concluida })}
         className={cn(
-          '-mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-areia/70 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60',
+          '-mx-2 flex min-h-16 w-[calc(100%+1rem)] items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-suave/70 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60',
         )}
       >
         <span

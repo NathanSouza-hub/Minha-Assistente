@@ -25,8 +25,8 @@ export default defineConfig({
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f7f1e8',
-        theme_color: '#0e4a5a',
+        background_color: '#f4f7fc',
+        theme_color: '#1b3fae',
       },
       workbox: {
         // O worker do MSW só existe para desenvolvimento.

@@ -52,12 +52,12 @@ function ListaEquipe() {
             <li key={m.id}>
               <Link
                 to={`/equipe/${m.id}`}
-                className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-areia/70"
+                className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-suave/70"
               >
                 {/* Inicial do nome no selo da área, como um crachá. */}
                 <span
                   aria-hidden
-                  className={cn('selo-area size-11 text-lg font-bold', !m.ativo && 'bg-areia text-muted-foreground')}
+                  className={cn('selo-area size-11 text-lg font-bold', !m.ativo && 'bg-suave text-muted-foreground')}
                 >
                   {m.nome.trim().charAt(0).toUpperCase()}
                 </span>
@@ -65,7 +65,7 @@ function ListaEquipe() {
                   <span className="flex flex-wrap items-center gap-x-2 text-lg leading-snug font-bold">
                     <span className={cn(!m.ativo && 'text-muted-foreground')}>{m.nome}</span>
                     {!m.ativo && (
-                      <span className="rounded-full bg-areia px-2.5 text-base font-semibold text-muted-foreground">
+                      <span className="rounded-full bg-suave px-2.5 text-base font-semibold text-muted-foreground">
                         Inativa
                       </span>
                     )}
