@@ -71,6 +71,9 @@ npm run lint                                  # oxlint
   imóvel (nome, endereço, identificação). Os números vêm de `GET /relatorios/imoveis/:id`. Os
   cartões de residência do painel e o nome na lista de Imóveis levam para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (painel e imóvel usam os mesmos).
+- **Relatório** (`/relatorio`): "Balanço do período" (entradas, saídas, saldo realizado e projetado,
+  recebíveis por origem e despesas pessoais, de `GET /relatorios/financeiro`) e, embaixo, os gastos
+  por imóvel ou categoria (`/relatorios/gastos`). O mesmo período vale para os dois.
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
   valores a receber do mês (pela data prevista). Status, saldo e atrasado vêm da API, derivados do
   histórico de recebimentos — não recalcule. No detalhe: situação, "Registrar recebimento" (o valor

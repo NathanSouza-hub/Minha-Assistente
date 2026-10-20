@@ -319,10 +319,16 @@ describe('relatório de gastos', () => {
   test('mostra totais do mês e separa por imóvel ou categoria', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/relatorio')
-    const totais = await screen.findByText('Previsto', { selector: 'dt' })
+    // O "Balanço do período" (recebíveis, contas e saldo) vem antes dos gastos por imóvel/categoria.
+    const balanco = await screen.findByRole('region', { name: 'Balanço do período' })
+    expect(within(balanco).getByText('Saldo realizado')).toBeInTheDocument()
+    expect(within(balanco).getByText('Saldo projetado')).toBeInTheDocument()
+    expect(within(balanco).getByText('Aluguel')).toBeInTheDocument()
+
+    await screen.findByText('Sem imóvel')
+    const totais = screen.getAllByText('Previsto', { selector: 'dt' }).find((dt) => !balanco.contains(dt))!
     // Pendentes de outubro: 1.250 + 238,90 + 1.800 + 180 + 399,90 (parcela 2/3)
     expect(within(totais.closest('div')!).getByText('R$ 3.868,80')).toBeInTheDocument()
-    expect(screen.getByText('Sem imóvel')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('radio', { name: 'Categoria' }))
     expect(await screen.findByText('Contas residenciais')).toBeInTheDocument()
