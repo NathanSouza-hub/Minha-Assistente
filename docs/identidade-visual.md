@@ -60,6 +60,7 @@ Texto corrido continua no grafite.
 |---|---|---|
 | Agenda, Hoje e geral | `#1F4FD1` | `#E3EBFD` |
 | Contas (e cartões, equipe, relatório) | `#0F766E` | `#D5F0EC` |
+| Recebíveis | `#05714F` | `#D3F2E5` |
 | Remédios | `#2F6B45` | `#DDEFE2` |
 | Compromissos | `#8A5A00` | `#F6E7C6` |
 | Viagens | `#0369A1` | `#DBEEFA` |

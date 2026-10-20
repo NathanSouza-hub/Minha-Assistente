@@ -1,5 +1,6 @@
 const db = require('../../config/db');
 const { garantirContas } = require('../equipe/contas');
+const { ORIGENS } = require('../recebiveis/schema');
 
 const SEM_IMOVEL = 'Sem imóvel';
 const CARTAO_DE_CREDITO = 'Cartão de crédito';
@@ -79,6 +80,51 @@ const valores = (linha) => ({
   vencidoCentavos: linha?.vencidoCentavos ?? 0,
 });
 
+// Recebíveis com data prevista no período, pela origem: previsto, já recebido, saldo a receber e
+// saldo vencido. Mais o realizado: recebimentos com data no período, de qualquer recebível.
+async function entradasDoPeriodo(usuarioId, inicio, fim) {
+  const { rows } = await db.raw(
+    `WITH r AS (
+       SELECT r.origem, r.valor_previsto_centavos AS previsto, r.data_prevista,
+              (r.encerrado OR m.recebido >= r.valor_previsto_centavos) AS quitado, m.recebido
+       FROM recebivel r
+       CROSS JOIN LATERAL (
+         SELECT COALESCE(SUM(valor_centavos), 0) AS recebido FROM recebimento WHERE recebivel_id = r.id
+       ) m
+       WHERE r.usuario_id = ? AND r.data_prevista BETWEEN ? AND ?
+     )
+     SELECT origem,
+            SUM(previsto) AS total_centavos,
+            SUM(recebido) AS recebido_centavos,
+            SUM(CASE WHEN quitado THEN 0 ELSE previsto - recebido END) AS pendente_centavos,
+            SUM(CASE WHEN NOT quitado AND data_prevista < current_date THEN previsto - recebido ELSE 0 END)
+              AS vencido_centavos
+     FROM r GROUP BY origem`,
+    [usuarioId, inicio, fim],
+  );
+  const realizado = await db('recebimento as m')
+    .join('recebivel as r', 'r.id', 'm.recebivelId')
+    .where('r.usuarioId', usuarioId)
+    .whereBetween('m.data', [inicio, fim])
+    .first(db.raw('COALESCE(SUM(m.valor_centavos), 0) AS centavos'));
+
+  const porOrigem = ORIGENS.map((origem) => rows.find((l) => l.origem === origem)).filter(Boolean);
+  const somar = (campo) => porOrigem.reduce((soma, l) => soma + l[campo], 0);
+  return {
+    totalCentavos: somar('totalCentavos'),
+    recebidoCentavos: somar('recebidoCentavos'),
+    pendenteCentavos: somar('pendenteCentavos'),
+    vencidoCentavos: somar('vencidoCentavos'),
+    recebidoNoPeriodoCentavos: realizado.centavos,
+    porOrigem: porOrigem.map(({ origem, totalCentavos, recebidoCentavos, pendenteCentavos }) => ({
+      origem,
+      totalCentavos,
+      recebidoCentavos,
+      pendenteCentavos,
+    })),
+  };
+}
+
 // Visão financeira do período: as contas que vencem nele (quanto já foi pago, está pendente ou
 // vencido), o realizado (pago no período, pela data do pagamento), cada imóvel e as despesas
 // pessoais (sem imóvel) por categoria.
@@ -116,13 +162,21 @@ async function financeiro(usuarioId, { inicio, fim }) {
     db('imovel').where({ usuarioId }).orderBy(['ordem', 'nome']).select('id', 'nome'),
   ]);
 
+  const saidas = {
+    ...valores(geral),
+    pagoNoPeriodoCentavos: realizado.centavos,
+    contasADefinir: geral.contasADefinir,
+  };
+  const entradas = await entradasDoPeriodo(usuarioId, inicio, fim);
+
   return {
     inicio,
     fim,
-    saidas: {
-      ...valores(geral),
-      pagoNoPeriodoCentavos: realizado.centavos,
-      contasADefinir: geral.contasADefinir,
+    saidas,
+    entradas,
+    saldo: {
+      realizadoCentavos: entradas.recebidoNoPeriodoCentavos - saidas.pagoNoPeriodoCentavos,
+      projetadoCentavos: entradas.totalCentavos - saidas.totalCentavos,
     },
     imoveis: imoveis.map(({ id, nome }) => ({ id, nome, ...valores(porImovel.find((l) => l.imovelId === id)) })),
     pessoal: {

@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button'
 import { useTarefasHoje } from '@/consultas/hoje'
 import { useRelatorioFinanceiro } from '@/consultas/pagamentos'
 import { dataPorExtenso, hojeISO, intervaloDoMes, mesDe, saudacao } from '@/lib/datas'
-import { BlocoContasPendentes, BlocoFinancas, BlocoPessoais, BlocoResidencias } from './blocosFinanceiros'
+import {
+  BlocoContasPendentes,
+  BlocoFinancas,
+  BlocoPessoais,
+  BlocoRecebiveis,
+  BlocoResidencias,
+} from './blocosFinanceiros'
 import { BlocoAgenda, BlocoHoje, BlocoRemedios } from './blocosDoDia'
 
 /** "Boa tarde, <primeiro nome da conta>" e a data de hoje por extenso. */
@@ -56,6 +62,7 @@ export function Inicio() {
         <BlocoAgenda />
         <BlocoResidencias consulta={financeiro} mes={mes} />
         <BlocoPessoais consulta={financeiro} mes={mes} />
+        <BlocoRecebiveis consulta={financeiro} mes={mes} />
       </div>
     </Pagina>
   )

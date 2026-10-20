@@ -60,6 +60,13 @@ npm run lint                                  # oxlint
   `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
   ("Contas que vencem em outubro", "Pela data do pagamento"). Imóvel e "pessoais" levam à Lista de
   despesas filtrada (`?imovel=<id>` ou `?imovel=pessoal`, que vira `destino=pessoal`).
+- **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
+  valores a receber do mês (pela data prevista). Status, saldo e atrasado vêm da API, derivados do
+  histórico de recebimentos — não recalcule. No detalhe: situação, "Registrar recebimento" (o valor
+  já vem com o que falta; abaixo do saldo aparece "Foi o valor final", que manda `encerrar`),
+  histórico com "Desfazer" e comprovantes (`ListaArquivos`). Toda mutação invalida `recebiveis` e os
+  relatórios (entradas e saldo do painel). Mock em `mocks/recebiveis.ts` (o relatório do mock usa o
+  `entradasDoPeriodo` dele).
 - **Hoje = tarefas do dia** (`/hoje`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
   `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
   uma lista só, já normalizada pelo back-end, com ✓/✗ por linha (o texto de cada categoria em

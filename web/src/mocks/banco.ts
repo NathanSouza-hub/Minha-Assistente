@@ -12,6 +12,8 @@ import type {
   Imovel,
   ItemCompra,
   MembroEquipeCorpo,
+  Recebimento,
+  RecebivelCorpo,
   Recorrencia,
   Rotina,
   StatusPagamento,
@@ -96,6 +98,17 @@ export type AnexoViagemMock = {
 
 export type ItemCompraMock = ItemCompra & { usuarioId: string }
 
+export type RecebivelMock = RecebivelCorpo & {
+  id: string
+  usuarioId: string
+  encerrado: boolean
+  recorrenciaOrigemId: string | null
+  criadoEm: string
+  atualizadoEm: string
+}
+export type RecebimentoMock = Recebimento & { recebivelId: string }
+export type ComprovanteRecebivelMock = Omit<AnexoViagemMock, 'viagemId'> & { recebivelId: string }
+
 export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
 
 // Mesmas categorias e ordem de src/modules/categorias/padrao.js: toda conta nova começa com elas.
@@ -151,6 +164,9 @@ export const banco = {
   viagens: [] as ViagemMock[],
   anexosViagem: [] as AnexoViagemMock[],
   comprovantes: [] as ComprovanteMock[],
+  recebiveis: [] as RecebivelMock[],
+  recebimentos: [] as RecebimentoMock[],
+  comprovantesRecebivel: [] as ComprovanteRecebivelMock[],
   compras: [] as ItemCompraMock[],
   inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
   // Resumo da manhã por usuário; sem entrada = o padrão do back-end (ligado às 07:00).
@@ -521,6 +537,9 @@ export function resetarBancoMock() {
   banco.viagens.length = 0
   banco.anexosViagem.length = 0
   banco.comprovantes.length = 0
+  banco.recebiveis.length = 0
+  banco.recebimentos.length = 0
+  banco.comprovantesRecebivel.length = 0
   banco.compras.length = 0
   banco.inscricoesPush.length = 0
   banco.resumos.clear()
@@ -530,6 +549,37 @@ export function resetarBancoMock() {
   semearRotina()
   semearViagens()
   semearCompras()
+  semearRecebiveis()
+}
+
+/** Recebíveis da Maria no mês: aluguel recebido em parte, dividendo já recebido, honorário atrasado. */
+function semearRecebiveis() {
+  const agora = agoraISO()
+  const hoje = deDataISO(hojeISO())
+  const doMes = (dia: number) => hoje.set({ day: Math.min(dia, hoje.daysInMonth!) }).toISODate()!
+  const recebivel = (dados: Omit<RecebivelMock, 'id' | 'usuarioId' | 'encerrado' | 'recorrenciaOrigemId' | 'criadoEm' | 'atualizadoEm' | 'observacoes'>) => {
+    const r: RecebivelMock = {
+      id: crypto.randomUUID(),
+      usuarioId: MARIA_ID,
+      encerrado: false,
+      recorrenciaOrigemId: null,
+      observacoes: null,
+      criadoEm: agora,
+      atualizadoEm: agora,
+      ...dados,
+    }
+    banco.recebiveis.push(r)
+    return r
+  }
+  const receber = (recebivelId: string, valorCentavos: number, data: string) =>
+    banco.recebimentos.push({ id: crypto.randomUUID(), recebivelId, valorCentavos, data, observacoes: null, criadoEm: agora })
+
+  const aluguel = recebivel({ descricao: 'Aluguel da sala comercial', origem: 'aluguel', valorPrevistoCentavos: 320000, dataPrevista: doMes(5), recorrencia: 'mensal' })
+  receber(aluguel.id, 200000, doMes(5))
+  const dividendo = recebivel({ descricao: 'Dividendos Itaúsa', origem: 'dividendos', valorPrevistoCentavos: 85000, dataPrevista: doMes(1), recorrencia: 'nenhuma' })
+  receber(dividendo.id, 85000, doMes(1))
+  recebivel({ descricao: 'Honorários do parecer', origem: 'honorarios', valorPrevistoCentavos: 450000, dataPrevista: hoje.minus({ days: 2 }).toISODate()!, recorrencia: 'nenhuma' })
+  recebivel({ descricao: 'Rendimento do CDB', origem: 'rendimentos', valorPrevistoCentavos: 61000, dataPrevista: hoje.plus({ days: 6 }).toISODate()!, recorrencia: 'mensal' })
 }
 
 resetarBancoMock()

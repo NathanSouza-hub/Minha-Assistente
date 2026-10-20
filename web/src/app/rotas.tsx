@@ -48,6 +48,9 @@ const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Im
 const categorias = () =>
   import('@/paginas/categorias/Categorias').then((m) => ({ Component: m.Categorias }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
+const recebiveis = () => import('@/paginas/recebiveis/Recebiveis').then((m) => ({ Component: m.Recebiveis }))
+const paginaRecebivel = () =>
+  import('@/paginas/recebiveis/PaginaRecebivel').then((m) => ({ Component: m.PaginaRecebivel }))
 const trocarSenha = () => import('@/paginas/TrocarSenha').then((m) => ({ Component: m.TrocarSenha }))
 
 // Exportado separado para os testes montarem com createMemoryRouter.
@@ -80,6 +83,9 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
           { path: 'pagamentos/:id', lazy: paginaPagamento },
+          { path: 'recebiveis', lazy: recebiveis },
+          { path: 'recebiveis/novo', lazy: paginaRecebivel },
+          { path: 'recebiveis/:id', lazy: paginaRecebivel },
           { path: 'equipe/novo', lazy: paginaMembro },
           { path: 'equipe/:id', lazy: paginaMembro },
           { path: 'cartoes/novo', lazy: paginaCartao },

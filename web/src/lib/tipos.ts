@@ -174,6 +174,43 @@ export type RelatorioGastos = {
   itens: { id: string | null; nome: string; pagoCentavos: number; previstoCentavos: number }[]
 }
 
+export type OrigemRecebivel = 'dividendos' | 'aluguel' | 'rendimentos' | 'honorarios' | 'outros'
+/** Derivado dos recebimentos: nada, parte ou tudo (ou encerrado com menos). */
+export type StatusRecebivel = 'pendente' | 'parcial' | 'recebido'
+
+export type RecebivelCorpo = {
+  descricao: string
+  origem: OrigemRecebivel
+  valorPrevistoCentavos: number
+  dataPrevista: string
+  recorrencia: 'nenhuma' | 'mensal' | 'anual'
+  observacoes: string | null
+}
+
+export type Recebivel = RecebivelCorpo & {
+  id: string
+  recebidoCentavos: number
+  /** Quanto falta (0 quando recebido). */
+  saldoCentavos: number
+  status: StatusRecebivel
+  /** Não recebido com data prevista antes de hoje. */
+  atrasado: boolean
+  encerrado: boolean
+  ultimoRecebimento: string | null
+  recorrenciaOrigemId: string | null
+  totalComprovantes: number
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type Recebimento = { id: string; valorCentavos: number; data: string; observacoes: string | null; criadoEm: string }
+
+export type RecebivelDetalhe = Recebivel & { recebimentos: Recebimento[]; comprovantes: Comprovante[] }
+
+export type RecebimentoCorpo = { valorCentavos: number; data?: string; observacoes?: string | null; encerrar?: boolean }
+
+export type FiltrosRecebivel = { inicio?: string; fim?: string; status?: StatusRecebivel; origem?: OrigemRecebivel }
+
 /** Contas com vencimento no período, pela situação (GET /relatorios/financeiro). */
 export type ValoresContas = {
   totalCentavos: number
@@ -191,6 +228,22 @@ export type RelatorioFinanceiro = {
     pagoNoPeriodoCentavos: number
     /** Contas da equipe com valor a definir (somam 0). */
     contasADefinir: number
+  }
+  /** Recebíveis com data prevista no período. */
+  entradas: {
+    totalCentavos: number
+    recebidoCentavos: number
+    pendenteCentavos: number
+    vencidoCentavos: number
+    /** Realizado: recebimentos com data no período, de qualquer recebível. */
+    recebidoNoPeriodoCentavos: number
+    porOrigem: { origem: OrigemRecebivel; totalCentavos: number; recebidoCentavos: number; pendenteCentavos: number }[]
+  }
+  saldo: {
+    /** Recebido no período − pago no período. */
+    realizadoCentavos: number
+    /** Entradas previstas − saídas previstas do período. */
+    projetadoCentavos: number
   }
   /** Todos os imóveis, na ordem, mesmo sem contas no período. */
   imoveis: ({ id: string; nome: string } & ValoresContas)[]

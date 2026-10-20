@@ -1,5 +1,6 @@
 const { z } = require('../../lib/zod');
 const { data, periodoValido, MENSAGEM_PERIODO } = require('../../lib/esquemas');
+const { ORIGENS } = require('../recebiveis/schema');
 
 const AGRUPAMENTOS = ['imovel', 'categoria'];
 
@@ -53,6 +54,27 @@ const relatorioFinanceiro = z.object({
       'Realizado: contas pagas com dataPagamento no período, de qualquer vencimento',
     ),
     contasADefinir: z.number().int().describe('Contas da equipe do período com valor a definir (somam 0)'),
+  }),
+  entradas: z
+    .object({
+      totalCentavos: centavos.describe('Recebíveis com data prevista no período (valor previsto)'),
+      recebidoCentavos: centavos.describe('Já recebido desses recebíveis (soma dos recebimentos, de qualquer data)'),
+      pendenteCentavos: centavos.describe('Saldo ainda a receber desses recebíveis'),
+      vencidoCentavos: centavos.describe('Saldo a receber dos que tinham data prevista antes de hoje'),
+      recebidoNoPeriodoCentavos: centavos.describe('Realizado: recebimentos com data no período, de qualquer recebível'),
+      porOrigem: z.array(
+        z.object({
+          origem: z.enum(ORIGENS),
+          totalCentavos: centavos,
+          recebidoCentavos: centavos,
+          pendenteCentavos: centavos,
+        }),
+      ),
+    })
+    .describe('Recebíveis (valores a receber)'),
+  saldo: z.object({
+    realizadoCentavos: centavos.describe('entradas.recebidoNoPeriodo − saidas.pagoNoPeriodo'),
+    projetadoCentavos: centavos.describe('entradas.total − saidas.total (o previsto do período, pelas datas)'),
   }),
   imoveis: z
     .array(z.object({ id: z.uuid(), nome: z.string(), ...valoresContas }))

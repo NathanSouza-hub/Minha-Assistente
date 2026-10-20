@@ -1,12 +1,23 @@
-import { BuildingsIcon, CheckCircleIcon, ClockIcon, ReceiptIcon, UserIcon, WalletIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import {
+  BuildingsIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  HandCoinsIcon,
+  ReceiptIcon,
+  UserIcon,
+  WalletIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { usePagamentos } from '@/consultas/pagamentos'
-import { descreverVencimento, hojeISO, nomeDoMes, somarDias } from '@/lib/datas'
+import { useRecebiveis } from '@/consultas/recebiveis'
+import { dataCurta, descreverVencimento, hojeISO, nomeDoMes, somarDias } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { Pagamento, RelatorioFinanceiro, ValoresContas } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { IMOVEL_PESSOAL } from '@/paginas/pagamentos/filtros'
+import { ORIGENS } from '@/paginas/recebiveis/formulario'
 import { Bloco, Vazio } from './Bloco'
 
 type Financeiro = UseQueryResult<RelatorioFinanceiro>
@@ -40,10 +51,11 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
       className="lg:col-span-2"
     >
       {() => {
-        const s = consulta.data!.saidas
+        const { saidas: s, entradas: e, saldo } = consulta.data!
         return (
-          <div className="flex flex-col gap-3">
-            <dl className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-col gap-4">
+            <h3 className="text-base font-bold text-muted-foreground">Despesas</h3>
+            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
               <Indicador rotulo="Despesas do mês" valor={s.totalCentavos} nota={`Contas que vencem em ${nomeMes}`} />
               <Indicador rotulo="Já pago" valor={s.pagoCentavos} nota="Dessas contas" cor="text-ok" />
               <Indicador
@@ -53,6 +65,33 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
                 cor={s.vencidoCentavos > 0 ? 'text-atraso' : 'text-alerta'}
               />
               <Indicador rotulo="Pago no mês" valor={s.pagoNoPeriodoCentavos} nota="Pela data do pagamento" />
+            </dl>
+            <h3 className="text-base font-bold text-muted-foreground">Recebíveis</h3>
+            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
+              <Indicador rotulo="Previsto a receber" valor={e.totalCentavos} nota={`Previstos para ${nomeMes}`} />
+              <Indicador rotulo="Já recebido" valor={e.recebidoCentavos} nota="Desses recebíveis" cor="text-ok" />
+              <Indicador
+                rotulo="A receber"
+                valor={e.pendenteCentavos}
+                nota={e.vencidoCentavos > 0 ? `${formatarCentavos(e.vencidoCentavos)} atrasados` : 'Nenhum atrasado'}
+                cor={e.vencidoCentavos > 0 ? 'text-atraso' : 'text-alerta'}
+              />
+              <Indicador rotulo="Recebido no mês" valor={e.recebidoNoPeriodoCentavos} nota="Pela data do recebimento" />
+            </dl>
+            <h3 className="text-base font-bold text-muted-foreground">Saldo do mês</h3>
+            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+              <Indicador
+                rotulo="Saldo realizado"
+                valor={saldo.realizadoCentavos}
+                nota="Recebido no mês − pago no mês"
+                cor={saldo.realizadoCentavos < 0 ? 'text-atraso' : 'text-ok'}
+              />
+              <Indicador
+                rotulo="Saldo projetado"
+                valor={saldo.projetadoCentavos}
+                nota="Previsto a receber − despesas do mês"
+                cor={saldo.projetadoCentavos < 0 ? 'text-atraso' : 'text-ok'}
+              />
             </dl>
             {s.contasADefinir > 0 && (
               <p className="text-base text-alerta">
@@ -205,6 +244,77 @@ export function BlocoPessoais({ consulta, mes }: { consulta: Financeiro; mes: st
                 </li>
               ))}
             </ul>
+          </div>
+        )
+      }}
+    </Bloco>
+  )
+}
+
+const QUANTOS_RECEBIVEIS = 5
+
+/**
+ * O que ainda falta receber até 30 dias à frente (os atrasados primeiro, pela data prevista) e o
+ * resumo do mês por origem.
+ */
+export function BlocoRecebiveis({ consulta: financeiro, mes }: { consulta: Financeiro; mes: string }) {
+  const consulta = useRecebiveis({ fim: somarDias(hojeISO(), 30) })
+  return (
+    <Bloco
+      titulo="Recebíveis"
+      icone={HandCoinsIcon}
+      area="recebiveis"
+      link={{ para: `/recebiveis?mes=${mes}`, rotulo: 'Ver todos' }}
+      consulta={consulta}
+    >
+      {() => {
+        const abertos = consulta.data!.filter((r) => r.status !== 'recebido')
+        const porOrigem = financeiro.data?.entradas.porOrigem ?? []
+        return (
+          <div className="flex flex-col gap-3">
+            {porOrigem.length > 0 && (
+              <ul className="flex flex-wrap gap-2" aria-label="Previsto no mês por origem">
+                {porOrigem.map((o) => (
+                  <li key={o.origem} className="rounded-full bg-area-fundo px-3 py-1 text-base font-semibold text-area">
+                    {ORIGENS[o.origem]} {formatarCentavos(o.totalCentavos)}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {abertos.length === 0 ? (
+              <Vazio>Nada a receber nos próximos 30 dias.</Vazio>
+            ) : (
+              <ul className="flex flex-col divide-y divide-linha">
+                {abertos.slice(0, QUANTOS_RECEBIVEIS).map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      to={`/recebiveis/${r.id}`}
+                      className="-mx-2 flex items-start gap-3 rounded-lg px-2 py-2.5 hover:bg-suave/60"
+                    >
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="font-bold">{r.descricao}</span>
+                        <span className="text-base text-muted-foreground">
+                          {ORIGENS[r.origem]}
+                          {r.status === 'parcial' && ` · recebido ${formatarCentavos(r.recebidoCentavos)}`}
+                        </span>
+                      </span>
+                      <span className="flex shrink-0 flex-col items-end">
+                        <span className="font-bold tabular-nums">{formatarCentavos(r.saldoCentavos)}</span>
+                        <span
+                          className={cn(
+                            'flex items-center gap-1 text-base',
+                            r.atrasado ? 'font-semibold text-atraso' : 'text-muted-foreground',
+                          )}
+                        >
+                          {r.atrasado && <WarningCircleIcon className="size-4" weight="fill" aria-hidden />}
+                          {r.atrasado ? `Atrasado (${dataCurta(r.dataPrevista)})` : `Previsto ${dataCurta(r.dataPrevista)}`}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )
       }}

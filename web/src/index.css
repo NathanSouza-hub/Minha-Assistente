@@ -112,6 +112,8 @@
   --area-agenda-fundo: var(--azul-fundo);
   --area-contas: #0f766e;
   --area-contas-fundo: #d5f0ec;
+  --area-recebiveis: #05714f;
+  --area-recebiveis-fundo: #d3f2e5;
   --area-remedios: #2f6b45;
   --area-remedios-fundo: #ddefe2;
   --area-compromissos: #8a5a00;
@@ -205,6 +207,7 @@
 /* Uma classe por área: define --area/--area-fundo para quem estiver dentro. */
 .area-agenda { --area: var(--area-agenda); --area-fundo: var(--area-agenda-fundo); }
 .area-contas { --area: var(--area-contas); --area-fundo: var(--area-contas-fundo); }
+.area-recebiveis { --area: var(--area-recebiveis); --area-fundo: var(--area-recebiveis-fundo); }
 .area-remedios { --area: var(--area-remedios); --area-fundo: var(--area-remedios-fundo); }
 .area-compromissos { --area: var(--area-compromissos); --area-fundo: var(--area-compromissos-fundo); }
 .area-viagens { --area: var(--area-viagens); --area-fundo: var(--area-viagens-fundo); }

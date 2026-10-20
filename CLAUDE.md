@@ -65,7 +65,7 @@ migrations e o SQL dentro de `raw` usam snake_case.
 `src/config/pg-tipos.js` faz o driver devolver `date` como `"2026-10-13"`, `time` como `"08:00"`
 e `timestamptz` como ISO com offset sem milissegundos. Nunca passe datas sem hora por `new Date`;
 use os helpers de `src/lib/tempo.js` (Luxon). `bigint`/`numeric` voltam como `Number`. Dinheiro é
-sempre inteiro em centavos.
+sempre inteiro em centavos, em colunas `bigint` (sem teto de negócio).
 
 **Migrations** (`db/migrations/`) usam os helpers de `db/helpers.js`: `criarTabela` (id uuid,
 `criado_em`/`atualizado_em` e trigger), `donoUsuario`, `checkIn` para "enums" (`text` + `CHECK`
@@ -79,7 +79,7 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 
 ## Próximas etapas
 
-Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`, `/relatorios/financeiro` (painel; decisão 25),
+Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`, `/relatorios/financeiro` (painel; decisão 25), `/recebiveis` (decisão 26),
 `/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
 `/cartoes` (faturas viram contas em `pagamento`; regras em `src/lib/fatura.js`, decisão 19 de
 `docs/arquitetura.md`), `/equipe` (os dias de pagamento viram contas em `pagamento`, criadas por

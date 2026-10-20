@@ -52,6 +52,12 @@ describe('Início (painel)', () => {
     expect(valorDe('Já pago')).toBe(formatarCentavos(esperado.saidas.pagoCentavos))
     expect(valorDe('A pagar')).toBe(formatarCentavos(esperado.saidas.pendenteCentavos))
     expect(valorDe('Pago no mês')).toBe(formatarCentavos(esperado.saidas.pagoNoPeriodoCentavos))
+    expect(valorDe('Previsto a receber')).toBe(formatarCentavos(esperado.entradas.totalCentavos))
+    expect(valorDe('Recebido no mês')).toBe(formatarCentavos(esperado.entradas.recebidoNoPeriodoCentavos))
+    expect(valorDe('Saldo realizado')).toBe(formatarCentavos(esperado.saldo.realizadoCentavos))
+    expect(valorDe('Saldo projetado')).toBe(formatarCentavos(esperado.saldo.projetadoCentavos))
+    // Recebido (realizado) e previsto ficam separados: o aluguel recebido em parte não conta inteiro.
+    expect(esperado.entradas.recebidoCentavos).toBeLessThan(esperado.entradas.totalCentavos)
     // O critério de cada número fica escrito.
     expect(within(financas).getByText('Contas que vencem em outubro')).toBeInTheDocument()
     expect(within(financas).getByText('Pela data do pagamento')).toBeInTheDocument()

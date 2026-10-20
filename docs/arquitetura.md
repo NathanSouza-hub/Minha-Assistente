@@ -17,7 +17,8 @@ separadamente e depende do contrato de API descrito aqui.
 - JSON em camelCase; banco em snake_case (conversão central no Knex).
 - Datas sem hora: `"2026-10-13"`. Data/hora: ISO 8601 com offset, `"2026-10-13T14:00:00-03:00"`.
   Hora do dia: `"08:00"`. Fuso de referência: `America/Sao_Paulo`.
-- Dinheiro: inteiro em centavos (`15990` = R$ 159,90).
+- Dinheiro: inteiro em centavos (`15990` = R$ 159,90), colunas `bigint` (migration 23): sem teto de
+  negócio, só o maior inteiro exato do JavaScript.
 - Erros: `{ "erro": { "codigo": "STRING", "mensagem": "texto" } }`.
 - Listagens devolvem array direto, sem paginação (volume de uma pessoa).
 - Todas as rotas exceto `GET`/`POST /auth/cadastro` e `POST /auth/login` exigem
@@ -39,6 +40,9 @@ POST /cartoes/:id/compras | GET/PUT/DELETE /cartoes/:id/compras/:compraId       
 GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                          (acrescentadas)
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET /relatorios/financeiro?inicio=&fim=  (visão financeira do período, decisão 25)
+GET/POST /recebiveis (inicio, fim, status, origem) | GET/PUT/DELETE /recebiveis/:id  (decisão 26)
+POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebimentoId
+POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
 GET/POST /medicamentos | GET/PUT/DELETE /medicamentos/:id | GET /medicamentos/hoje
@@ -285,8 +289,15 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
       (`saidas.pagoNoPeriodoCentavos`) = pagas com `dataPagamento` no período, de qualquer
       vencimento. Valor nulo (equipe a definir) soma 0 e é contado em `saidas.contasADefinir`.
     - Resposta: `{ inicio, fim, saidas: { totalCentavos, pagoCentavos, pendenteCentavos,
-      vencidoCentavos, pagoNoPeriodoCentavos, contasADefinir }, imoveis: [{ id, nome, ...valores }],
-      pessoal: { ...valores, categorias: [{ id, nome, totalCentavos }] } }`. `imoveis` traz todos os
+      vencidoCentavos, pagoNoPeriodoCentavos, contasADefinir }, entradas: { totalCentavos,
+      recebidoCentavos, pendenteCentavos, vencidoCentavos, recebidoNoPeriodoCentavos, porOrigem: [{
+      origem, totalCentavos, recebidoCentavos, pendenteCentavos }] }, saldo: { realizadoCentavos,
+      projetadoCentavos }, imoveis: [{ id, nome, ...valores }], pessoal: { ...valores, categorias:
+      [{ id, nome, totalCentavos }] } }`.
+    - **Entradas** = recebíveis com `dataPrevista` no período (previsto, já recebido deles, saldo a
+      receber e saldo atrasado); `recebidoNoPeriodoCentavos` = recebimentos com data no período, de
+      qualquer recebível. **Saldo realizado** = recebido no período − pago no período (só o que de
+      fato entrou e saiu). **Saldo projetado** = entradas previstas − contas do período. `imoveis` traz todos os
       imóveis do usuário (na ordem dele, zerados se não têm contas).
     - **Destino** da despesa: imóvel = conta com `imovelId`; **pessoal** = sem imóvel (faturas de
       cartão e salários da equipe incluídos). Cada conta tem no máximo um imóvel e as compras de
@@ -296,6 +307,27 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     - Como `/pagamentos` e o relatório de gastos, roda `garantirContas` da equipe (idempotente)
       antes de somar, para as contas do mês da equipe entrarem no total.
 
+26. **Recebíveis** (valores a receber — "receitas" aqui nunca é receita médica; migration 24,
+    `src/modules/recebiveis/`):
+    - `recebivel` (descricao, origem `dividendos|aluguel|rendimentos|honorarios|outros`,
+      valor_previsto_centavos, data_prevista, encerrado, recorrencia `nenhuma|mensal|anual`,
+      recorrencia_origem_id, observacoes) e o histórico em `recebimento` (valor_centavos > 0, data,
+      observacoes). Comprovantes em `recebivel_comprovante`, com as regras dos de conta
+      (`src/lib/comprovantes.js`, a mesma fábrica dos comprovantes de conta).
+    - **Situação derivada, nada em dobro**: `recebidoCentavos` = soma dos recebimentos; `status`
+      `recebido` quando a soma ≥ previsto **ou** encerrado (ex.: dividendo menor que o esperado:
+      `POST /recebimentos` com `encerrar: true`), `parcial` com algo recebido, senão `pendente`;
+      `saldoCentavos` = previsto − recebido (0 quando recebido); `atrasado` = não recebido com
+      `dataPrevista` < hoje. Receber mais que o previsto é aceito.
+    - `POST /recebiveis/:id/recebimentos` `{ valorCentavos, data? (hoje), observacoes?, encerrar? }`
+      → `201` com o detalhe; já recebido → `409 JA_RECEBIDO`. `DELETE .../recebimentos/:id` desfaz
+      (o recebível volta a aberto e perde o "encerrado"). Listagem pela `dataPrevista`, filtros
+      `status` e `origem`. De outro usuário → `404`.
+    - **Recorrência só quando configurada**: ao ficar `recebido`, o recorrente ganha a próxima
+      ocorrência (data a partir do início da série, como nas contas; índice único em
+      `recorrencia_origem_id`, então desfazer e receber de novo não duplica). O `PUT` muda só aquela
+      ocorrência; as próximas nascem dela.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -303,7 +335,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 - `date` para datas sem hora (driver configurado para devolver string), `timestamptz` para
   instantes, `time` para hora do dia. Sessão do Postgres em `America/Sao_Paulo`.
 - Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, categoria_pagamento, pagamento, evento, rotina,
-  medicamento, viagem, compra_item, lembrete_envio, push_inscricao, tarefa_registro. Tabelas filhas (conclusões,
+  medicamento, viagem, compra_item, lembrete_envio, push_inscricao, tarefa_registro, recebivel. Tabelas filhas (conclusões,
   horários, registros, anexos) herdam o dono pela tabela pai. Índices começam por `usuario_id`.
 - `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)` e `pagamento (categoria_id,
   usuario_id)` → `categoria_pagamento (id, usuario_id)`: FKs compostas impedem apontar para imóvel
@@ -335,6 +367,9 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | compra_item | nome, categoria?, quantidade?, comprado, comprado_em? | idx comprado |
 | lembrete_envio | origem_tipo, origem_id, ocorrencia, canal, agendado_para, enviado_em?, status, tentativas, erro? | unique (origem_tipo, origem_id, ocorrencia, agendado_para, canal); idx (status, agendado_para) |
 | push_inscricao | endpoint (unique), p256dh, auth, user_agent | |
+| recebivel | usuario_id, descricao, origem, valor_previsto_centavos (bigint), data_prevista, encerrado, recorrencia, recorrencia_origem_id?, observacoes | CHECKs de origem, recorrência e valor > 0; único parcial (recorrencia_origem_id); idx (usuario_id, data_prevista) |
+| recebimento | recebivel_id, valor_centavos (bigint), data, observacoes | valor > 0; cascade com o recebível; idx (recebivel_id, data) |
+| recebivel_comprovante | recebivel_id, nome_original, caminho, mime_type, tamanho_bytes | cascade com o recebível |
 | tarefa_registro | usuario_id, categoria, item_id (sem FK), data_ocorrencia, horario?, status (feito, nao_feito) | unique nulls not distinct (usuario_id, categoria, item_id, data_ocorrencia, horario) |
 
 ## Lembretes

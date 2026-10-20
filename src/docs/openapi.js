@@ -9,6 +9,7 @@ const modulos = [
   require('../modules/cartoes/docs'),
   require('../modules/equipe/docs'),
   require('../modules/relatorios/docs'),
+  require('../modules/recebiveis/docs'),
   require('../modules/eventos/docs'),
   require('../modules/medicamentos/docs'),
   require('../modules/rotinas/docs'),

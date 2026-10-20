@@ -6,6 +6,7 @@ import type { Pagamento, PagamentoCriacao, PagamentoEdicao, Comprovante } from '
 import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock, type ComprovanteMock } from './banco'
 import { detectarTipo, lerUpload, nomeSeguro, respostaArquivo, tipoNaoAceito } from './arquivos'
 import { garantirContasEquipe } from './equipe'
+import { entradasDoPeriodo } from './recebiveis'
 import { autenticado, erro, naoEncontrado } from './util'
 
 const idDe = (params: Record<string, unknown>) => String(params.id)
@@ -559,15 +560,23 @@ export const handlersPagamentos = [
         categorias.set(nome, g)
       }
 
+      const saidas = {
+        ...valores(doPeriodo),
+        pagoNoPeriodoCentavos: somar(
+          doUsuario.filter((p) => p.status === 'pago' && p.dataPagamento! >= inicio && p.dataPagamento! <= fim),
+        ),
+        contasADefinir: doPeriodo.filter((p) => p.valorCentavos === null).length,
+      }
+      const entradas = entradasDoPeriodo(u.id, inicio, fim)
+
       return HttpResponse.json({
         inicio,
         fim,
-        saidas: {
-          ...valores(doPeriodo),
-          pagoNoPeriodoCentavos: somar(
-            doUsuario.filter((p) => p.status === 'pago' && p.dataPagamento! >= inicio && p.dataPagamento! <= fim),
-          ),
-          contasADefinir: doPeriodo.filter((p) => p.valorCentavos === null).length,
+        saidas,
+        entradas,
+        saldo: {
+          realizadoCentavos: entradas.recebidoNoPeriodoCentavos - saidas.pagoNoPeriodoCentavos,
+          projetadoCentavos: entradas.totalCentavos - saidas.totalCentavos,
         },
         imoveis: imoveisDo(u.id).map((i) => ({
           id: i.id,

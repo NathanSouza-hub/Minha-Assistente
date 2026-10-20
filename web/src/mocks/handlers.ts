@@ -9,6 +9,7 @@ import { handlersHoje } from './hoje'
 import { handlersMedicamentos } from './medicamentos'
 import { handlersNotificacoes } from './notificacoes'
 import { handlersPagamentos } from './pagamentos'
+import { handlersRecebiveis } from './recebiveis'
 import { handlersRotinas } from './rotinas'
 import { handlersViagens } from './viagens'
 
@@ -17,6 +18,7 @@ export { resetarBancoMock } from './banco'
 export const handlers = [
   ...handlersAuth,
   ...handlersPagamentos,
+  ...handlersRecebiveis,
   ...handlersCartoes,
   ...handlersEquipe,
   ...handlersEventos,

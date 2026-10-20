@@ -34,6 +34,10 @@ async function criarBancoSeNaoExistir() {
 
 async function prepararBanco(db) {
   await criarBancoSeNaoExistir();
+  // Apaga os dados antes de desfazer: o "down" das migrations antigas volta colunas de dinheiro para
+  // integer, e um valor grande deixado pelo arquivo de teste anterior faria a volta falhar.
+  // Todo dado pertence a um usuário (ON DELETE CASCADE), então TRUNCATE usuario leva tudo.
+  if (await db.schema.hasTable('usuario')) await db.raw('TRUNCATE usuario CASCADE');
   await db.migrate.rollback(undefined, true);
   await db.migrate.latest();
 }

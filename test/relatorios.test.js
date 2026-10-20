@@ -120,6 +120,15 @@ test('financeiro: contas do período por situação, realizado, imóveis e pesso
       pagoNoPeriodoCentavos: 12000,
       contasADefinir: 0,
     },
+    entradas: {
+      totalCentavos: 0,
+      recebidoCentavos: 0,
+      pendenteCentavos: 0,
+      vencidoCentavos: 0,
+      recebidoNoPeriodoCentavos: 0,
+      porOrigem: [],
+    },
+    saldo: { realizadoCentavos: -12000, projetadoCentavos: -25000 },
     imoveis: [
       { id: cobertura.id, nome: 'Cobertura', totalCentavos: 15000, pagoCentavos: 10000, pendenteCentavos: 5000, vencidoCentavos: 5000 },
       { id: serra.id, nome: 'Serra', totalCentavos: 0, pagoCentavos: 0, pendenteCentavos: 0, vencidoCentavos: 0 },

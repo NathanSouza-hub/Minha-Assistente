@@ -12,7 +12,8 @@ const centavos = z
   .number('Informe o valor em centavos.')
   .int('O valor deve ser um número inteiro de centavos.')
   .positive('O valor precisa ser maior que zero.')
-  .max(2_147_483_647, 'Valor alto demais.');
+  // Colunas bigint (migration 23): sem teto de negócio, só o maior inteiro exato do JavaScript.
+  .max(Number.MAX_SAFE_INTEGER, 'Valor alto demais.');
 
 // Texto opcional: vazio ou ausente vira null.
 const textoOpcional = (max) =>
