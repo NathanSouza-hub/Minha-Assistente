@@ -67,7 +67,8 @@ describe('Recebíveis', () => {
     expect(screen.getByLabelText('Valor recebido')).toHaveValue('3.500,00')
 
     await usuario.click(screen.getByRole('button', { name: 'Registrar recebimento' }))
-    expect(await within(situacao).findByText('Recebido')).toBeInTheDocument()
+    // A situação é a linha de cima (<p>); "Recebido" também é o rótulo da coluna de valores (<dt>).
+    expect(await within(situacao).findByText('Recebido', { selector: 'p' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Registrar recebimento' })).not.toBeInTheDocument()
     const historico = screen.getByRole('region', { name: 'Histórico de recebimentos' })
     expect(within(historico).getAllByRole('listitem')).toHaveLength(2)
