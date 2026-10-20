@@ -1,6 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
@@ -13,7 +12,7 @@ const servidor = setupServer(...handlers)
 
 beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 beforeEach(async () => {
-  // Terça, 13/10/2026, 08h (os mesmos dados de exemplo da tela Hoje).
+  // Terça, 13/10/2026, 08h.
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-10-13T08:00:00-03:00'))
   resetarBancoMock()
@@ -30,20 +29,13 @@ const bloco = async (titulo: string) => screen.findByRole('region', { name: titu
 // O valor formatado usa espaço sem quebra; o texto da tela chega normalizado com espaço comum.
 const reais = (centavos: number) => formatarCentavos(centavos).replace(/\s/g, ' ')
 
-describe('Início (painel)', () => {
-  test('saudação com o nome da conta, data de hoje e atalho para as notificações', async () => {
-    renderizarApp('/')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
-    expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
-    const cabecalho = screen.getByRole('heading', { level: 1 }).closest('header')!
-    expect(within(cabecalho).getByRole('link', { name: 'Notificações' })).toHaveAttribute('href', '/notificacoes')
-  })
-
-  test('os números de finanças, imóveis e pessoais são os do relatório do back-end', async () => {
+describe('Finanças → Visão geral', () => {
+  test('os números do mês são os do relatório do back-end, com o critério escrito', async () => {
     const esperado = await api<RelatorioFinanceiro>('/relatorios/financeiro', {
       query: { inicio: '2026-10-01', fim: '2026-10-31' },
     })
-    renderizarApp('/')
+    renderizarApp('/financas')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Finanças' })).toBeInTheDocument()
 
     const financas = await bloco('Finanças do mês')
     const valorDe = (rotulo: string) => within(financas).getByText(rotulo).nextElementSibling?.textContent
@@ -56,9 +48,6 @@ describe('Início (painel)', () => {
     expect(valorDe('Recebido no mês')).toBe(formatarCentavos(esperado.entradas.recebidoNoPeriodoCentavos))
     expect(valorDe('Saldo realizado')).toBe(formatarCentavos(esperado.saldo.realizadoCentavos))
     expect(valorDe('Saldo projetado')).toBe(formatarCentavos(esperado.saldo.projetadoCentavos))
-    // Recebido (realizado) e previsto ficam separados: o aluguel recebido em parte não conta inteiro.
-    expect(esperado.entradas.recebidoCentavos).toBeLessThan(esperado.entradas.totalCentavos)
-    // O critério de cada número fica escrito.
     expect(within(financas).getByText('Contas que vencem em outubro')).toBeInTheDocument()
     expect(within(financas).getByText('Pela data do pagamento')).toBeInTheDocument()
 
@@ -71,36 +60,29 @@ describe('Início (painel)', () => {
 
     const pessoais = await bloco('Despesas pessoais')
     expect(within(pessoais).getAllByText(reais(esperado.pessoal.totalCentavos)).length).toBeGreaterThan(0)
-    expect(within(pessoais).getByRole('link', { name: /Ver lista/ })).toHaveAttribute(
-      'href',
-      '/despesas?mes=2026-10&imovel=pessoal',
-    )
+    expect(await within(await bloco('Contas a pagar')).findByText('Condomínio')).toBeInTheDocument()
+
+    // Atividades do dia ficam no Início, não aqui.
+    expect(screen.queryByRole('region', { name: 'Remédios de hoje' })).not.toBeInTheDocument()
   })
 
-  test('hoje, remédios, contas a pagar e agenda vêm das telas de cada área', async () => {
-    renderizarApp('/')
-    const hoje = await bloco('Hoje')
-    expect(await within(hoje).findByText(/de 11 concluídas/)).toBeInTheDocument()
-    expect(within(hoje).getByRole('link', { name: /Ver o dia/ })).toHaveAttribute('href', '/hoje')
-
-    const remedios = await bloco('Remédios de hoje')
-    expect((await within(remedios).findAllByText('Losartana')).length).toBeGreaterThan(0)
-
-    const contas = await bloco('Contas a pagar')
-    expect(await within(contas).findByText('Condomínio')).toBeInTheDocument()
-    expect(within(contas).getByText(/Venceu há 3 dias/)).toBeInTheDocument()
-
-    const agenda = await bloco('Próximos agendamentos')
-    expect(await within(agenda).findAllByRole('link')).not.toHaveLength(0)
-  })
-
-  test('o "Tomei" do bloco de remédios marca a dose, como na tela Hoje', async () => {
-    renderizarApp('/')
-    const remedios = await bloco('Remédios de hoje')
-    await within(remedios).findByText('1 de 4 doses tomadas')
-    const linha = within(remedios).getAllByText('Losartana')[0].closest('li')!
-    await userEvent.click(within(linha).getByRole('button', { name: /Tomei/ }))
-    expect(await within(remedios).findByText('2 de 4 doses tomadas')).toBeInTheDocument()
+  test('o menu da área leva às telas de Finanças', async () => {
+    renderizarApp('/financas')
+    const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
+    const links = within(menu).getAllByRole('link').map((l) => l.textContent)
+    expect(links).toEqual([
+      'Visão geral',
+      'Contas a pagar',
+      'Lista de despesas',
+      'Pessoais',
+      'Residências',
+      'Equipe',
+      'Recebíveis',
+      'Cartões',
+      'Relatório',
+      'Categorias',
+    ])
+    expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
   })
 
   test('um bloco com erro mostra o aviso e deixa tentar de novo, sem derrubar os outros', async () => {
@@ -109,10 +91,10 @@ describe('Início (painel)', () => {
         HttpResponse.json({ erro: { codigo: 'ERRO_INTERNO', mensagem: 'Falhou.' } }, { status: 500 }),
       ),
     )
-    renderizarApp('/')
+    renderizarApp('/financas')
     const financas = await bloco('Finanças do mês')
     expect(await within(financas).findByText(/Não foi possível carregar/)).toBeInTheDocument()
     expect(within(financas).getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
-    expect((await within(await bloco('Remédios de hoje')).findAllByText('Losartana')).length).toBeGreaterThan(0)
+    expect(await within(await bloco('Contas a pagar')).findByText('Condomínio')).toBeInTheDocument()
   })
 })

@@ -14,10 +14,10 @@ import { TIPOS } from './textos'
 const DIAS = 60
 
 /**
- * Áreas "Programa de rádio", "Atividade física" e "Fisioterapia": a agenda só daquele tipo, nos
+ * Áreas "Programa de rádio", "Consultas", "Exames", "Atividade física" e "Fisioterapia": a agenda só daquele tipo, nos
  * próximos dias. "Novo" já vem com o tipo, e salvar volta para cá (`voltar`).
  */
-export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string }) {
+export function AgendaDoTipo({ tipo, rota, titulo }: { tipo: TipoEvento; rota: string; titulo?: string }) {
   const inicio = hojeISO()
   const consulta = useEventos({ inicio, fim: somarDias(inicio, DIAS), tipo })
   const eventos = consulta.data ?? []
@@ -25,7 +25,7 @@ export function AgendaDoTipo({ tipo, rota }: { tipo: TipoEvento; rota: string })
 
   return (
     <Pagina
-      titulo={TIPOS[tipo]}
+      titulo={titulo ?? TIPOS[tipo]}
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>

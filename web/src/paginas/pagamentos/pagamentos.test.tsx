@@ -135,19 +135,26 @@ describe('tabela de contas', () => {
 })
 
 describe('navegação', () => {
-  test('"Despesas" na barra abre a Lista de despesas; o Cadastro de despesas fica em "Mais"', async () => {
+  test('a barra tem as 5 áreas; Finanças leva à Lista de despesas e às Contas a pagar', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/')
     // A barra de baixo do celular (a lateral do computador também se chama "Principal").
     const barra = (await screen.findAllByRole('navigation', { name: 'Principal' })).find((nav) =>
-      within(nav).queryByRole('link', { name: 'Mais' }),
+      nav.className.includes('bottom-0'),
     )!
-    expect(within(barra).queryByRole('link', { name: 'Contas' })).not.toBeInTheDocument()
-    await usuario.click(within(barra).getByRole('link', { name: 'Despesas' }))
+    expect(within(barra).getAllByRole('link').map((l) => l.textContent)).toEqual([
+      'Início',
+      'Finanças',
+      'Agenda',
+      'Saúde',
+      'Compromissos',
+    ])
+    await usuario.click(within(barra).getByRole('link', { name: 'Finanças' }))
+    const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
+    await usuario.click(within(menu).getByRole('link', { name: 'Lista de despesas' }))
     expect(await screen.findByRole('heading', { name: 'Lista de despesas' })).toBeInTheDocument()
 
-    await usuario.click(within(barra).getByRole('link', { name: 'Mais' }))
-    await usuario.click(within(await screen.findByRole('main')).getByRole('link', { name: 'Cadastro de despesas' }))
+    await usuario.click(within(await screen.findByRole('navigation', { name: 'Telas de Finanças' })).getByRole('link', { name: 'Contas a pagar' }))
     expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
   })
 

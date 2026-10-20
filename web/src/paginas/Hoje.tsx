@@ -1,4 +1,4 @@
-import { SunIcon } from '@phosphor-icons/react'
+import { GearSixIcon, SunIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { useSessao } from '@/app/useSessao'
 import { Pagina } from '@/components/layout/Pagina'
@@ -9,21 +9,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useTarefasHoje } from '@/consultas/hoje'
 import { agora, dataPorExtenso, hojeISO, saudacao } from '@/lib/datas'
 import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
 import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
+import { NovaAtividade } from '@/paginas/hoje/NovaAtividade'
 
-/** "Bom dia, Maria", a data por extenso e o resumo do dia, na capa. */
+/** Saudação discreta, a data de hoje como título e o resumo do dia, na capa. */
 function CabecalhoHoje({ resumo }: { resumo: string | null }) {
   const { usuario } = useSessao()
   const hoje = agora()
   const primeiroNome = usuario?.nome.trim().split(/\s+/)[0]
   return (
-    <div className="flex flex-col gap-1">
-      <h1 className="text-[2rem] leading-tight font-[750] tracking-[-0.01em] md:text-[2.5rem]">
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="text-lg font-semibold text-muted-foreground">
         {saudacao(hoje.hour)}
         {primeiroNome && `, ${primeiroNome}`}
+      </p>
+      <h1 className="text-[1.75rem] leading-tight font-[750] tracking-[-0.01em] md:text-[2.25rem]">
+        {dataPorExtenso(hoje.toISODate()!)}
       </h1>
-      <p className="text-lg font-semibold text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
       {resumo && (
         <p className="mt-2 max-w-prose text-lg" aria-live="polite">
           {resumo}
@@ -56,8 +58,19 @@ export function Hoje() {
 
   return (
     <Pagina
-      titulo="Hoje"
+      titulo="Início"
       cabecalho={<CabecalhoHoje resumo={consulta.data ? frase(consulta.data.resumo, ehHoje) : null} />}
+      acoes={
+        <div className="flex items-center gap-2">
+          {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
+          <Button asChild variant="ghost" size="icon" aria-label="Configurações" className="md:hidden">
+            <Link to="/configuracoes">
+              <GearSixIcon className="size-6" weight="bold" aria-hidden />
+            </Link>
+          </Button>
+          <NovaAtividade />
+        </div>
+      }
     >
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -96,45 +109,22 @@ export function Hoje() {
   )
 }
 
-/** Os quatro números do dia, cada um na sua cor. */
-function ResumoDia({ resumo }: { resumo: TarefasHoje['resumo'] }) {
-  const contadores = [
-    { rotulo: 'Programadas', valor: resumo.programadas, cor: 'area-viagens text-area bg-area-fundo' },
-    { rotulo: 'Concluídas', valor: resumo.concluidas, cor: 'text-ok bg-ok-fundo' },
-    { rotulo: 'Pendentes', valor: resumo.pendentes, cor: 'area-compromissos text-area bg-area-fundo' },
-    { rotulo: 'Atrasadas', valor: resumo.atrasadas, cor: 'text-atraso bg-atraso-fundo' },
-  ]
-  return (
-    <section aria-label="Resumo do dia">
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        {contadores.map((c) => (
-          <div key={c.rotulo} className={cn('flex flex-col rounded-xl px-4 py-3', c.cor)}>
-            <dt className="text-base font-semibold">{c.rotulo}</dt>
-            <dd className="text-3xl leading-tight font-[750] tabular-nums">{c.valor}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  )
-}
-
 function TarefasDoDia({ dia, ehHoje }: { dia: TarefasHoje; ehHoje: boolean }) {
   if (dia.tarefas.length === 0) {
     return (
       <EstadoVazio
         icone={SunIcon}
         titulo={ehHoje ? 'Nada programado para hoje.' : 'Nada programado para este dia.'}
-        acao={
-          <Button asChild>
-            <Link to="/agenda/novo">Novo agendamento</Link>
-          </Button>
-        }
+        acao={<NovaAtividade />}
       />
     )
   }
 
-  const comHorario = dia.tarefas.filter((t) => t.horario)
-  const diaTodo = dia.tarefas.filter((t) => !t.horario)
+  // As atrasadas (o horário já passou, conta vencida, lembrete de outro dia) ficam em cima, à parte.
+  const atrasadas = dia.tarefas.filter((t) => t.status === 'atrasado')
+  const noDia = dia.tarefas.filter((t) => t.status !== 'atrasado')
+  const comHorario = noDia.filter((t) => t.horario)
+  const diaTodo = noDia.filter((t) => !t.horario)
   const lista = (tarefas: TarefaHoje[]) => (
     <ul className="flex flex-col divide-y divide-linha">
       {tarefas.map((t) => (
@@ -145,11 +135,19 @@ function TarefasDoDia({ dia, ehHoje }: { dia: TarefasHoje; ehHoje: boolean }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ResumoDia resumo={dia.resumo} />
+      {atrasadas.length > 0 && (
+        <section aria-labelledby="hoje-atrasadas" className="flex flex-col gap-1">
+          <h2 id="hoje-atrasadas" className="text-xl font-bold text-atraso">
+            Atrasadas
+          </h2>
+          {lista(atrasadas)}
+        </section>
+      )}
       <section aria-labelledby="hoje-tarefas" className="flex flex-col gap-1">
         <h2 id="hoje-tarefas" className="text-xl font-bold">
-          Tarefas do dia
+          {ehHoje ? 'Atividades de hoje' : 'Atividades do dia'}
         </h2>
+        {noDia.length === 0 && <p className="text-muted-foreground">Nada mais para este dia.</p>}
         {comHorario.length > 0 && lista(comHorario)}
         {diaTodo.length > 0 && (
           <>

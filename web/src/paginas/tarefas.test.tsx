@@ -75,7 +75,7 @@ describe('Tarefas avulsas', () => {
     })
     const usuario = userEvent.setup()
     renderizarApp('/hoje')
-    const lista = await screen.findByRole('region', { name: 'Tarefas do dia' })
+    const lista = await screen.findByRole('region', { name: 'Atividades de hoje' })
     const linha = (await within(lista).findAllByText('Enviar mensagens'))[0].closest('li')!
     await usuario.click(within(linha).getByRole('button', { name: /Fiz/ }))
     await vi.waitFor(() =>

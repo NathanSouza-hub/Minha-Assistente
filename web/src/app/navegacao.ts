@@ -1,22 +1,9 @@
 import {
-  AirplaneTiltIcon,
-  BasketIcon,
-  BellIcon,
-  BuildingsIcon,
   CalendarDotsIcon,
-  ChartBarIcon,
   CheckSquareIcon,
-  HandCoinsIcon,
+  GearSixIcon,
   HeartbeatIcon,
-  HouseIcon,
-  ListChecksIcon,
-  MicrophoneStageIcon,
-  PersonSimpleRunIcon,
-  PillIcon,
-  ReceiptIcon,
-  SquaresFourIcon,
   SunIcon,
-  TagIcon,
   WalletIcon,
   type Icon,
 } from '@phosphor-icons/react'
@@ -37,58 +24,160 @@ export type Area =
   | 'fisioterapia'
   | 'geral'
 
-/** `rotuloCurto`: o nome na barra inferior do celular, quando o completo não cabe. */
-export type ItemNavegacao = { rota: string; rotulo: string; rotuloCurto?: string; icone: Icon; area: Area }
+/**
+ * Item do menu interno de uma seção. `rota` pode ter query (ex.: `/despesas?imovel=pessoal`): o item
+ * fica marcado quando o caminho e esses parâmetros batem. `prefixos` são outros caminhos que
+ * pertencem a ele (ex.: `/equipe/...` é da Equipe).
+ */
+export type ItemSecao = { rota: string; rotulo: string; prefixos?: string[] }
 
-/** Barra inferior do celular: o painel (Início), as três áreas de uso diário e "Mais". */
-export const navegacaoPrincipal: ItemNavegacao[] = [
-  { rota: '/', rotulo: 'Início', icone: HouseIcon, area: 'geral' },
-  { rota: '/hoje', rotulo: 'Hoje', icone: SunIcon, area: 'hoje' },
-  { rota: '/agenda', rotulo: 'Agenda', icone: CalendarDotsIcon, area: 'agenda' },
-  { rota: '/despesas', rotulo: 'Lista de despesas', rotuloCurto: 'Despesas', icone: ReceiptIcon, area: 'contas' },
+/** Uma das 6 áreas principais (barra do celular e barra lateral). */
+export type Secao = { id: string; rota: string; rotulo: string; icone: Icon; area: Area; itens: ItemSecao[] }
+
+export const SECOES: Secao[] = [
+  // Só as atividades do dia (tela Hoje).
+  { id: 'inicio', rota: '/', rotulo: 'Início', icone: SunIcon, area: 'hoje', itens: [] },
+  {
+    id: 'financas',
+    rota: '/financas',
+    rotulo: 'Finanças',
+    icone: WalletIcon,
+    area: 'contas',
+    itens: [
+      { rota: '/financas', rotulo: 'Visão geral' },
+      { rota: '/pagamentos', rotulo: 'Contas a pagar' },
+      { rota: '/despesas', rotulo: 'Lista de despesas' },
+      { rota: '/despesas?imovel=pessoal', rotulo: 'Pessoais' },
+      { rota: '/imoveis', rotulo: 'Residências' },
+      { rota: '/pagamentos?aba=equipe', rotulo: 'Equipe', prefixos: ['/equipe'] },
+      { rota: '/recebiveis', rotulo: 'Recebíveis' },
+      { rota: '/pagamentos?aba=cartoes', rotulo: 'Cartões', prefixos: ['/cartoes'] },
+      { rota: '/relatorio', rotulo: 'Relatório' },
+      { rota: '/categorias', rotulo: 'Categorias' },
+    ],
+  },
+  {
+    id: 'agenda',
+    rota: '/agenda',
+    rotulo: 'Agenda',
+    icone: CalendarDotsIcon,
+    area: 'agenda',
+    itens: [
+      { rota: '/agenda', rotulo: 'Agendamentos' },
+      { rota: '/viagens', rotulo: 'Viagens' },
+      { rota: '/radio', rotulo: 'Programa de rádio' },
+    ],
+  },
+  {
+    id: 'saude',
+    rota: '/remedios',
+    rotulo: 'Saúde',
+    icone: HeartbeatIcon,
+    area: 'remedios',
+    itens: [
+      { rota: '/remedios', rotulo: 'Medicamentos' },
+      { rota: '/consultas', rotulo: 'Consultas' },
+      { rota: '/exames', rotulo: 'Exames' },
+      { rota: '/fisioterapia', rotulo: 'Fisioterapia' },
+      { rota: '/atividade-fisica', rotulo: 'Atividade física' },
+    ],
+  },
+  {
+    id: 'compromissos',
+    rota: '/rotina',
+    rotulo: 'Compromissos',
+    icone: CheckSquareIcon,
+    area: 'compromissos',
+    itens: [
+      { rota: '/rotina', rotulo: 'Lembretes que repetem' },
+      { rota: '/tarefas', rotulo: 'Lembretes do dia' },
+      { rota: '/compras', rotulo: 'Lista de compras' },
+    ],
+  },
+  {
+    id: 'configuracoes',
+    rota: '/configuracoes',
+    rotulo: 'Configurações',
+    icone: GearSixIcon,
+    area: 'geral',
+    itens: [
+      { rota: '/configuracoes', rotulo: 'Geral' },
+      { rota: '/notificacoes', rotulo: 'Notificações' },
+    ],
+  },
 ]
 
-export const itemMais: ItemNavegacao = { rota: '/mais', rotulo: 'Mais', icone: SquaresFourIcon, area: 'geral' }
+/** Barra do celular: as 5 áreas de uso (Configurações abre pelo Início e pela barra lateral). */
+export const SECOES_DA_BARRA = SECOES.filter((s) => s.id !== 'configuracoes')
 
-/** Áreas que ficam em "Mais" no celular e direto na barra lateral do computador. */
-// Na ordem da lista combinada com quem usa o app. Rádio, Atividade física e Fisioterapia são a agenda só daquele tipo
-// (paginas/agenda/AgendaDoTipo.tsx; rotas em AREAS_DO_TIPO de paginas/agenda/textos.ts).
-export const navegacaoSecundaria: ItemNavegacao[] = [
-  { rota: '/remedios', rotulo: 'Remédios', icone: PillIcon, area: 'remedios' },
-  { rota: '/pagamentos', rotulo: 'Cadastro de despesas', icone: WalletIcon, area: 'contas' },
-  { rota: '/recebiveis', rotulo: 'Recebíveis', icone: HandCoinsIcon, area: 'recebiveis' },
-  { rota: '/rotina', rotulo: 'Compromissos', icone: CheckSquareIcon, area: 'compromissos' },
-  { rota: '/tarefas', rotulo: 'Tarefas', icone: ListChecksIcon, area: 'tarefas' },
-  { rota: '/radio', rotulo: 'Programa de rádio', icone: MicrophoneStageIcon, area: 'radio' },
-  { rota: '/viagens', rotulo: 'Viagens', icone: AirplaneTiltIcon, area: 'viagens' },
-  { rota: '/atividade-fisica', rotulo: 'Atividade física', icone: PersonSimpleRunIcon, area: 'atividade' },
-  { rota: '/fisioterapia', rotulo: 'Fisioterapia', icone: HeartbeatIcon, area: 'fisioterapia' },
-  { rota: '/compras', rotulo: 'Compras', icone: BasketIcon, area: 'compras' },
+const separar = (rota: string) => {
+  const [caminho, busca = ''] = rota.split('?')
+  return { caminho, parametros: new URLSearchParams(busca) }
+}
+
+const pertence = (caminho: string, base: string) => caminho === base || caminho.startsWith(`${base}/`)
+
+/** Quanto o item casa com a tela aberta (0 = não casa; parâmetros que batem valem mais). */
+function pontuar(item: ItemSecao, caminho: string, busca: URLSearchParams) {
+  const alvo = separar(item.rota)
+  const doItem = alvo.caminho === caminho
+  const doPrefixo = (item.prefixos ?? []).some((p) => pertence(caminho, p))
+  const abaixo = alvo.caminho !== '/' && caminho.startsWith(`${alvo.caminho}/`)
+  if (!doItem && !doPrefixo && !abaixo) return 0
+  const exigidos = [...alvo.parametros.entries()]
+  if (doItem && exigidos.some(([chave, valor]) => busca.get(chave) !== valor)) return 0
+  if (doPrefixo) return 3
+  return doItem ? 2 + exigidos.length : 1
+}
+
+/** Seção e item do menu interno da tela aberta. A Início só vale no caminho exato. */
+export function secaoDaTela(caminho: string, buscaTexto = '') {
+  const busca = new URLSearchParams(buscaTexto)
+  if (caminho === '/') return { secao: SECOES[0], item: undefined, exato: true }
+  let melhor: { secao: Secao; item?: ItemSecao; pontos: number } | undefined
+  for (const secao of SECOES) {
+    for (const item of secao.itens) {
+      const pontos = pontuar(item, caminho, busca)
+      if (pontos > (melhor?.pontos ?? 0)) melhor = { secao, item, pontos }
+    }
+  }
+  if (!melhor) return { secao: undefined, item: undefined, exato: false }
+  // "Exato": a tela é a de um item (lista), não um formulário dentro dele — só aí o menu interno aparece.
+  const exato = melhor.item ? separar(melhor.item.rota).caminho === caminho : false
+  return { secao: melhor.secao, item: melhor.item, exato }
+}
+
+// Cor de cada tela (a fita embaixo do cabeçalho e os selos), pela rota mais específica.
+const AREAS_DAS_ROTAS: { rota: string; area: Area }[] = [
+  { rota: '/financas', area: 'contas' },
+  { rota: '/pagamentos', area: 'contas' },
+  { rota: '/despesas', area: 'contas' },
+  { rota: '/equipe', area: 'contas' },
+  { rota: '/cartoes', area: 'contas' },
+  { rota: '/imoveis', area: 'contas' },
+  { rota: '/relatorio', area: 'contas' },
+  { rota: '/categorias', area: 'contas' },
+  { rota: '/recebiveis', area: 'recebiveis' },
+  { rota: '/agenda', area: 'agenda' },
+  { rota: '/viagens', area: 'viagens' },
+  { rota: '/radio', area: 'radio' },
+  { rota: '/remedios', area: 'remedios' },
+  { rota: '/consultas', area: 'remedios' },
+  { rota: '/exames', area: 'remedios' },
+  { rota: '/fisioterapia', area: 'fisioterapia' },
+  { rota: '/atividade-fisica', area: 'atividade' },
+  { rota: '/rotina', area: 'compromissos' },
+  { rota: '/tarefas', area: 'tarefas' },
+  { rota: '/compras', area: 'compras' },
+  { rota: '/notificacoes', area: 'geral' },
+  { rota: '/configuracoes', area: 'geral' },
 ]
 
-export const navegacaoConfiguracoes: ItemNavegacao[] = [
-  { rota: '/notificacoes', rotulo: 'Notificações', icone: BellIcon, area: 'geral' },
-  { rota: '/categorias', rotulo: 'Categorias', icone: TagIcon, area: 'contas' },
-  { rota: '/imoveis', rotulo: 'Imóveis', icone: BuildingsIcon, area: 'contas' },
-  { rota: '/relatorio', rotulo: 'Relatório de gastos', icone: ChartBarIcon, area: 'contas' },
-]
-
-// Telas que não estão no menu mas pertencem a uma área.
-const outrasRotas: { rota: string; area: Area }[] = [{ rota: '/equipe', area: 'contas' }]
-
-const todasAsRotas = [
-  ...navegacaoPrincipal,
-  ...navegacaoSecundaria,
-  ...navegacaoConfiguracoes,
-  itemMais,
-  ...outrasRotas,
-]
-
-/** Área da tela aberta, pela rota mais específica que a contém (`/` só vale exato). */
+/** Área (cor) da tela aberta, pela rota mais específica que a contém (`/` = Início). */
 export function areaDaRota(caminho: string): Area {
-  if (caminho === '/') return 'geral'
-  const encontrada = todasAsRotas
-    .filter((item) => item.rota !== '/' && (caminho === item.rota || caminho.startsWith(`${item.rota}/`)))
-    .sort((a, b) => b.rota.length - a.rota.length)[0]
+  if (caminho === '/') return 'hoje'
+  const encontrada = AREAS_DAS_ROTAS.filter((item) => pertence(caminho, item.rota)).sort(
+    (a, b) => b.rota.length - a.rota.length,
+  )[0]
   return encontrada?.area ?? 'geral'
 }

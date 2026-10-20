@@ -28,28 +28,31 @@ afterEach(() => {
 })
 afterAll(() => servidor.close())
 
-const linhas = async () => within(await screen.findByRole('region', { name: 'Tarefas do dia' })).getAllByRole('listitem')
+// As atrasadas ficam numa seção em cima; as linhas vêm na ordem da tela (atrasadas primeiro).
+const linhas = async () => {
+  const doDia = await screen.findByRole('region', { name: /^Atividades d/ })
+  const atras = screen.queryByRole('region', { name: 'Atrasadas' })
+  return [...(atras ? within(atras).getAllByRole('listitem') : []), ...within(doDia).queryAllByRole('listitem')]
+}
 const linhaDe = async (texto: string) => (await linhas()).find((l) => within(l).queryByText(texto))!
-const contador = (rotulo: string) =>
-  within(screen.getByRole('region', { name: 'Resumo do dia' })).getByText(rotulo).nextElementSibling?.textContent
+const atrasadas = () => screen.queryByRole('region', { name: 'Atrasadas' })
 
 describe('tela Hoje: tarefas do dia', () => {
   beforeEach(entrarComoMaria)
 
-  test('uma lista só, em ordem de horário, com o resumo e o "dia todo" no fim', async () => {
-    renderizarApp('/hoje')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
-    expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
+  test('Início: atrasadas em cima, o resto em ordem de horário, o "dia todo" no fim', async () => {
+    renderizarApp('/')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Terça-feira, 13 de outubro' })).toBeInTheDocument()
+    expect(screen.getByText('Bom dia, Maria')).toBeInTheDocument()
     expect(await screen.findByText('Para hoje: 11 tarefas, 2 concluídas e 1 atrasada.')).toBeInTheDocument()
-
-    expect(contador('Programadas')).toBe('11')
-    expect(contador('Concluídas')).toBe('2')
-    expect(contador('Pendentes')).toBe('8')
-    expect(contador('Atrasadas')).toBe('1')
+    // Sem indicadores nem finanças no Início.
+    expect(screen.queryByText('Despesas do mês')).not.toBeInTheDocument()
 
     const titulos = (await linhas()).map((l) => within(l).getByRole('link').querySelector('p')!.textContent)
-    expect(titulos.slice(0, 4)).toEqual(['Omeprazol', 'Losartana', 'Ler e-mails', 'Vitamina D'])
-    expect(titulos.slice(-2)).toEqual(['Regar as plantas', 'Condomínio'])
+    expect(titulos[0]).toBe('Condomínio')
+    expect(within(atrasadas()!).getAllByRole('listitem')).toHaveLength(1)
+    expect(titulos.slice(1, 5)).toEqual(['Omeprazol', 'Losartana', 'Ler e-mails', 'Vitamina D'])
+    expect(titulos.at(-1)).toBe('Regar as plantas')
 
     // Dose sempre com a unidade; conta com valor, imóvel e o dia em que venceu.
     expect(within(await linhaDe('Vitamina D')).getByText('1 gota de 50.000 UI')).toBeInTheDocument()
@@ -70,7 +73,7 @@ describe('tela Hoje: tarefas do dia', () => {
     const fisio = await linhaDe('Fisioterapia')
     expect(within(fisio).getByText('09:00')).toHaveClass('text-atraso')
     expect(within(fisio).getByRole('button', { name: 'Fiz: Fisioterapia' })).toBeInTheDocument()
-    expect(contador('Atrasadas')).toBe('5')
+    expect(within(atrasadas()!).getAllByRole('listitem')).toHaveLength(5)
   })
 
   test('✓ no remédio vale na tela de Remédios; tocar de novo desfaz', async () => {
@@ -79,15 +82,15 @@ describe('tela Hoje: tarefas do dia', () => {
     const tomei = within(await linhaDe('Vitamina D')).getByRole('button', { name: 'Tomei: Vitamina D' })
     await usuario.click(tomei)
     expect(tomei).toHaveAttribute('aria-pressed', 'true')
-    await waitFor(() => expect(contador('Concluídas')).toBe('3'))
+    expect(await screen.findByText(/3 concluídas/)).toBeInTheDocument()
 
     await usuario.click(tomei)
     await waitFor(() => expect(tomei).toHaveAttribute('aria-pressed', 'false'))
-    expect(contador('Concluídas')).toBe('2')
+    expect(await screen.findByText(/2 concluídas/)).toBeInTheDocument()
 
     await usuario.click(tomei)
-    await waitFor(() => expect(contador('Concluídas')).toBe('3'))
-    await usuario.click(screen.getAllByRole('link', { name: /Remédios/ })[0])
+    expect(await screen.findByText(/3 concluídas/)).toBeInTheDocument()
+    await usuario.click(screen.getAllByRole('link', { name: /Saúde/ })[0])
     expect(await screen.findByText('2 de 4 doses tomadas')).toBeInTheDocument()
   })
 
@@ -96,7 +99,7 @@ describe('tela Hoje: tarefas do dia', () => {
     renderizarApp('/hoje')
     const condominio = await linhaDe('Condomínio')
     await usuario.click(within(condominio).getByRole('button', { name: 'Paguei: Condomínio' }))
-    await waitFor(() => expect(contador('Atrasadas')).toBe('0'))
+    await waitFor(() => expect(atrasadas()).not.toBeInTheDocument())
     const contas = await api<{ descricao: string; status: string }[]>('/pagamentos', { query: { fim: '2026-10-10' } })
     expect(contas.find((p) => p.descricao === 'Condomínio')?.status).toBe('pago')
 
@@ -144,5 +147,5 @@ test('conta nova, sem nada: "Nada programado para hoje."', async () => {
   salvarToken(token)
   renderizarApp('/hoje')
   expect(await screen.findByText('Nada programado para hoje.')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Novo agendamento' })).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: 'Nova' }).length).toBeGreaterThan(0)
 })

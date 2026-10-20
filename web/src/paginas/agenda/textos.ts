@@ -41,6 +41,8 @@ export const MODALIDADES_DO_TIPO: Record<TipoEvento, ModalidadeEvento[]> = {
 
 /** Tipos com área própria no menu ("a agenda só daquele tipo"). As rotas são as de app/navegacao.ts. */
 export const AREAS_DO_TIPO: { rota: string; tipo: TipoEvento }[] = [
+  { rota: '/consultas', tipo: 'consulta' },
+  { rota: '/exames', tipo: 'exame' },
   { rota: '/radio', tipo: 'programa_radio' },
   { rota: '/atividade-fisica', tipo: 'atividade_fisica' },
   { rota: '/fisioterapia', tipo: 'fisioterapia' },

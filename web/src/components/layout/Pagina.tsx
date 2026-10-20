@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
-import { useLocation } from 'react-router'
-import { areaDaRota, type Area } from '@/app/navegacao'
+import { Link, useLocation } from 'react-router'
+import { areaDaRota, secaoDaTela, type Area } from '@/app/navegacao'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -50,7 +50,39 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
         </div>
       </header>
       <div aria-hidden className="h-1.5 bg-area-fundo" />
+      <MenuDaSecao />
       <div className={cn('mx-auto w-full px-4 pt-6 pb-8 md:px-8 md:pt-8', largura)}>{children}</div>
     </div>
+  )
+}
+
+/**
+ * Celular: as telas da área (ex.: Finanças → Visão geral, Contas a pagar...) numa fileira que rola
+ * para o lado, só nas telas de lista (num formulário, o "voltar" do cabeçalho basta). No computador
+ * a barra lateral já mostra essas telas.
+ */
+function MenuDaSecao() {
+  const { pathname, search } = useLocation()
+  const { secao, item: atual, exato } = secaoDaTela(pathname, search)
+  if (!secao || !exato || secao.itens.length < 2) return null
+  return (
+    <nav aria-label={`Telas de ${secao.rotulo}`} className="border-b border-linha bg-folha md:hidden">
+      <ul className="flex gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]">
+        {secao.itens.map((item) => (
+          <li key={item.rota} className="shrink-0">
+            <Link
+              to={item.rota}
+              aria-current={item === atual ? 'page' : undefined}
+              className={cn(
+                'flex min-h-11 items-center rounded-full px-4 text-base font-semibold whitespace-nowrap text-muted-foreground hover:bg-suave',
+                item === atual && 'bg-primary text-primary-foreground hover:bg-primary',
+              )}
+            >
+              {item.rotulo}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }

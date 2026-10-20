@@ -53,7 +53,7 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Início = painel** (`/`, `paginas/inicio/`): blocos com carregando/erro/conteúdo em `Bloco.tsx`, cada
+- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): blocos com carregando/erro/conteúdo em `Bloco.tsx`, cada
   um com o atalho para a tela da área. Só lê das consultas que já existem (`useTarefasHoje` de hoje —
   o mesmo cache da tela Hoje —, `useRelatorioFinanceiro` do mês, `usePagamentos` pendentes até +30
   dias, `useEventos` padrão); o único que escreve é o ✓/✗ de `LinhaTarefa`. Os totais vêm de
@@ -81,7 +81,7 @@ npm run lint                                  # oxlint
   histórico com "Desfazer" e comprovantes (`ListaArquivos`). Toda mutação invalida `recebiveis` e os
   relatórios (entradas e saldo do painel). Mock em `mocks/recebiveis.ts` (o relatório do mock usa o
   `entradasDoPeriodo` dele).
-- **Hoje = tarefas do dia** (`/hoje`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
+- **Início = atividades do dia** (`/`, `paginas/Hoje.tsx`; atrasadas numa seção em cima, "Nova" escolhe o módulo em `hoje/NovaAtividade.tsx`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
   `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
   uma lista só, já normalizada pelo back-end, com ✓/✗ por linha (o texto de cada categoria em
   `CATEGORIAS` de `LinhaTarefa`). `useMarcarTarefa` é otimista (linha e resumo) e, ao terminar a
@@ -161,9 +161,15 @@ npm run lint                                  # oxlint
 
 ## Estrutura
 
-- `src/app/navegacao.ts` define as áreas; a barra inferior (celular) e a lateral (desktop) em
-  `components/layout/LayoutApp.tsx` são geradas dela. No celular as áreas secundárias ficam em
-  "Mais", que fica marcado quando uma delas está aberta.
+- **Navegação** (`src/app/navegacao.ts`, `SECOES`): 6 áreas — Início (`/`, só as atividades do dia),
+  Finanças (`/financas` e as telas de dinheiro), Agenda (agendamentos, viagens, rádio), Saúde
+  (remédios, consultas, exames, fisioterapia, atividade física), Compromissos (lembretes que repetem,
+  lembretes do dia, compras) e Configurações. Cada seção tem `itens` (o menu interno; `rota` pode ter
+  query, ex. `/pagamentos?aba=equipe`). `secaoDaTela()` diz a seção e o item da tela aberta: a barra
+  de baixo (5 áreas; Configurações abre pela engrenagem do Início) e a lateral (que abre os itens da
+  área) usam ela, e `Pagina` desenha sozinha no celular a fileira "Telas de <área>" nas telas de lista.
+  Tela nova: incluir em `SECOES` (se for de menu) e em `AREAS_DAS_ROTAS` (cor). `/hoje` e `/mais` só
+  redirecionam (`components/Redirecionar.tsx`) para `/` e `/configuracoes`.
 - **Sessão** (`src/app/sessao.tsx`): `useSessao()` (em `src/app/useSessao.ts`) dá `token`, `usuario` (de `/auth/me`),
   `entrar(sessao)` e `sair()`. Ambos limpam o cache do TanStack Query (aparelho compartilhado).
   Token vencido é descartado ao abrir o app; `NAO_AUTORIZADO` da API chama `sair()`.

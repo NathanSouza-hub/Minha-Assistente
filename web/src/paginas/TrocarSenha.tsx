@@ -38,7 +38,7 @@ export function TrocarSenha() {
       // O token antigo deixa de valer: guarda o novo para continuar conectado neste aparelho.
       entrar(await trocar.mutateAsync(dados))
       toast.success('Senha trocada. Os outros aparelhos precisam entrar de novo.')
-      navegar('/mais')
+      navegar('/configuracoes')
     } catch (erro) {
       aplicarErroApi(erro, setError, { porCodigo: { SENHA_INCORRETA: 'senhaAtual' } })
     }
@@ -50,11 +50,11 @@ export function TrocarSenha() {
       cabecalho={
         <div className="flex flex-col gap-2">
           <Link
-            to="/mais"
+            to="/configuracoes"
             className="-ml-1 flex min-h-11 items-center gap-1 self-start rounded-lg pr-2 font-semibold text-primary"
           >
             <ArrowLeftIcon weight="bold" className="size-5" aria-hidden />
-            Mais
+            Configurações
           </Link>
           <h1 className="text-3xl leading-tight font-bold">Trocar senha</h1>
         </div>

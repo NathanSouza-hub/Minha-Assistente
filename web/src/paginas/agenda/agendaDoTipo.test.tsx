@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
@@ -29,7 +29,8 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     const main = await principal()
     expect(await main.findByRole('heading', { name: 'Fisioterapia', level: 1 })).toBeInTheDocument()
     // Série semanal: hoje (13/10) e as próximas terças
-    expect((await main.findAllByRole('link', { name: /Fisioterapia/ })).length).toBeGreaterThanOrEqual(8)
+    // (mais o link "Fisioterapia" do menu da Saúde, que aparece antes de a agenda carregar)
+    await waitFor(() => expect(main.getAllByRole('link', { name: /Fisioterapia/ }).length).toBeGreaterThanOrEqual(9))
     expect(main.queryByText('Consulta com cardiologista')).not.toBeInTheDocument()
     expect(main.queryByText('Caminhada no parque')).not.toBeInTheDocument()
   })
@@ -52,21 +53,23 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     expect(screen.getByRole('heading', { name: 'Programa de rádio', level: 1 })).toBeInTheDocument()
   })
 
-  test('as três áreas aparecem no menu, na ordem da lista', async () => {
-    renderizarApp('/mais')
-    const links = within(await screen.findByRole('main')).getAllByRole('link').map((l) => l.textContent)
-    // Remédios saiu da barra do celular (entrou o Início) e abre a lista do "Mais".
-    expect(links.slice(0, 10)).toEqual([
-      'Remédios',
-      'Cadastro de despesas',
-      'Recebíveis',
-      'Compromissos',
-      'Tarefas',
-      'Programa de rádio',
+  test('Rádio fica no menu da Agenda; Fisioterapia, Consultas e Exames no menu da Saúde', async () => {
+    renderizarApp('/agenda')
+    const agenda = await screen.findByRole('navigation', { name: 'Telas de Agenda' })
+    expect(within(agenda).getAllByRole('link').map((l) => l.textContent)).toEqual([
+      'Agendamentos',
       'Viagens',
-      'Atividade física',
+      'Programa de rádio',
+    ])
+    cleanup()
+    renderizarApp('/remedios')
+    const saude = await screen.findByRole('navigation', { name: 'Telas de Saúde' })
+    expect(within(saude).getAllByRole('link').map((l) => l.textContent)).toEqual([
+      'Medicamentos',
+      'Consultas',
+      'Exames',
       'Fisioterapia',
-      'Compras',
+      'Atividade física',
     ])
   })
 })

@@ -128,7 +128,7 @@ describe('aba Cartões', () => {
     )
 
     await usuario.click(screen.getByRole('link', { name: 'Visa' }))
-    await usuario.click(screen.getByRole('link', { name: 'Lista de despesas' }))
+    await usuario.click(screen.getAllByRole('link', { name: 'Lista de despesas' })[0])
     const fatura = (await screen.findByRole('link', { name: /^Fatura Visa/ })).closest('tr') as HTMLElement
     expect(within(fatura).getByText('Visa')).toBeInTheDocument()
     expect(within(fatura).getByText('em 13/10/2026')).toBeInTheDocument()

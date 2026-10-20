@@ -25,11 +25,11 @@ const nomes = () =>
     .map((li) => li.querySelector('span')?.textContent)
 
 describe('tela de categorias', () => {
-  test('aparece em Mais e lista as categorias na ordem das abas', async () => {
+  test('aparece no menu de Finanças e lista as categorias na ordem das abas', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/mais')
-    const conteudo = await screen.findByRole('main')
-    await usuario.click(await within(conteudo).findByRole('link', { name: 'Categorias' }))
+    renderizarApp('/financas')
+    const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
+    await usuario.click(within(menu).getByRole('link', { name: 'Categorias' }))
     await screen.findByRole('list', { name: 'Suas categorias' })
     expect(nomes()).toEqual(['Contas residenciais', 'Outros'])
   })

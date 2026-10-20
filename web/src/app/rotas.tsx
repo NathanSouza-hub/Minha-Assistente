@@ -1,13 +1,15 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
+import { Redirecionar } from '@/components/Redirecionar'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
-import { Mais } from '@/paginas/Mais'
+import { Configuracoes } from '@/paginas/Configuracoes'
 import { NaoEncontrada } from '@/paginas/NaoEncontrada'
 import type { TipoEvento } from '@/lib/tipos'
 
 // Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
 // para o app abrir rápido no celular.
-const inicio = () => import('@/paginas/inicio/Inicio').then((m) => ({ Component: m.Inicio }))
+const financas = () =>
+  import('@/paginas/inicio/PainelFinanceiro').then((m) => ({ Component: m.PainelFinanceiro }))
 const hoje = () => import('@/paginas/Hoje').then((m) => ({ Component: m.Hoje }))
 const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
 const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
@@ -25,9 +27,9 @@ const agenda = () => import('@/paginas/agenda/Agenda').then((m) => ({ Component:
 const paginaEvento = () =>
   import('@/paginas/agenda/PaginaEvento').then((m) => ({ Component: m.PaginaEvento }))
 // Programa de rádio, Atividade física e Fisioterapia: a agenda só daquele tipo.
-const agendaDoTipo = (tipo: TipoEvento, rota: string) => () =>
+const agendaDoTipo = (tipo: TipoEvento, rota: string, titulo?: string) => () =>
   import('@/paginas/agenda/AgendaDoTipo').then(({ AgendaDoTipo }) => ({
-    Component: () => <AgendaDoTipo tipo={tipo} rota={rota} />,
+    Component: () => <AgendaDoTipo tipo={tipo} rota={rota} titulo={titulo} />,
   }))
 const remedios = () => import('@/paginas/remedios/Remedios').then((m) => ({ Component: m.Remedios }))
 const paginaRemedio = () =>
@@ -75,14 +77,18 @@ export const definicaoRotas: RouteObject[] = [
       {
         element: <LayoutApp />,
         children: [
-          { index: true, lazy: inicio },
-          { path: 'hoje', lazy: hoje },
+          // Início = as atividades do dia. /hoje e /mais ficam como atalhos antigos (links e avisos já enviados).
+          { index: true, lazy: hoje },
+          { path: 'hoje', element: <Redirecionar para="/" /> },
+          { path: 'financas', lazy: financas },
           { path: 'agenda', lazy: agenda },
           { path: 'agenda/novo', lazy: paginaEvento },
           { path: 'agenda/:id', lazy: paginaEvento },
           { path: 'radio', lazy: agendaDoTipo('programa_radio', '/radio') },
           { path: 'atividade-fisica', lazy: agendaDoTipo('atividade_fisica', '/atividade-fisica') },
           { path: 'fisioterapia', lazy: agendaDoTipo('fisioterapia', '/fisioterapia') },
+          { path: 'consultas', lazy: agendaDoTipo('consulta', '/consultas', 'Consultas') },
+          { path: 'exames', lazy: agendaDoTipo('exame', '/exames', 'Exames') },
           { path: 'despesas', lazy: despesas },
           { path: 'pagamentos', lazy: pagamentos },
           { path: 'pagamentos/novo', lazy: paginaPagamento },
@@ -99,7 +105,8 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'remedios', lazy: remedios },
           { path: 'remedios/novo', lazy: paginaRemedio },
           { path: 'remedios/:id', lazy: paginaRemedio },
-          { path: 'mais', element: <Mais /> },
+          { path: 'configuracoes', element: <Configuracoes /> },
+          { path: 'mais', element: <Redirecionar para="/configuracoes" /> },
           { path: 'rotina', lazy: rotina },
           { path: 'rotina/nova', lazy: paginaRotina },
           { path: 'rotina/:id', lazy: paginaRotina },
