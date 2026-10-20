@@ -16,6 +16,7 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
   // Rádio, atividade física e fisioterapia têm cor própria; o resto fica na cor da Agenda.
   const area = areaDaRota(AREAS_DO_TIPO.find((a) => a.tipo === e.tipo)?.rota ?? '/agenda')
   const detalhes = [nomeDoTipo(e), e.modalidade && MODALIDADES[e.modalidade]].filter(Boolean).join(', ')
+  const profissional = [e.profissional, e.especialidade].filter(Boolean).join(' · ')
 
   return (
     <li className={cn('flex flex-col gap-3 py-3', `area-${area}`)}>
@@ -37,6 +38,7 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
             </strong>
           )}
           <span className="text-base text-muted-foreground">{detalhes}</span>
+          {profissional && <span className="text-base">{profissional}</span>}
           {e.local && (
             <span className="flex items-start gap-1.5 text-base">
               <MapPinIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />

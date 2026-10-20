@@ -195,3 +195,61 @@ test('lista, isolamento e exclusão', async () => {
   await request(app).get(`/medicamentos/${med.id}`).set(sessao.auth).expect(404);
   await request(app).get('/medicamentos/hoje').expect(401);
 });
+
+test('período de uso: fora do início/fim não aparece no dia nem aceita registro', async () => {
+  const sessao = await criarSessao(app);
+  const { body: med } = await criar(
+    sessao,
+    losartana({ dataInicio: TERCA, dataFim: '2026-10-22', intervaloHoras: 12 }),
+  );
+  assert.equal(med.dataInicio, TERCA);
+  assert.equal(med.dataFim, '2026-10-22');
+  assert.equal(med.intervaloHoras, 12);
+
+  assert.equal((await doDia(sessao, SEGUNDA)).length, 0, 'antes do início');
+  assert.equal((await doDia(sessao, TERCA)).length, 2);
+  assert.equal((await doDia(sessao, '2026-10-23')).length, 0, 'depois do fim');
+
+  const manha = med.horarios.find((h) => h.periodo === 'manha');
+  const fora = await registrar(sessao, { horarioId: manha.id, data: '2026-10-23' }, 400);
+  assert.match(fora.body.erro.mensagem, /fora do período de uso/);
+
+  const invertido = await criar(sessao, losartana({ dataInicio: TERCA, dataFim: SEGUNDA }), 400);
+  assert.match(invertido.body.erro.mensagem, /dataFim: O fim do uso precisa ser/);
+  await criar(sessao, losartana({ intervaloHoras: 25 }), 400);
+
+  // Sem período, vale todo dia (como os remédios cadastrados antes).
+  const { body: semPeriodo } = await criar(sessao, losartana({ nome: 'AAS' }));
+  assert.equal(semPeriodo.dataInicio, null);
+  assert.equal(semPeriodo.intervaloHoras, null);
+});
+
+test('dose não tomada: situação, troca para tomada e volta para pendente', async () => {
+  const sessao = await criarSessao(app);
+  const { body: med } = await criar(sessao, losartana());
+  const manha = med.horarios.find((h) => h.periodo === 'manha');
+  const situacao = async () => (await doDia(sessao, TERCA)).find((i) => i.horarioId === manha.id).situacao;
+
+  assert.equal(await situacao(), 'pendente');
+  const nao = await registrar(sessao, { horarioId: manha.id, data: TERCA, situacao: 'nao_tomado' });
+  assert.equal(nao.body.situacao, 'nao_tomado');
+  assert.equal(nao.body.tomado, false);
+
+  // A tela Hoje mostra o mesmo ✗.
+  const hojeTerca = await request(app).get('/hoje').query({ data: TERCA }).set(sessao.auth).expect(200);
+  const naTelaHoje = hojeTerca.body.tarefas.find((t) => t.id === `remedio:${manha.id}:${TERCA}T08:00`);
+  assert.equal(naTelaHoje.status, 'nao_feito');
+
+  await registrar(sessao, { horarioId: manha.id, data: TERCA, situacao: 'tomado' });
+  assert.equal(await situacao(), 'tomado');
+  await registrar(sessao, { horarioId: manha.id, data: TERCA, situacao: 'nao_tomado' });
+  assert.equal(await situacao(), 'nao_tomado');
+  assert.equal(
+    (await db('medicamentoRegistro').where({ medicamentoHorarioId: manha.id })).length,
+    0,
+    'não tomada apaga o "tomei"',
+  );
+  await registrar(sessao, { horarioId: manha.id, data: TERCA, situacao: 'pendente' });
+  assert.equal(await situacao(), 'pendente');
+  assert.equal((await db('tarefaRegistro').where({ itemId: manha.id })).length, 0);
+});

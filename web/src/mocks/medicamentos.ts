@@ -2,7 +2,7 @@
 import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import { deDataISO, hojeISO } from '@/lib/datas'
-import type { DoseDoDia, HorarioRemedio, Medicamento, MedicamentoCorpo } from '@/lib/tipos'
+import type { DoseDoDia, HorarioRemedio, Medicamento, MedicamentoCorpo, SituacaoDose } from '@/lib/tipos'
 import { agoraISO, banco, type MedicamentoMock } from './banco'
 import { autenticado, erro, naoEncontrado } from './util'
 
@@ -35,6 +35,10 @@ function validar(c: Partial<MedicamentoCorpo>): Response | null {
     if (h.periodo !== 'semanal' && h.diaSemana !== null && h.diaSemana !== undefined)
       problemas.push(`horarios.${i}.diaSemana: Dia da semana só vale para o período semanal.`)
   })
+  if (c.dataInicio && c.dataFim && c.dataFim < c.dataInicio)
+    problemas.push('dataFim: O fim do uso precisa ser no dia do início ou depois.')
+  if (c.intervaloHoras != null && (c.intervaloHoras < 1 || c.intervaloHoras > 24))
+    problemas.push('intervaloHoras: O intervalo vai de 1 a 24 horas.')
   return problemas.length ? erro(400, 'VALIDACAO', problemas.join('; ')) : null
 }
 
@@ -52,6 +56,28 @@ function itensDoDia(usuarioId: string, data: string) {
     .sort((a, b) => ordenar(a.item, b.item))
 }
 
+// Sem início ou fim, vale para qualquer dia.
+const noPeriodo = (m: MedicamentoMock, data: string) =>
+  (!m.dataInicio || m.dataInicio <= data) && (!m.dataFim || m.dataFim >= data)
+
+const naoTomado = (usuarioId: string, horarioId: string, data: string) =>
+  banco.registrosTarefa.some(
+    (r) =>
+      r.usuarioId === usuarioId &&
+      r.categoria === 'remedio' &&
+      r.itemId === horarioId &&
+      r.dataOcorrencia === data &&
+      r.status === 'nao_feito',
+  )
+
+/** O ✗ do remédio fica em tarefa_registro, como no back-end. */
+export function limparNaoTomado(usuarioId: string, horarioId: string, data: string) {
+  banco.registrosTarefa = banco.registrosTarefa.filter(
+    (r) =>
+      !(r.usuarioId === usuarioId && r.categoria === 'remedio' && r.itemId === horarioId && r.dataOcorrencia === data),
+  )
+}
+
 function dose(m: MedicamentoMock, h: HorarioRemedio, data: string): DoseDoDia {
   const registro = banco.registrosRemedio.find((r) => r.horarioId === h.id && r.data === data)
   return {
@@ -65,6 +91,7 @@ function dose(m: MedicamentoMock, h: HorarioRemedio, data: string): DoseDoDia {
     data,
     tomado: Boolean(registro),
     tomadoEm: registro?.tomadoEm ?? null,
+    situacao: registro ? 'tomado' : naoTomado(m.usuarioId, h.id, data) ? 'nao_tomado' : 'pendente',
   }
 }
 
@@ -75,7 +102,7 @@ const doUsuario = (usuarioId: string, id: string) =>
 export function dosesDoDia(usuarioId: string, data: string) {
   const dia = diaDaSemana(data)
   return itensDoDia(usuarioId, data)
-    .filter(({ m, h }) => m.ativo && (h.periodo !== 'semanal' || h.diaSemana === dia))
+    .filter(({ m, h }) => m.ativo && noPeriodo(m, data) && (h.periodo !== 'semanal' || h.diaSemana === dia))
     .map(({ item }) => item)
 }
 
@@ -96,18 +123,33 @@ export const handlersMedicamentos = [
         horarioId,
         data = hojeISO(),
         tomado = true,
+        situacao,
       } = (await request.json()) as {
         horarioId: string
         data?: string
         tomado?: boolean
+        situacao?: SituacaoDose
       }
+      const nova = situacao ?? (tomado ? 'tomado' : 'pendente')
       const achado = itensDoDia(u.id, data).find(({ h }) => h.id === horarioId)
       if (!achado) return naoEncontrado('Horário')
       if (achado.h.periodo === 'semanal' && achado.h.diaSemana !== diaDaSemana(data))
         return erro(400, 'VALIDACAO', 'data: este remédio semanal não é tomado nesse dia da semana.')
+      if (!noPeriodo(achado.m, data))
+        return erro(400, 'VALIDACAO', 'data: este dia está fora do período de uso do remédio.')
+      limparNaoTomado(u.id, horarioId, data)
       const indice = banco.registrosRemedio.findIndex((r) => r.horarioId === horarioId && r.data === data)
-      if (tomado && indice < 0) banco.registrosRemedio.push({ horarioId, data, tomadoEm: agoraISO() })
-      if (!tomado && indice >= 0) banco.registrosRemedio.splice(indice, 1)
+      if (nova === 'tomado' && indice < 0) banco.registrosRemedio.push({ horarioId, data, tomadoEm: agoraISO() })
+      if (nova !== 'tomado' && indice >= 0) banco.registrosRemedio.splice(indice, 1)
+      if (nova === 'nao_tomado')
+        banco.registrosTarefa.push({
+          usuarioId: u.id,
+          categoria: 'remedio',
+          itemId: horarioId,
+          dataOcorrencia: data,
+          horario: achado.h.hora,
+          status: 'nao_feito',
+        })
       return HttpResponse.json(dose(achado.m, achado.h, data))
     }),
   ),
@@ -146,6 +188,9 @@ export const handlersMedicamentos = [
         dose: texto(corpo.dose),
         observacoes: texto(corpo.observacoes),
         ativo: corpo.ativo ?? true,
+        dataInicio: corpo.dataInicio ?? null,
+        dataFim: corpo.dataFim ?? null,
+        intervaloHoras: corpo.intervaloHoras ?? null,
         horarios: corpo.horarios.map((h) => ({
           id: crypto.randomUUID(),
           periodo: h.periodo,
@@ -187,6 +232,9 @@ export const handlersMedicamentos = [
         dose: texto(corpo.dose),
         observacoes: texto(corpo.observacoes),
         ativo: corpo.ativo ?? true,
+        dataInicio: corpo.dataInicio ?? null,
+        dataFim: corpo.dataFim ?? null,
+        intervaloHoras: corpo.intervaloHoras ?? null,
         horarios,
         atualizadoEm: agoraISO(),
       })

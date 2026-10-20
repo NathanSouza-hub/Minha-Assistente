@@ -41,7 +41,11 @@ npm run lint                                  # oxlint
   tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda).
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
-- **Remédios**: no PUT, mande o `id` dos horários que continuam — sem ele o back-end recria o
+- **Remédios** (decisão 31): período de uso (`dataInicio`/`dataFim`) e "Tomar a cada" — `montarHorarios`
+  (`paginas/remedios/formulario.ts`) só roda no toque em "Montar horários", reaproveitando os `id` na
+  ordem; nunca mude horários sozinho. A dose tem `situacao` (Tomei / Não tomei / Desfazer, otimista).
+  Consulta, exame e fisioterapia mostram Profissional e Especialidade (`TIPOS_SAUDE` em `agenda/textos.ts`).
+  No PUT, mande o `id` dos horários que continuam — sem ele o back-end recria o
   horário e o histórico de "tomei" se perde (o formulário guarda o `id` em cada linha do
   `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
   na hora e volta atrás se o servidor recusar.

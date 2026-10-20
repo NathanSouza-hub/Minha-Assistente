@@ -8,7 +8,7 @@ import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDosesDoDia, useMedicamentos } from '@/consultas/medicamentos'
-import { hojeISO } from '@/lib/datas'
+import { dataCurta, hojeISO } from '@/lib/datas'
 import type { PeriodoRemedio } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { ItemDose } from './ItemDose'
@@ -113,7 +113,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
             </Button>
           }
         >
-          Remédios pausados não aparecem aqui.
+          Remédios pausados ou fora do período de uso não aparecem aqui.
         </EstadoVazio>
       ) : (
         <>
@@ -146,6 +146,14 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
       )}
     </>
   )
+}
+
+/** "Desde 20/10/2026", "De 20/10/2026 até 27/10/2026", "Terminou em 27/10/2026". */
+function descreverPeriodo(inicio: string | null, fim: string | null) {
+  if (fim && fim < hojeISO()) return `Terminou em ${dataCurta(fim)}`
+  if (inicio && fim) return `De ${dataCurta(inicio)} até ${dataCurta(fim)}`
+  if (fim) return `Até ${dataCurta(fim)}`
+  return inicio! > hojeISO() ? `Começa em ${dataCurta(inicio!)}` : `Desde ${dataCurta(inicio!)}`
 }
 
 function MeusRemedios() {
@@ -184,8 +192,12 @@ function MeusRemedios() {
             </span>
             {m.dose && <span className="text-base">{m.dose}</span>}
             <span className="text-base text-muted-foreground">
+              {m.intervaloHoras && `A cada ${m.intervaloHoras} horas: `}
               {m.horarios.map(descreverHorario).join('; ')}
             </span>
+            {(m.dataInicio || m.dataFim) && (
+              <span className="text-base text-muted-foreground">{descreverPeriodo(m.dataInicio, m.dataFim)}</span>
+            )}
           </Link>
         </li>
       ))}

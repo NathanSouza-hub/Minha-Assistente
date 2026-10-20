@@ -18,6 +18,8 @@ const TIPOS = [
   'entrevista',
   'outro',
 ];
+// Tipos de saúde: têm profissional e especialidade (migration 29).
+const TIPOS_SAUDE = ['consulta', 'exame', 'fisioterapia'];
 const MODALIDADES = ['presencial', 'telemedicina', 'videoconferencia', 'podcast', 'gravacao'];
 const RECORRENCIAS = ['nenhuma', 'diaria', 'semanal', 'mensal', 'anual'];
 
@@ -38,6 +40,8 @@ const corpo = z
     inicio: dataHora,
     fim: dataHora.nullish().transform((v) => v ?? null),
     local: textoOpcional(300),
+    profissional: textoOpcional(120).describe('Médico ou profissional (consulta, exame e fisioterapia)'),
+    especialidade: textoOpcional(120).describe('Especialidade (consulta, exame e fisioterapia)'),
     // Campo em branco no formulário ("") vira null.
     link: z
       .url({ protocol: /^https?$/, message: 'Link inválido: use um endereço http(s).' })
@@ -120,6 +124,8 @@ const evento = z.object({
   inicio: instante.describe('Início desta ocorrência'),
   fim: instante.nullable().describe('Fim desta ocorrência'),
   local: z.string().nullable(),
+  profissional: z.string().nullable().describe('Só nos tipos de saúde; nulo nos demais'),
+  especialidade: z.string().nullable().describe('Só nos tipos de saúde; nulo nos demais'),
   link: z.string().nullable(),
   observacoes: z.string().nullable(),
   recorrencia: z.enum(RECORRENCIAS),
@@ -131,4 +137,4 @@ const evento = z.object({
   atualizadoEm: instante,
 });
 
-module.exports = { corpo, filtros, evento, TIPOS, MODALIDADES, RECORRENCIAS, MAXIMO_DIAS_LISTAGEM };
+module.exports = { corpo, filtros, evento, TIPOS, TIPOS_SAUDE, MODALIDADES, RECORRENCIAS, MAXIMO_DIAS_LISTAGEM };

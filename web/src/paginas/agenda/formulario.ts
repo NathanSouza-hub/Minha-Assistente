@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { combinarDataHora, hojeISO, separarDataHora, somarDias } from '@/lib/datas'
 import type { Evento, EventoCorpo, ModalidadeEvento, RecorrenciaEvento, TipoEvento } from '@/lib/tipos'
 import { deMinutos, MAXIMO_LEMBRETES, paraMinutos, VESPERA, type Lembrete } from './lembretes'
+import { TIPOS_SAUDE } from './textos'
 
 const HORA = /^\d{2}:\d{2}$/
 const DATA = /^\d{4}-\d{2}-\d{2}$/
@@ -18,6 +19,8 @@ export const esquemaEvento = z
     horaInicio: z.string().regex(HORA, 'Informe a hora.'),
     horaFim: z.string().refine((v) => v === '' || HORA.test(v), 'Hora inválida.'),
     local: z.string().max(300, 'Use no máximo 300 caracteres.'),
+    profissional: z.string().max(120, 'Use no máximo 120 caracteres.'),
+    especialidade: z.string().max(120, 'Use no máximo 120 caracteres.'),
     link: z
       .string()
       .trim()
@@ -73,6 +76,8 @@ export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO(), tipoPad
       horaInicio: '',
       horaFim: '',
       local: '',
+      profissional: '',
+      especialidade: '',
       link: '',
       observacoes: '',
       recorrencia: 'nenhuma',
@@ -91,6 +96,8 @@ export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO(), tipoPad
     horaInicio: hora,
     horaFim: evento.fim ? separarDataHora(evento.fim).hora : '',
     local: evento.local ?? '',
+    profissional: evento.profissional ?? '',
+    especialidade: evento.especialidade ?? '',
     link: evento.link ?? '',
     observacoes: evento.observacoes ?? '',
     recorrencia: evento.recorrencia,
@@ -110,6 +117,8 @@ export function paraCorpo(d: DadosEvento): EventoCorpo {
     inicio: combinarDataHora(d.data, d.horaInicio),
     fim: d.horaFim ? combinarDataHora(diaDoFim, d.horaFim) : null,
     local: d.local.trim() || null,
+    profissional: (TIPOS_SAUDE.includes(d.tipo as TipoEvento) && d.profissional.trim()) || null,
+    especialidade: (TIPOS_SAUDE.includes(d.tipo as TipoEvento) && d.especialidade.trim()) || null,
     link: d.link.trim() || null,
     observacoes: d.observacoes.trim() || null,
     recorrencia: d.recorrencia as RecorrenciaEvento,

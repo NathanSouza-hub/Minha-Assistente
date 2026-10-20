@@ -1,5 +1,5 @@
-import { useEffect, useId } from 'react'
-import { Controller, useFieldArray, useForm, type UseFormReturn } from 'react-hook-form'
+import { useEffect, useId, useState } from 'react'
+import { Controller, useFieldArray, useForm, useWatch, type UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeftIcon, PlusIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -20,7 +20,9 @@ import type { Medicamento, PeriodoRemedio } from '@/lib/tipos'
 import {
   esquemaRemedio,
   HORA_SUGERIDA,
+  INTERVALOS,
   MAXIMO_HORARIOS,
+  montarHorarios,
   novoHorario,
   paraCorpo,
   valoresIniciais,
@@ -73,9 +75,26 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
     handleSubmit,
     setError,
     setFocus,
+    getValues,
     formState: { errors, isSubmitting },
   } = formulario
   const horarios = useFieldArray({ control, name: 'horarios', keyName: 'chave' })
+  const intervalo = useWatch({ control, name: 'intervaloHoras' })
+  const [montados, setMontados] = useState('')
+
+  // Só quando a pessoa toca no botão: os horários atuais são trocados pelos de "a cada N horas"
+  // (os ids são reaproveitados na ordem, para o histórico de "tomei" continuar).
+  function montar() {
+    const primeira = getValues('primeiraDose')
+    if (!intervalo || !/^\d{2}:\d{2}$/.test(primeira)) return
+    const novos = montarHorarios(Number(intervalo), primeira)
+    const atuais = getValues('horarios')
+    horarios.replace(novos.map((h, i) => ({ ...h, ...(atuais[i]?.id && { id: atuais[i].id }) })))
+    const lista = novos.map((h) => h.hora)
+    setMontados(
+      `Horários montados: ${lista.length > 1 ? `${lista.slice(0, -1).join(', ')} e ${lista.at(-1)}` : lista[0]}. Confira abaixo.`,
+    )
+  }
 
   useEffect(() => {
     if (!editando) setFocus('nome')
@@ -140,7 +159,42 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
         </div>
 
         <fieldset className="flex flex-col gap-3">
+          <legend className="mb-1 text-base font-semibold">Período de uso</legend>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo rotulo="Começa em" type="date" erro={errors.dataInicio?.message} {...register('dataInicio')} />
+            <Campo
+              rotulo="Termina em (opcional)"
+              type="date"
+              dica="Deixe em branco se é de uso contínuo."
+              erro={errors.dataFim?.message}
+              {...register('dataFim')}
+            />
+          </div>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-3">
           <legend className="mb-1 text-base font-semibold">Quando tomar</legend>
+          <div className="flex flex-col gap-4 rounded-2xl bg-suave p-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Selecao rotulo="Tomar a cada" {...register('intervaloHoras', { onChange: () => setMontados('') })}>
+                <option value="">Horários livres</option>
+                {INTERVALOS.map((h) => (
+                  <option key={h} value={h}>
+                    {h === 24 ? '24 horas (uma vez por dia)' : `${h} horas`}
+                  </option>
+                ))}
+              </Selecao>
+              {intervalo && <Campo rotulo="Primeira dose às" type="time" {...register('primeiraDose')} />}
+            </div>
+            {intervalo && (
+              <Button type="button" variant="outline" className="self-start" onClick={montar}>
+                Montar horários
+              </Button>
+            )}
+            <p aria-live="polite" className="text-base font-semibold text-primary empty:hidden">
+              {montados}
+            </p>
+          </div>
           <ul className="flex flex-col gap-3">
             {horarios.fields.map((campo, indice) => (
               <LinhaHorario

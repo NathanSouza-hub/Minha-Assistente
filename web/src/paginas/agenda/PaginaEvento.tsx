@@ -36,6 +36,7 @@ import {
   TIPO_VIAGEM,
   TIPOS,
   TIPOS_DO_FORMULARIO,
+  TIPOS_SAUDE,
 } from './textos'
 
 /** /agenda/novo e /agenda/:id */
@@ -226,6 +227,23 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
           )}
         </div>
 
+        {TIPOS_SAUDE.includes(tipo as TipoEvento) && (
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Campo
+              rotulo="Profissional (opcional)"
+              placeholder="Ex.: Dra. Ana Lima"
+              erro={errors.profissional?.message}
+              {...register('profissional')}
+            />
+            <Campo
+              rotulo="Especialidade (opcional)"
+              placeholder="Ex.: Cardiologia"
+              erro={errors.especialidade?.message}
+              {...register('especialidade')}
+            />
+          </div>
+        )}
+
         <div className="grid gap-6 sm:grid-cols-3">
           <Campo
             rotulo={recorrente ? 'Primeiro dia' : 'Dia'}
@@ -260,7 +278,7 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
           />
         ) : (
           <Campo
-            rotulo="Local (opcional)"
+            rotulo={TIPOS_SAUDE.includes(tipo as TipoEvento) ? 'Endereço (opcional)' : 'Local (opcional)'}
             placeholder="Ex.: Clínica Movimento, sala 4"
             erro={errors.local?.message}
             {...register('local')}

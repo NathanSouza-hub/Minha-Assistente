@@ -295,6 +295,9 @@ export type EventoCorpo = {
   inicio: string
   fim: string | null
   local: string | null
+  /** Só em consulta, exame e fisioterapia (nulo nos outros tipos). */
+  profissional: string | null
+  especialidade: string | null
   link: string | null
   observacoes: string | null
   recorrencia: RecorrenciaEvento
@@ -332,6 +335,11 @@ export type Medicamento = {
   dose: string | null
   observacoes: string | null
   ativo: boolean
+  /** Período de uso (vazio = sem limite). */
+  dataInicio: string | null
+  dataFim: string | null
+  /** "A cada N horas" usado para montar os horários (só registro). */
+  intervaloHoras: number | null
   horarios: HorarioRemedio[]
   criadoEm: string
   atualizadoEm: string
@@ -343,8 +351,13 @@ export type MedicamentoCorpo = {
   dose: string | null
   observacoes: string | null
   ativo: boolean
+  dataInicio: string | null
+  dataFim: string | null
+  intervaloHoras: number | null
   horarios: (Omit<HorarioRemedio, 'id'> & { id?: string })[]
 }
+
+export type SituacaoDose = 'tomado' | 'nao_tomado' | 'pendente'
 
 /** Item de GET /medicamentos/hoje: uma dose do dia com o status. */
 export type DoseDoDia = {
@@ -358,6 +371,8 @@ export type DoseDoDia = {
   data: string
   tomado: boolean
   tomadoEm: string | null
+  /** "nao_tomado" é o ✗ (aqui ou na tela Hoje). */
+  situacao: SituacaoDose
 }
 
 // ---- Rotina (etapa 7 do back-end) ----

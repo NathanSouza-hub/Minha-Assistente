@@ -110,9 +110,10 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     - Medicamento traz `horarios: [{ id, periodo, hora, diaSemana }]` (`diaSemana` 0 = domingo,
       obrigatório só no semanal). No PUT, horário com `id` é mantido (com o histórico de "tomei"),
       sem `id` é criado, e os ausentes são removidos.
-    - `GET /medicamentos/hoje?data=` (padrão hoje): diários + semanais do dia da semana, só ativos.
+    - `GET /medicamentos/hoje?data=` (padrão hoje): diários + semanais do dia da semana, só ativos e
+      dentro do período de uso (decisão 31).
       Item: `{ horarioId, medicamentoId, nome, dose, observacoes, periodo, hora, data, tomado, tomadoEm }`.
-    - `POST /medicamentos/registros` `{ horarioId, data?, tomado? }` responde o item atualizado;
+    - `POST /medicamentos/registros` `{ horarioId, data?, tomado?, situacao? }` responde o item atualizado;
       é idempotente e `tomado: false` desmarca. Semanal fora do dia da semana → `400`.
 
 13. **Rotina (etapa 7)**:
@@ -378,6 +379,17 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     `evento_tipo_descricao_check`. Nos outros tipos o service grava `tipoDescricao` nulo (trocar de
     tipo apaga a descrição). **Viagem** não é tipo de evento: no formulário, escolher "Viagem" leva
     ao cadastro de viagem (`/viagens/nova`), que é da área Agenda — sem segundo cadastro.
+31. **Saúde** (migration 29): o remédio ganha `dataInicio`/`dataFim` (período de uso, opcionais e
+    inclusivos; sem eles vale todo dia, como os cadastrados antes) e `intervaloHoras` (1–24, só
+    registro do "a cada N horas"). Fora do período a dose não entra em `/medicamentos/hoje`, na tela
+    Hoje nem nos lembretes, e `POST /medicamentos/registros` responde `400`. O back-end **não gera
+    nem muda horários**: o formulário monta a lista (`montarHorarios`) quando a pessoa toca em
+    "Montar horários", e ela confere antes de salvar. A dose tem `situacao` (`tomado`, `nao_tomado`,
+    `pendente`): o "não tomado" é a linha `nao_feito` de `tarefa_registro` (o mesmo ✗ da tela Hoje), e
+    `registros` aceita `situacao` no lugar de `tomado`; dose marcada (tomada ou não) não é lembrada.
+    Consulta, exame e fisioterapia ganham `profissional` e `especialidade` (nulos nos outros tipos);
+    presencial usa `local` (endereço) e online o `link`. Continuam sendo eventos da Agenda, mostrados
+    também nas telas de Saúde (sem segundo cadastro).
 
 ## Convenções de banco
 
@@ -406,10 +418,10 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 | membro_equipe_dia | membro_id, dia, valor_previsto_centavos?, desde | unique (membro_id, dia); dia 1–31 |
 | membro_equipe_dispensa | membro_id, vencimento | pk (membro_id, vencimento) |
 | pagamento | descricao, categoria_id? (nulo na fatura e na equipe), cartao_id?, competencia?, membro_id?, valor_centavos? (nulo só na equipe pendente), imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
-| evento | titulo, tipo, tipo_descricao?, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
+| evento | titulo, tipo, tipo_descricao?, modalidade?, inicio, fim?, local, profissional?, especialidade?, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
 | rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |
 | rotina_conclusao | rotina_id, data, concluida_em | unique (rotina_id, data) |
-| medicamento | nome, dose, observacoes, ativo | |
+| medicamento | nome, dose, observacoes, ativo, data_inicio?, data_fim?, intervalo_horas? | fim >= início; intervalo 1–24 |
 | medicamento_horario | medicamento_id, periodo, hora?, dia_semana? | semanal ⇒ dia_semana |
 | medicamento_registro | medicamento_horario_id, data, tomado_em | unique (horario, data) |
 | viagem | destino, ida, volta?, hospedagem, transporte, observacoes | volta≥ida; idx ida |

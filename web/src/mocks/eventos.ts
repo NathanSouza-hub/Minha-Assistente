@@ -65,6 +65,7 @@ const TIPOS = [
   'entrevista',
   'outro',
 ]
+const TIPOS_SAUDE = ['consulta', 'exame', 'fisioterapia']
 const DATA_HORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
 
 /** Validações do schema.js; devolve a resposta de erro ou o corpo normalizado. */
@@ -98,6 +99,8 @@ function validar(c: Partial<EventoCorpo>): Response | EventoCorpo {
     inicio: c.inicio!,
     fim: c.fim ?? null,
     local: texto(c.local),
+    profissional: TIPOS_SAUDE.includes(c.tipo!) ? texto(c.profissional) : null,
+    especialidade: TIPOS_SAUDE.includes(c.tipo!) ? texto(c.especialidade) : null,
     link: texto(c.link),
     observacoes: texto(c.observacoes),
     recorrencia,

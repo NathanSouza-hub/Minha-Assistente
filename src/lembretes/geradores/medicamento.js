@@ -1,4 +1,5 @@
-// Remédios: um lembrete na hora de cada dose (horários com hora, de remédios em uso).
+// Remédios: um lembrete na hora de cada dose (horários com hora, de remédios em uso, dentro do
+// período de uso quando ele foi informado).
 const { instante, naData, diasEntre, juntar } = require('../textos');
 
 const tipo = 'medicamento_horario';
@@ -12,18 +13,19 @@ async function gerar(conexao, { de, ate, usuarios }) {
     .whereIn('m.usuarioId', usuarios)
     .where('m.ativo', true)
     .whereNotNull('h.hora')
-    .select('h.id', 'm.usuarioId', 'h.periodo', 'h.hora', 'h.diaSemana');
+    .select('h.id', 'm.usuarioId', 'h.periodo', 'h.hora', 'h.diaSemana', 'm.dataInicio', 'm.dataFim');
 
   return diasEntre(de, ate).flatMap((data) =>
     horarios
       .filter((h) => h.periodo !== 'semanal' || h.diaSemana === diaDaSemana(data))
+      .filter((h) => (!h.dataInicio || h.dataInicio <= data) && (!h.dataFim || h.dataFim >= data))
       .map((h) => ({ ...h, momento: naData(data, h.hora) }))
       .filter(({ momento }) => momento >= de && momento < ate)
       .map(({ id, usuarioId, momento }) => ({ usuarioId, origemId: id, ocorrencia: momento, agendadoPara: momento })),
   );
 }
 
-// Não lembra de dose já marcada como tomada, nem de remédio pausado.
+// Não lembra de dose já marcada (tomada ou não tomada), nem de remédio pausado.
 async function mensagem(conexao, lembrete) {
   const data = instante(lembrete.ocorrencia).toISODate();
   const dose = await conexao('medicamentoHorario as h')
@@ -34,6 +36,10 @@ async function mensagem(conexao, lembrete) {
     .where('h.id', lembrete.origemId)
     .first('m.nome', 'm.dose', 'm.observacoes', 'm.ativo', 'r.tomadoEm');
   if (!dose || !dose.ativo || dose.tomadoEm) return null;
+  const naoTomado = await conexao('tarefaRegistro')
+    .where({ categoria: 'remedio', itemId: lembrete.origemId, dataOcorrencia: data, status: 'nao_feito' })
+    .first('id');
+  if (naoTomado) return null;
   return {
     titulo: `Hora do remédio: ${dose.nome}`,
     corpo: juntar(dose.dose, dose.observacoes) || 'Toque para marcar que tomou.',

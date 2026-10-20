@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { invalidarPainel } from './hoje'
 import { agora, paraDataHoraISO } from '@/lib/datas'
-import type { DoseDoDia, Medicamento, MedicamentoCorpo } from '@/lib/tipos'
+import type { DoseDoDia, Medicamento, MedicamentoCorpo, SituacaoDose } from '@/lib/tipos'
 
 export const chavesRemedios = {
   todos: ['medicamentos'] as const,
@@ -29,8 +29,8 @@ export const useDosesDoDia = (data: string) =>
   })
 
 /**
- * Marca ou desmarca uma dose. Atualiza a tela na hora (a pessoa vê o "tomado" sem esperar a
- * rede) e desfaz se o servidor recusar.
+ * Marca a dose como tomada, não tomada ou pendente (desfaz). Atualiza a tela na hora (a pessoa vê
+ * o resultado sem esperar a rede) e desfaz se o servidor recusar.
  */
 export function useRegistrarDose(data: string) {
   const cliente = useQueryClient()
@@ -43,19 +43,16 @@ export function useRegistrarDose(data: string) {
     )
 
   return useMutation({
-    mutationFn: ({ horarioId, tomado }: { horarioId: string; tomado: boolean }) =>
-      api<DoseDoDia>('/medicamentos/registros', { method: 'POST', corpo: { horarioId, data, tomado } }),
-    onMutate: async ({ horarioId, tomado }) => {
+    mutationFn: ({ horarioId, situacao }: { horarioId: string; situacao: SituacaoDose }) =>
+      api<DoseDoDia>('/medicamentos/registros', { method: 'POST', corpo: { horarioId, data, situacao } }),
+    onMutate: async ({ horarioId, situacao }) => {
       await cliente.cancelQueries({ queryKey: chave })
       const anterior = cliente.getQueryData<DoseDoDia[]>(chave)
-      const tomadoAntes = !tomado
-      trocar(horarioId, (d) => ({ ...d, tomado, tomadoEm: tomado ? paraDataHoraISO(agora()) : null }))
-      return { anterior, horarioId, tomadoAntes }
+      const tomado = situacao === 'tomado'
+      trocar(horarioId, (d) => ({ ...d, situacao, tomado, tomadoEm: tomado ? paraDataHoraISO(agora()) : null }))
+      return { anterior }
     },
-    onError: (_erro, _vars, contexto) => {
-      cliente.setQueryData(chave, contexto?.anterior)
-      if (contexto) trocar(contexto.horarioId, (d) => ({ ...d, tomado: contexto.tomadoAntes }))
-    },
+    onError: (_erro, _vars, contexto) => cliente.setQueryData(chave, contexto?.anterior),
     onSuccess: (atualizado) => trocar(atualizado.horarioId, () => atualizado),
     // O resumo do painel (pendentes) vem do servidor.
     onSettled: () => invalidarPainel(cliente),

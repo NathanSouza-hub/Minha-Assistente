@@ -211,3 +211,15 @@ test('tipos novos; "outro" exige a descrição (API e banco) e a guarda; trocar 
     /evento_tipo_descricao_check/,
   );
 });
+
+test('consulta guarda profissional e especialidade; outros tipos não', async () => {
+  const sessao = await criarSessao(app);
+  const base = { titulo: 'Retorno', inicio: '2099-05-11T10:00:00-03:00', profissional: ' Dra. Lima ', especialidade: 'Cardiologia' };
+  const consulta = (await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo: 'consulta' }).expect(201)).body;
+  assert.equal(consulta.profissional, 'Dra. Lima');
+  assert.equal(consulta.especialidade, 'Cardiologia');
+
+  const reuniao = (await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo: 'reuniao_pessoal' }).expect(201)).body;
+  assert.equal(reuniao.profissional, null);
+  assert.equal(reuniao.especialidade, null);
+});

@@ -34,6 +34,9 @@ export const TIPOS_DO_FORMULARIO: TipoEvento[] = [
 ]
 export const TIPO_VIAGEM = 'viagem'
 
+/** Tipos de saúde: o formulário pede profissional e especialidade (a API guarda só neles). */
+export const TIPOS_SAUDE: TipoEvento[] = ['consulta', 'exame', 'fisioterapia']
+
 /** Nome do tipo para mostrar: no "outro", a descrição que a pessoa escreveu. */
 export const nomeDoTipo = (e: { tipo: TipoEvento; tipoDescricao?: string | null }) =>
   e.tipo === 'outro' && e.tipoDescricao ? e.tipoDescricao : TIPOS[e.tipo]

@@ -71,6 +71,9 @@ export type MedicamentoMock = {
   dose: string | null
   observacoes: string | null
   ativo: boolean
+  dataInicio: string | null
+  dataFim: string | null
+  intervaloHoras: number | null
   horarios: HorarioRemedio[]
   criadoEm: string
   atualizadoEm: string
@@ -318,6 +321,8 @@ function semearAgenda() {
     usuarioId: MARIA_ID,
     tipoDescricao: null,
     modalidade: null,
+    profissional: null,
+    especialidade: null,
     fim: null,
     local: null,
     link: null,
@@ -389,7 +394,15 @@ function semearRemedios() {
     hora,
     diaSemana,
   })
-  const remedio = (dados: Omit<MedicamentoMock, 'id' | 'usuarioId' | 'criadoEm' | 'atualizadoEm'>) => ({
+  const remedio = (
+    dados: Omit<
+      MedicamentoMock,
+      'id' | 'usuarioId' | 'criadoEm' | 'atualizadoEm' | 'dataInicio' | 'dataFim' | 'intervaloHoras'
+    >,
+  ): MedicamentoMock => ({
+    dataInicio: null,
+    dataFim: null,
+    intervaloHoras: null,
     ...dados,
     id: crypto.randomUUID(),
     usuarioId: MARIA_ID,

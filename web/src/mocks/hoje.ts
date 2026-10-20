@@ -7,7 +7,7 @@ import { formatarCentavos } from '@/lib/dinheiro'
 import type { CategoriaTarefa, MarcacaoTarefa, Pagamento, TarefaHoje } from '@/lib/tipos'
 import { agoraISO, banco } from './banco'
 import { ocorrenciasDoPeriodo } from './eventos'
-import { dosesDoDia } from './medicamentos'
+import { dosesDoDia, limparNaoTomado } from './medicamentos'
 import { garantirProxima, listarPagamentos } from './pagamentos'
 import { tarefasDoDia } from './rotinas'
 import { concluirTarefa, tarefasAvulsasDoDia } from './tarefas'
@@ -168,6 +168,7 @@ function itens(usuarioId: string, data: string) {
 
 function marcarNaArea(usuarioId: string, o: Ocorrencia, feito: boolean) {
   if (o.categoria === 'remedio') {
+    limparNaoTomado(usuarioId, o.itemId, o.data)
     banco.registrosRemedio = banco.registrosRemedio.filter((r) => !(r.horarioId === o.itemId && r.data === o.data))
     if (feito) banco.registrosRemedio.push({ horarioId: o.itemId, data: o.data, tomadoEm: agoraISO() })
   }

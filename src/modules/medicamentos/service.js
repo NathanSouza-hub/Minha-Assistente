@@ -3,7 +3,18 @@ const db = require('../../config/db');
 const { hoje } = require('../../lib/tempo');
 const { naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
 
-const COLUNAS = ['id', 'nome', 'dose', 'observacoes', 'ativo', 'criadoEm', 'atualizadoEm'];
+const COLUNAS = [
+  'id',
+  'nome',
+  'dose',
+  'observacoes',
+  'ativo',
+  'dataInicio',
+  'dataFim',
+  'intervaloHoras',
+  'criadoEm',
+  'atualizadoEm',
+];
 const COLUNAS_HORARIO = ['id', 'medicamentoId', 'periodo', 'hora', 'diaSemana'];
 
 // Manhã, tarde, noite e por último os semanais; dentro do período, pela hora.
@@ -18,6 +29,9 @@ const camposGravaveis = (d) => ({
   dose: d.dose,
   observacoes: d.observacoes,
   ativo: d.ativo,
+  dataInicio: d.dataInicio,
+  dataFim: d.dataFim,
+  intervaloHoras: d.intervaloHoras,
 });
 
 const camposHorario = (h) => ({ periodo: h.periodo, hora: h.hora, diaSemana: h.diaSemana });
@@ -115,7 +129,8 @@ async function remover(usuarioId, id) {
   });
 }
 
-// Horários do usuário com o status de "tomado" no dia.
+// Horários do usuário com o status de "tomado" no dia. O "não tomado" (✗) fica em tarefa_registro,
+// como nas outras categorias da tela Hoje.
 const itensDoDia = (usuarioId, data) =>
   db('medicamentoHorario as h')
     .join('medicamento as m', 'm.id', 'h.medicamentoId')
@@ -133,6 +148,14 @@ const itensDoDia = (usuarioId, data) =>
       'h.hora',
       'h.diaSemana',
       'r.tomadoEm',
+      'm.dataInicio',
+      'm.dataFim',
+      db.raw(
+        `EXISTS (SELECT 1 FROM tarefa_registro t
+          WHERE t.usuario_id = m.usuario_id AND t.categoria = 'remedio' AND t.item_id = h.id
+            AND t.data_ocorrencia = ?::date AND t.status = 'nao_feito') AS nao_tomado`,
+        [data],
+      ),
     )
     .orderByRaw(ordemHorario('h.'))
     .orderBy('m.nome');
@@ -149,31 +172,59 @@ function formatarItem(data, linha) {
     data,
     tomado: Boolean(linha.tomadoEm),
     tomadoEm: linha.tomadoEm ?? null,
+    situacao: linha.tomadoEm ? 'tomado' : linha.naoTomado ? 'nao_tomado' : 'pendente',
   };
 }
+
+// Sem início ou fim, o remédio vale para qualquer dia (como antes da migration 29).
+const noPeriodo = (data, { dataInicio, dataFim }) =>
+  (!dataInicio || dataInicio <= data) && (!dataFim || dataFim >= data);
+
+const limparNaoTomado = (conexao, usuarioId, horarioId, data) =>
+  conexao('tarefaRegistro')
+    .where({ usuarioId, categoria: 'remedio', itemId: horarioId, dataOcorrencia: data })
+    .del();
 
 async function doDia(usuarioId, { data = hoje() } = {}) {
   const linhas = await itensDoDia(usuarioId, data)
     .where('m.ativo', true)
     .where((w) => w.whereNot('h.periodo', 'semanal').orWhere('h.diaSemana', diaDaSemana(data)));
-  return linhas.map((linha) => formatarItem(data, linha));
+  return linhas.filter((linha) => noPeriodo(data, linha)).map((linha) => formatarItem(data, linha));
 }
 
-async function registrar(usuarioId, { horarioId, data = hoje(), tomado }) {
+/** Marca a dose: `situacao` (tomado, nao_tomado, pendente) ou, sem ela, `tomado` (false = pendente). */
+async function registrar(usuarioId, { horarioId, data = hoje(), tomado, situacao }) {
+  const nova = situacao ?? (tomado ? 'tomado' : 'pendente');
   const item = await itensDoDia(usuarioId, data).where('h.id', horarioId).first();
   if (!item) throw naoEncontrado('Horário');
   if (item.periodo === 'semanal' && item.diaSemana !== diaDaSemana(data)) {
     throw requisicaoInvalida('data: este remédio semanal não é tomado nesse dia da semana.');
   }
-
-  if (tomado) {
-    await db('medicamentoRegistro')
-      .insert({ medicamentoHorarioId: horarioId, data })
-      .onConflict(['medicamentoHorarioId', 'data'])
-      .ignore();
-  } else {
-    await db('medicamentoRegistro').where({ medicamentoHorarioId: horarioId, data }).del();
+  if (!noPeriodo(data, item)) {
+    throw requisicaoInvalida('data: este dia está fora do período de uso do remédio.');
   }
+
+  await db.transaction(async (trx) => {
+    await limparNaoTomado(trx, usuarioId, horarioId, data);
+    if (nova === 'tomado') {
+      await trx('medicamentoRegistro')
+        .insert({ medicamentoHorarioId: horarioId, data })
+        .onConflict(['medicamentoHorarioId', 'data'])
+        .ignore();
+    } else {
+      await trx('medicamentoRegistro').where({ medicamentoHorarioId: horarioId, data }).del();
+    }
+    if (nova === 'nao_tomado') {
+      await trx('tarefaRegistro').insert({
+        usuarioId,
+        categoria: 'remedio',
+        itemId: horarioId,
+        dataOcorrencia: data,
+        horario: item.hora,
+        status: 'nao_feito',
+      });
+    }
+  });
 
   const atualizado = await itensDoDia(usuarioId, data).where('h.id', horarioId).first();
   return formatarItem(data, atualizado);

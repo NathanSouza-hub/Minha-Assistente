@@ -3,6 +3,7 @@ const db = require('../../config/db');
 const { FUSO, hoje, paraISO } = require('../../lib/tempo');
 const { expandir } = require('../../lib/recorrencia');
 const { naoEncontrado } = require('../../lib/erros');
+const { TIPOS_SAUDE } = require('./schema');
 
 const DIAS_PADRAO = 30;
 
@@ -15,6 +16,8 @@ const COLUNAS = [
   'inicio',
   'fim',
   'local',
+  'profissional',
+  'especialidade',
   'link',
   'observacoes',
   'recorrencia',
@@ -42,6 +45,9 @@ const camposGravaveis = (d) => ({
   inicio: d.inicio,
   fim: d.fim,
   local: d.local,
+  // Profissional e especialidade só nos tipos de saúde (trocar de tipo apaga).
+  profissional: TIPOS_SAUDE.includes(d.tipo) ? d.profissional : null,
+  especialidade: TIPOS_SAUDE.includes(d.tipo) ? d.especialidade : null,
   link: d.link,
   observacoes: d.observacoes,
   recorrencia: d.recorrencia,
