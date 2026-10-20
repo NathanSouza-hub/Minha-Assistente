@@ -41,7 +41,7 @@ function textoDoResumo({ data, eventos, medicamentos, rotina, pagamentos }) {
     pagamentos.vencidos.length > 0 && plural(pagamentos.vencidos.length, 'conta vencida', 'contas vencidas'),
   ];
   const corpo = juntar(...partes);
-  return corpo ? { titulo: 'Bom dia! Seu dia hoje', corpo, url: '/' } : null;
+  return corpo ? { titulo: 'Bom dia! Seu dia hoje', corpo, url: '/hoje' } : null;
 }
 
 // Não envia se a pessoa desligou o resumo ou mudou o horário depois de o lembrete ser gerado.

@@ -37,7 +37,7 @@ describe('tela Hoje: tarefas do dia', () => {
   beforeEach(entrarComoMaria)
 
   test('uma lista só, em ordem de horário, com o resumo e o "dia todo" no fim', async () => {
-    renderizarApp('/')
+    renderizarApp('/hoje')
     expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
     expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
     expect(await screen.findByText('Para hoje: 11 tarefas, 2 concluídas e 1 atrasada.')).toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('tela Hoje: tarefas do dia', () => {
 
   test('horário que já passou fica em vermelho como atrasado', async () => {
     relogio('2026-10-13T10:00:00-03:00')
-    renderizarApp('/')
+    renderizarApp('/hoje')
     const fisio = await linhaDe('Fisioterapia')
     expect(within(fisio).getByText('09:00')).toHaveClass('text-atraso')
     expect(within(fisio).getByRole('button', { name: 'Fiz: Fisioterapia' })).toBeInTheDocument()
@@ -75,7 +75,7 @@ describe('tela Hoje: tarefas do dia', () => {
 
   test('✓ no remédio vale na tela de Remédios; tocar de novo desfaz', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/')
+    renderizarApp('/hoje')
     const tomei = within(await linhaDe('Vitamina D')).getByRole('button', { name: 'Tomei: Vitamina D' })
     await usuario.click(tomei)
     expect(tomei).toHaveAttribute('aria-pressed', 'true')
@@ -93,7 +93,7 @@ describe('tela Hoje: tarefas do dia', () => {
 
   test('✓ na conta marca como paga (como "Marcar como pago"); ✗ marca como não paga', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/')
+    renderizarApp('/hoje')
     const condominio = await linhaDe('Condomínio')
     await usuario.click(within(condominio).getByRole('button', { name: 'Paguei: Condomínio' }))
     await waitFor(() => expect(contador('Atrasadas')).toBe('0'))
@@ -115,7 +115,7 @@ describe('tela Hoje: tarefas do dia', () => {
       ),
     )
     const usuario = userEvent.setup()
-    renderizarApp('/')
+    renderizarApp('/hoje')
     const naoFiz = within(await linhaDe('Regar as plantas')).getByRole('button', { name: 'Não fiz: Regar as plantas' })
     await usuario.click(naoFiz)
     expect(await screen.findByText('Falhou.')).toBeInTheDocument()
@@ -124,7 +124,7 @@ describe('tela Hoje: tarefas do dia', () => {
 
   test('seletor de data: outro dia, sem as contas vencidas antes, e volta para hoje', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/')
+    renderizarApp('/hoje')
     await linhaDe('Condomínio')
     await usuario.click(screen.getByRole('button', { name: 'Próximo dia' }))
     expect(await screen.findByText(/^Amanhã, 14 de outubro/)).toBeInTheDocument()
@@ -142,7 +142,7 @@ test('conta nova, sem nada: "Nada programado para hoje."', async () => {
     corpo: { nome: 'Pessoa Nova', email: 'nova@exemplo.com', senha: 'senha-da-pessoa' },
   })
   salvarToken(token)
-  renderizarApp('/')
+  renderizarApp('/hoje')
   expect(await screen.findByText('Nada programado para hoje.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Novo agendamento' })).toBeInTheDocument()
 })

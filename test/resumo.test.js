@@ -73,7 +73,7 @@ test('texto do resumo: só o que há no dia; dia vazio não gera aviso', () => {
     titulo: 'Bom dia! Seu dia hoje',
     corpo:
       '2 agendamentos (o 1º às 09:00) · 2 remédios · 1 compromisso · Conta de luz vence hoje (R$ 120,00) · 2 contas vencidas',
-    url: '/',
+    url: '/hoje',
   });
 
   const umEvento = textoDoResumo({ data: '2027-01-12', ...vazio, eventos: [{ titulo: 'Rádio', inicio: '2027-01-12T19:00:00-03:00' }] });

@@ -29,7 +29,7 @@ separadamente e depende do contrato de API descrito aqui.
 ```
 GET/POST /auth/cadastro (acrescentada) | POST /auth/login | GET /auth/me | PUT /auth/senha
 GET  /hoje | PATCH /hoje/:id  (tarefas do dia, decisão 24)
-GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId) | GET/PUT/DELETE /pagamentos/:id
+GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId, destino) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
 POST /pagamentos/:id/comprovantes | GET/DELETE /pagamentos/:id/comprovantes/:comprovanteId  (decisão 22)
 GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
@@ -38,6 +38,7 @@ GET/POST /cartoes | GET/PUT/DELETE /cartoes/:id | GET /cartoes/:id/faturas/:AAAA
 POST /cartoes/:id/compras | GET/PUT/DELETE /cartoes/:id/compras/:compraId            (acrescentadas)
 GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                          (acrescentadas)
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
+GET /relatorios/financeiro?inicio=&fim=  (visão financeira do período, decisão 25)
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
 GET/POST /medicamentos | GET/PUT/DELETE /medicamentos/:id | GET /medicamentos/hoje
@@ -275,6 +276,25 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
       categorias; sem linha = pendente.
     - Conta da equipe com valor a definir: `concluirNoFormulario: true` e o ✓ responde `400`
       (o valor pago é informado no formulário da conta); o ✗ vale normalmente.
+
+25. **Visão financeira e painel** (`GET /relatorios/financeiro?inicio=&fim=`, ambos obrigatórios;
+    front: tela Início em `/`, a tela Hoje passou para `/hoje`):
+    - Critérios explícitos. **Contas do período** = `vencimento` no período (competência = mês do
+      vencimento), pagas ou não, separadas em `pagoCentavos`, `pendenteCentavos` e
+      `vencidoCentavos` (pendente com vencimento antes de hoje). **Realizado**
+      (`saidas.pagoNoPeriodoCentavos`) = pagas com `dataPagamento` no período, de qualquer
+      vencimento. Valor nulo (equipe a definir) soma 0 e é contado em `saidas.contasADefinir`.
+    - Resposta: `{ inicio, fim, saidas: { totalCentavos, pagoCentavos, pendenteCentavos,
+      vencidoCentavos, pagoNoPeriodoCentavos, contasADefinir }, imoveis: [{ id, nome, ...valores }],
+      pessoal: { ...valores, categorias: [{ id, nome, totalCentavos }] } }`. `imoveis` traz todos os
+      imóveis do usuário (na ordem dele, zerados se não têm contas).
+    - **Destino** da despesa: imóvel = conta com `imovelId`; **pessoal** = sem imóvel (faturas de
+      cartão e salários da equipe incluídos). Cada conta tem no máximo um imóvel e as compras de
+      cartão só entram pela fatura, então imóveis + pessoal = total, sem contar nada duas vezes.
+      Rateio de uma conta entre imóveis não existe. `GET /pagamentos?destino=pessoal|imovel` filtra
+      pelo mesmo critério.
+    - Como `/pagamentos` e o relatório de gastos, roda `garantirContas` da equipe (idempotente)
+      antes de somar, para as contas do mês da equipe entrarem no total.
 
 ## Convenções de banco
 

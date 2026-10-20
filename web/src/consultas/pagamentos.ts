@@ -13,6 +13,7 @@ import type {
   PagamentoCriacao,
   PagamentoDetalhe,
   PagamentoEdicao,
+  RelatorioFinanceiro,
   RelatorioGastos,
 } from '@/lib/tipos'
 
@@ -22,7 +23,8 @@ export const chaves = {
   pagamentos: ['pagamentos'] as const,
   listaPagamentos: (filtros: FiltrosPagamento) => ['pagamentos', 'lista', filtros] as const,
   pagamento: (id: string) => ['pagamentos', 'item', id] as const,
-  relatorio: ['relatorios', 'gastos'] as const,
+  // Todos os relatórios (gastos e financeiro): qualquer conta mexida muda os dois.
+  relatorio: ['relatorios'] as const,
 }
 
 // Categorias são de cada usuário (as 5 padrão nascem no cadastro); cada uma é uma aba de Contas.
@@ -98,8 +100,16 @@ export const useBaixarComprovante = (pagamentoId: string) =>
 
 export const useRelatorioGastos = (periodo: { inicio: string; fim: string; agruparPor: AgruparGastosPor }) =>
   useQuery({
-    queryKey: [...chaves.relatorio, periodo],
+    queryKey: [...chaves.relatorio, 'gastos', periodo],
     queryFn: () => api<RelatorioGastos>('/relatorios/gastos', { query: periodo }),
+    placeholderData: (anterior) => anterior,
+  })
+
+/** Visão financeira do período (painel, imóveis): contas do período por situação, realizado, imóveis e pessoais. */
+export const useRelatorioFinanceiro = (periodo: { inicio: string; fim: string }) =>
+  useQuery({
+    queryKey: [...chaves.relatorio, 'financeiro', periodo],
+    queryFn: () => api<RelatorioFinanceiro>('/relatorios/financeiro', { query: periodo }),
     placeholderData: (anterior) => anterior,
   })
 

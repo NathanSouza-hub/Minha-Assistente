@@ -53,7 +53,14 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Hoje = tarefas do dia** (`GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
+- **Início = painel** (`/`, `paginas/inicio/`): blocos com carregando/erro/conteúdo em `Bloco.tsx`, cada
+  um com o atalho para a tela da área. Só lê das consultas que já existem (`useTarefasHoje` de hoje —
+  o mesmo cache da tela Hoje —, `useRelatorioFinanceiro` do mês, `usePagamentos` pendentes até +30
+  dias, `useEventos` padrão); o único que escreve é o ✓/✗ de `LinhaTarefa`. Os totais vêm de
+  `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
+  ("Contas que vencem em outubro", "Pela data do pagamento"). Imóvel e "pessoais" levam à Lista de
+  despesas filtrada (`?imovel=<id>` ou `?imovel=pessoal`, que vira `destino=pessoal`).
+- **Hoje = tarefas do dia** (`/hoje`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
   `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
   uma lista só, já normalizada pelo back-end, com ✓/✗ por linha (o texto de cada categoria em
   `CATEGORIAS` de `LinhaTarefa`). `useMarcarTarefa` é otimista (linha e resumo) e, ao terminar a

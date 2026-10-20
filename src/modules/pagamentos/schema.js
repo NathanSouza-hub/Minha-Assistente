@@ -94,6 +94,7 @@ const filtros = z
     status: z.enum(STATUS).optional(),
     categoriaId: id.optional(),
     imovelId: id.optional(),
+    destino: z.enum(['pessoal', 'imovel']).optional().describe('pessoal = contas sem imóvel; imovel = com imóvel'),
   })
   .refine(periodoValido, MENSAGEM_PERIODO);
 

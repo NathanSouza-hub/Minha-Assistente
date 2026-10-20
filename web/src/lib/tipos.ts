@@ -80,6 +80,8 @@ export type FiltrosPagamento = {
   status?: StatusPagamento
   categoriaId?: string
   imovelId?: string
+  /** `pessoal` = contas sem imóvel; `imovel` = com imóvel. */
+  destino?: 'pessoal' | 'imovel'
 }
 
 export type FormaPagamento = 'mensal' | 'plantao' | 'honorario'
@@ -170,6 +172,30 @@ export type RelatorioGastos = {
   totalPrevistoCentavos: number
   /** `id: null` = pagamentos sem imóvel ("Sem imóvel"). */
   itens: { id: string | null; nome: string; pagoCentavos: number; previstoCentavos: number }[]
+}
+
+/** Contas com vencimento no período, pela situação (GET /relatorios/financeiro). */
+export type ValoresContas = {
+  totalCentavos: number
+  pagoCentavos: number
+  pendenteCentavos: number
+  /** Pendentes com vencimento antes de hoje. */
+  vencidoCentavos: number
+}
+
+export type RelatorioFinanceiro = {
+  inicio: string
+  fim: string
+  saidas: ValoresContas & {
+    /** Realizado: pagas com data de pagamento no período, de qualquer vencimento. */
+    pagoNoPeriodoCentavos: number
+    /** Contas da equipe com valor a definir (somam 0). */
+    contasADefinir: number
+  }
+  /** Todos os imóveis, na ordem, mesmo sem contas no período. */
+  imoveis: ({ id: string; nome: string } & ValoresContas)[]
+  /** Contas sem imóvel (faturas de cartão e equipe incluídas). */
+  pessoal: ValoresContas & { categorias: { id: string | null; nome: string; totalCentavos: number }[] }
 }
 
 export type TipoEvento =

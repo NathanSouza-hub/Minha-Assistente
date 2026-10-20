@@ -62,4 +62,74 @@ async function gastos(usuarioId, { inicio, fim, agruparPor }) {
   };
 }
 
-module.exports = { gastos };
+// Contas com vencimento no período (competência = vencimento), por situação. Valor nulo (equipe a
+// definir) soma 0. Nada conta duas vezes: cada conta tem no máximo um imóvel e as compras de
+// cartão só entram pela fatura.
+const SOMAS_CONTAS = [
+  'COALESCE(SUM(p.valor_centavos), 0) AS total_centavos',
+  "COALESCE(SUM(p.valor_centavos) FILTER (WHERE p.status = 'pago'), 0) AS pago_centavos",
+  "COALESCE(SUM(p.valor_centavos) FILTER (WHERE p.status = 'pendente'), 0) AS pendente_centavos",
+  "COALESCE(SUM(p.valor_centavos) FILTER (WHERE p.status = 'pendente' AND p.vencimento < current_date), 0) AS vencido_centavos",
+];
+
+const valores = (linha) => ({
+  totalCentavos: linha?.totalCentavos ?? 0,
+  pagoCentavos: linha?.pagoCentavos ?? 0,
+  pendenteCentavos: linha?.pendenteCentavos ?? 0,
+  vencidoCentavos: linha?.vencidoCentavos ?? 0,
+});
+
+// Visão financeira do período: as contas que vencem nele (quanto já foi pago, está pendente ou
+// vencido), o realizado (pago no período, pela data do pagamento), cada imóvel e as despesas
+// pessoais (sem imóvel) por categoria.
+async function financeiro(usuarioId, { inicio, fim }) {
+  await garantirContas(db, usuarioId);
+  const doPeriodo = () =>
+    db('pagamento as p').where('p.usuarioId', usuarioId).whereBetween('p.vencimento', [inicio, fim]);
+  const somas = () => SOMAS_CONTAS.map((s) => db.raw(s));
+
+  const [geral, realizado, porImovel, pessoal, categorias, imoveis] = await Promise.all([
+    doPeriodo().first(
+      ...somas(),
+      db.raw('COUNT(*) FILTER (WHERE p.valor_centavos IS NULL)::int AS contas_a_definir'),
+    ),
+    db('pagamento as p')
+      .where({ 'p.usuarioId': usuarioId, 'p.status': 'pago' })
+      .whereBetween('p.dataPagamento', [inicio, fim])
+      .first(db.raw('COALESCE(SUM(p.valor_centavos), 0) AS centavos')),
+    doPeriodo().whereNotNull('p.imovelId').select('p.imovelId', ...somas()).groupBy('p.imovelId'),
+    doPeriodo().whereNull('p.imovelId').first(...somas()),
+    doPeriodo()
+      .whereNull('p.imovelId')
+      .leftJoin('categoriaPagamento as g', 'g.id', 'p.categoriaId')
+      .select(
+        'g.id',
+        db.raw('COALESCE(g.nome, CASE WHEN p.membro_id IS NOT NULL THEN ? ELSE ? END) AS nome', [
+          SALARIOS_EQUIPE,
+          CARTAO_DE_CREDITO,
+        ]),
+        db.raw('COALESCE(SUM(p.valor_centavos), 0) AS total_centavos'),
+      )
+      .groupBy('g.id', 'g.nome', 'g.ordem')
+      .groupByRaw('(p.membro_id IS NOT NULL)')
+      .orderByRaw('g.ordem NULLS LAST, nome'),
+    db('imovel').where({ usuarioId }).orderBy(['ordem', 'nome']).select('id', 'nome'),
+  ]);
+
+  return {
+    inicio,
+    fim,
+    saidas: {
+      ...valores(geral),
+      pagoNoPeriodoCentavos: realizado.centavos,
+      contasADefinir: geral.contasADefinir,
+    },
+    imoveis: imoveis.map(({ id, nome }) => ({ id, nome, ...valores(porImovel.find((l) => l.imovelId === id)) })),
+    pessoal: {
+      ...valores(pessoal),
+      categorias: categorias.map(({ id, nome, totalCentavos }) => ({ id, nome, totalCentavos })),
+    },
+  };
+}
+
+module.exports = { gastos, financeiro };

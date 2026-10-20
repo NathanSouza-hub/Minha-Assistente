@@ -12,7 +12,7 @@ export function NaoEncontrada() {
         titulo="Este endereço não existe"
         acao={
           <Button asChild size="lg">
-            <Link to="/">Voltar para Hoje</Link>
+            <Link to="/">Voltar para o início</Link>
           </Button>
         }
       >

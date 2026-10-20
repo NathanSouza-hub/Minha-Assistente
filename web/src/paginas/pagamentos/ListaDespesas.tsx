@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
 import { intervaloDoMes, nomeDoMes } from '@/lib/datas'
-import { type FiltroStatus, useFiltros, VOLTAR_DESPESAS } from './filtros'
+import { type FiltroStatus, IMOVEL_PESSOAL, useFiltros, VOLTAR_DESPESAS } from './filtros'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
 import { TabelaContas } from './TabelaContas'
 
@@ -22,7 +22,8 @@ export function ListaDespesas() {
     ...intervaloDoMes(mes),
     status: status === 'todos' ? undefined : status,
     categoriaId: categoriaId || undefined,
-    imovelId: imovelId || undefined,
+    // `?imovel=pessoal` (vem do painel): só as despesas sem imóvel.
+    ...(imovelId === IMOVEL_PESSOAL ? { destino: 'pessoal' as const } : { imovelId: imovelId || undefined }),
   })
   const pagamentos = consulta.data ?? []
   const filtrosAbertos = Number(Boolean(categoriaId)) + Number(Boolean(imovelId))
@@ -79,6 +80,7 @@ export function ListaDespesas() {
             {imoveis.length > 0 && (
               <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
                 <option value="">Todos</option>
+                <option value={IMOVEL_PESSOAL}>Despesas pessoais (sem imóvel)</option>
                 {imoveis.map((i) => (
                   <option key={i.id} value={i.id}>
                     {i.nome}

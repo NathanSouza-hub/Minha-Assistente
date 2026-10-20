@@ -162,7 +162,7 @@ const doUsuario = (usuarioId: string, id: string) =>
 // A conta da fatura é mantida pelas compras do cartão (mocks/cartoes.ts): aqui só pode ser paga.
 const faturaAutomatica = () => erro(409, 'FATURA_AUTOMATICA', 'O valor da fatura vem das compras do cartão.')
 
-type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imovelId', string | null>>
+type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imovelId' | 'destino', string | null>>
 
 /** Mesmo que listar() no back-end: filtros pelo vencimento, em ordem de vencimento. */
 export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
@@ -175,6 +175,8 @@ export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
     .filter((p) => !f.status || p.status === f.status)
     .filter((p) => !f.categoriaId || p.categoriaId === f.categoriaId)
     .filter((p) => !f.imovelId || p.imovelId === f.imovelId)
+    .filter((p) => f.destino !== 'pessoal' || p.imovelId === null)
+    .filter((p) => f.destino !== 'imovel' || p.imovelId !== null)
     .sort(ordenar)
     .map(paraResposta)
 }
@@ -297,6 +299,7 @@ export const handlersPagamentos = [
           status: q.get('status'),
           categoriaId: q.get('categoriaId'),
           imovelId: q.get('imovelId'),
+          destino: q.get('destino'),
         }),
       )
     }),
@@ -519,6 +522,64 @@ export const handlersPagamentos = [
         totalPagoCentavos: itens.reduce((s, i) => s + i.pagoCentavos, 0),
         totalPrevistoCentavos: itens.reduce((s, i) => s + i.previstoCentavos, 0),
         itens,
+      })
+    }),
+  ),
+
+  // Mesmas regras de financeiro() no back-end: contas com vencimento no período por situação,
+  // realizado pela data do pagamento, cada imóvel (mesmo zerado) e as pessoais (sem imóvel).
+  http.get(
+    `${API_URL}/relatorios/financeiro`,
+    autenticado(({ request }, u) => {
+      const q = new URL(request.url).searchParams
+      const inicio = q.get('inicio') ?? ''
+      const fim = q.get('fim') ?? ''
+      if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
+      if (inicio > fim) return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
+      garantirContasEquipe(u.id)
+
+      const hoje = hojeISO()
+      const doUsuario = banco.pagamentos.filter((p) => p.usuarioId === u.id)
+      const doPeriodo = doUsuario.filter((p) => p.vencimento >= inicio && p.vencimento <= fim)
+      const somar = (lista: PagamentoMock[]) => lista.reduce((s, p) => s + (p.valorCentavos ?? 0), 0)
+      const valores = (lista: PagamentoMock[]) => ({
+        totalCentavos: somar(lista),
+        pagoCentavos: somar(lista.filter((p) => p.status === 'pago')),
+        pendenteCentavos: somar(lista.filter((p) => p.status === 'pendente')),
+        vencidoCentavos: somar(lista.filter((p) => p.status === 'pendente' && p.vencimento < hoje)),
+      })
+      const pessoais = doPeriodo.filter((p) => p.imovelId === null)
+
+      const categorias = new Map<string, { id: string | null; nome: string; ordem: number; totalCentavos: number }>()
+      for (const p of pessoais) {
+        const cat = p.categoriaId ? categoriasDo(u.id).find((c) => c.id === p.categoriaId) : undefined
+        const nome = cat?.nome ?? (p.membroId ? 'Salários equipe' : 'Cartão de crédito')
+        const g = categorias.get(nome) ?? { id: cat?.id ?? null, nome, ordem: cat?.ordem ?? Infinity, totalCentavos: 0 }
+        g.totalCentavos += p.valorCentavos ?? 0
+        categorias.set(nome, g)
+      }
+
+      return HttpResponse.json({
+        inicio,
+        fim,
+        saidas: {
+          ...valores(doPeriodo),
+          pagoNoPeriodoCentavos: somar(
+            doUsuario.filter((p) => p.status === 'pago' && p.dataPagamento! >= inicio && p.dataPagamento! <= fim),
+          ),
+          contasADefinir: doPeriodo.filter((p) => p.valorCentavos === null).length,
+        },
+        imoveis: imoveisDo(u.id).map((i) => ({
+          id: i.id,
+          nome: i.nome,
+          ...valores(doPeriodo.filter((p) => p.imovelId === i.id)),
+        })),
+        pessoal: {
+          ...valores(pessoais),
+          categorias: [...categorias.values()]
+            .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
+            .map(({ ordem: _o, ...c }) => c),
+        },
       })
     }),
   ),

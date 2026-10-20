@@ -63,7 +63,7 @@ async function buscar(usuarioId, id, conexao = db) {
 
 // Antes de listar, garante as contas da equipe do mês atual e do seguinte.
 // `dataPagamento` não é filtro da rota: a tela Hoje usa para achar as vencidas pagas no dia.
-async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId, dataPagamento }) {
+async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId, destino, dataPagamento }) {
   await garantirContas(db, usuarioId);
   const q = consulta(db, usuarioId).orderBy(ORDEM);
   if (inicio) q.where('p.vencimento', '>=', inicio);
@@ -72,6 +72,8 @@ async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId, d
   if (dataPagamento) q.where('p.dataPagamento', dataPagamento);
   if (categoriaId) q.where('p.categoriaId', categoriaId);
   if (imovelId) q.where('p.imovelId', imovelId);
+  if (destino === 'pessoal') q.whereNull('p.imovelId');
+  if (destino === 'imovel') q.whereNotNull('p.imovelId');
   return q;
 }
 

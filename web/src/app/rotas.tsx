@@ -7,6 +7,7 @@ import type { TipoEvento } from '@/lib/tipos'
 
 // Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
 // para o app abrir rápido no celular.
+const inicio = () => import('@/paginas/inicio/Inicio').then((m) => ({ Component: m.Inicio }))
 const hoje = () => import('@/paginas/Hoje').then((m) => ({ Component: m.Hoje }))
 const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
 const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
@@ -67,7 +68,8 @@ export const definicaoRotas: RouteObject[] = [
       {
         element: <LayoutApp />,
         children: [
-          { index: true, lazy: hoje },
+          { index: true, lazy: inicio },
+          { path: 'hoje', lazy: hoje },
           { path: 'agenda', lazy: agenda },
           { path: 'agenda/novo', lazy: paginaEvento },
           { path: 'agenda/:id', lazy: paginaEvento },

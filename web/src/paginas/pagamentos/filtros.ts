@@ -32,3 +32,6 @@ export function useFiltros() {
 /** `?voltar=despesas`: a conta aberta pela Lista de despesas volta para ela ao salvar ou excluir. */
 export const VOLTAR_DESPESAS = 'despesas'
 export const enderecoDespesas = (mes: string) => `/despesas?mes=${mes}`
+
+/** Valor de `?imovel=` que mostra só as despesas pessoais (sem imóvel; `destino=pessoal` na API). */
+export const IMOVEL_PESSOAL = 'pessoal'

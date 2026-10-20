@@ -65,6 +65,13 @@ export function descreverVencimento(vencimento: string, hoje = hojeISO()) {
   return `Vence ${deDataISO(vencimento).toFormat('dd/MM')}`
 }
 
+/** "Bom dia" até o meio-dia, "Boa tarde" até as 18h, "Boa noite" depois (e de madrugada). */
+export function saudacao(hora = agora().hour) {
+  if (hora >= 5 && hora < 12) return 'Bom dia'
+  if (hora >= 12 && hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
 /** Segunda-feira da semana da data ("2026-10-13" → "2026-10-12"). */
 export const inicioDaSemana = (data: string) => deDataISO(data).startOf('week').toISODate()!
 

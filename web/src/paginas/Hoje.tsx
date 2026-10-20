@@ -7,17 +7,10 @@ import { NavegadorDia } from '@/components/NavegadorDia'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTarefasHoje } from '@/consultas/hoje'
-import { agora, dataPorExtenso, hojeISO } from '@/lib/datas'
+import { agora, dataPorExtenso, hojeISO, saudacao } from '@/lib/datas'
 import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
-
-/** "Bom dia" até o meio-dia, "Boa tarde" até as 18h, "Boa noite" depois (e de madrugada). */
-function saudacao(hora: number) {
-  if (hora >= 5 && hora < 12) return 'Bom dia'
-  if (hora >= 12 && hora < 18) return 'Boa tarde'
-  return 'Boa noite'
-}
 
 /** "Bom dia, Maria", a data por extenso e o resumo do dia, na capa. */
 function CabecalhoHoje({ resumo }: { resumo: string | null }) {

@@ -55,7 +55,9 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
   test('as três áreas aparecem no menu, na ordem da lista', async () => {
     renderizarApp('/mais')
     const links = within(await screen.findByRole('main')).getAllByRole('link').map((l) => l.textContent)
-    expect(links.slice(0, 7)).toEqual([
+    // Remédios saiu da barra do celular (entrou o Início) e abre a lista do "Mais".
+    expect(links.slice(0, 8)).toEqual([
+      'Remédios',
       'Cadastro de despesas',
       'Compromissos',
       'Programa de rádio',
