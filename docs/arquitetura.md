@@ -46,6 +46,7 @@ POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebim
 POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
 GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
+GET/POST /tarefas (inicio, fim, situacao) | GET/PUT/DELETE /tarefas/:id | PATCH /tarefas/:id/concluir  (decisão 28)
 GET/POST /medicamentos | GET/PUT/DELETE /medicamentos/:id | GET /medicamentos/hoje
 POST /medicamentos/registros
 GET/POST /viagens | GET/PUT/DELETE /viagens/:id | POST /viagens/:id/anexos
@@ -341,6 +342,21 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
     - Tudo calculado das contas vinculadas: não existe total digitado à mão. Rateio de uma conta
       entre imóveis não existe (cada conta tem no máximo um imóvel), então nada conta duas vezes.
 
+28. **Tarefas avulsas** (migration 26, `src/modules/tarefas/`): algo a fazer num dia, sem agenda nem
+    rotina (ler e-mails, conferir o banco, ligar para alguém). `{ titulo, detalhes?, data, hora?,
+    lembrete }` (`lembrete` exige `hora`). `concluida_em` guarda quando foi feita (histórico
+    mínimo); `PATCH /tarefas/:id/concluir` `{ concluida? = true }` conclui ou reabre e é idempotente
+    (concluir de novo mantém a hora da primeira vez). Resposta traz `concluida` e `atrasada`
+    (pendente com data antes de hoje). Listagem por data, hora e título; filtro `situacao`.
+    - **Tela Hoje** (decisão 24): categoria `tarefa` (a migration 26 troca o CHECK de
+      `tarefa_registro.categoria`). Entram as do dia e, olhando hoje, as de dias anteriores ainda
+      abertas (sem horário, `detalhe` termina em "Era para dd/MM") e as anteriores concluídas hoje
+      (para o ✓ poder ser desfeito). O ✓ conclui a própria tarefa; ✗ e desfazer reabrem e o ✗ fica
+      em `tarefa_registro`. Concluir uma tarefa não marca evento, remédio nem conta.
+    - **Lembrete** (origem `tarefa`, mesmo CHECK trocado em `lembrete_envio`): na data e hora da
+      tarefa com `lembrete`; tarefa concluída, apagada, sem lembrete ou com dia/hora mudados não é
+      avisada. Editar ou excluir cancela os pendentes (o agendador gera de novo).
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -348,7 +364,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 - `date` para datas sem hora (driver configurado para devolver string), `timestamptz` para
   instantes, `time` para hora do dia. Sessão do Postgres em `America/Sao_Paulo`.
 - Tabelas raiz têm `usuario_id` (FK, `ON DELETE CASCADE`): imovel, categoria_pagamento, pagamento, evento, rotina,
-  medicamento, viagem, compra_item, lembrete_envio, push_inscricao, tarefa_registro, recebivel. Tabelas filhas (conclusões,
+  medicamento, viagem, compra_item, lembrete_envio, push_inscricao, tarefa_registro, recebivel, tarefa. Tabelas filhas (conclusões,
   horários, registros, anexos) herdam o dono pela tabela pai. Índices começam por `usuario_id`.
 - `pagamento (imovel_id, usuario_id)` → `imovel (id, usuario_id)` e `pagamento (categoria_id,
   usuario_id)` → `categoria_pagamento (id, usuario_id)`: FKs compostas impedem apontar para imóvel
@@ -383,11 +399,12 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | recebivel | usuario_id, descricao, origem, valor_previsto_centavos (bigint), data_prevista, encerrado, recorrencia, recorrencia_origem_id?, observacoes | CHECKs de origem, recorrência e valor > 0; único parcial (recorrencia_origem_id); idx (usuario_id, data_prevista) |
 | recebimento | recebivel_id, valor_centavos (bigint), data, observacoes | valor > 0; cascade com o recebível; idx (recebivel_id, data) |
 | recebivel_comprovante | recebivel_id, nome_original, caminho, mime_type, tamanho_bytes | cascade com o recebível |
+| tarefa | usuario_id, titulo, detalhes?, data, hora?, lembrete, concluida_em? | lembrete ⇒ hora; idx (usuario_id, data) |
 | tarefa_registro | usuario_id, categoria, item_id (sem FK), data_ocorrencia, horario?, status (feito, nao_feito) | unique nulls not distinct (usuario_id, categoria, item_id, data_ocorrencia, horario) |
 
 ## Lembretes
 
-1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina, resumo) para as
+1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina, tarefa, resumo) para as
    próximas 24h e faz upsert em `lembrete_envio`, uma linha por canal ativo.
 2. Envia as linhas `pendente` com `agendado_para <= agora` via `canais[canal].enviar(lembrete)`.
 3. Novo canal (ex.: WhatsApp) = `src/lembretes/canais/whatsapp.js` + registro + migration do CHECK.

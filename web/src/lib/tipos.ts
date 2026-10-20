@@ -391,6 +391,29 @@ export type CategoriaTarefa =
   | 'viagem'
   | 'atividade'
   | 'fisioterapia'
+  | 'tarefa'
+
+/** Tarefa avulsa (decisão 28): algo a fazer num dia, com hora e lembrete opcionais. */
+export type TarefaCorpo = {
+  titulo: string
+  detalhes: string | null
+  data: string
+  hora: string | null
+  lembrete: boolean
+}
+
+export type Tarefa = TarefaCorpo & {
+  id: string
+  concluida: boolean
+  /** Quando foi concluída; null = pendente. */
+  concluidaEm: string | null
+  /** Pendente com data antes de hoje. */
+  atrasada: boolean
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export type FiltrosTarefa = { inicio?: string; fim?: string; situacao?: 'pendente' | 'concluida' }
 
 /** `atrasado` = pendente com horário (ou vencimento) já passado. */
 export type StatusTarefa = 'pendente' | 'feito' | 'nao_feito' | 'atrasado'

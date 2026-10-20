@@ -13,6 +13,7 @@ const modulos = [
   require('../modules/eventos/docs'),
   require('../modules/medicamentos/docs'),
   require('../modules/rotinas/docs'),
+  require('../modules/tarefas/docs'),
   require('../modules/hoje/docs'),
   require('../modules/viagens/docs'),
   require('../modules/compras/docs'),

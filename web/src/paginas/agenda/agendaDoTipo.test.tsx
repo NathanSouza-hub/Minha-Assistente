@@ -56,11 +56,12 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     renderizarApp('/mais')
     const links = within(await screen.findByRole('main')).getAllByRole('link').map((l) => l.textContent)
     // Remédios saiu da barra do celular (entrou o Início) e abre a lista do "Mais".
-    expect(links.slice(0, 9)).toEqual([
+    expect(links.slice(0, 10)).toEqual([
       'Remédios',
       'Cadastro de despesas',
       'Recebíveis',
       'Compromissos',
+      'Tarefas',
       'Programa de rádio',
       'Viagens',
       'Atividade física',

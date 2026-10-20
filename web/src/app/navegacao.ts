@@ -9,6 +9,7 @@ import {
   HandCoinsIcon,
   HeartbeatIcon,
   HouseIcon,
+  ListChecksIcon,
   MicrophoneStageIcon,
   PersonSimpleRunIcon,
   PillIcon,
@@ -26,6 +27,7 @@ export type Area =
   | 'agenda'
   | 'contas'
   | 'recebiveis'
+  | 'tarefas'
   | 'remedios'
   | 'compromissos'
   | 'viagens'
@@ -56,6 +58,7 @@ export const navegacaoSecundaria: ItemNavegacao[] = [
   { rota: '/pagamentos', rotulo: 'Cadastro de despesas', icone: WalletIcon, area: 'contas' },
   { rota: '/recebiveis', rotulo: 'Recebíveis', icone: HandCoinsIcon, area: 'recebiveis' },
   { rota: '/rotina', rotulo: 'Compromissos', icone: CheckSquareIcon, area: 'compromissos' },
+  { rota: '/tarefas', rotulo: 'Tarefas', icone: ListChecksIcon, area: 'tarefas' },
   { rota: '/radio', rotulo: 'Programa de rádio', icone: MicrophoneStageIcon, area: 'radio' },
   { rota: '/viagens', rotulo: 'Viagens', icone: AirplaneTiltIcon, area: 'viagens' },
   { rota: '/atividade-fisica', rotulo: 'Atividade física', icone: PersonSimpleRunIcon, area: 'atividade' },

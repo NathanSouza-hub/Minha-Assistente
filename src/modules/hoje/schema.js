@@ -4,7 +4,17 @@ const { data } = require('../../lib/esquemas');
 // Pagamentos que vencem até N dias depois do dia (resumo da manhã).
 const DIAS_A_VENCER = 7;
 
-const CATEGORIAS = ['remedio', 'despesa', 'agenda', 'compromisso', 'radio', 'viagem', 'atividade', 'fisioterapia'];
+const CATEGORIAS = [
+  'remedio',
+  'despesa',
+  'agenda',
+  'compromisso',
+  'radio',
+  'viagem',
+  'atividade',
+  'fisioterapia',
+  'tarefa',
+];
 const STATUS = ['pendente', 'feito', 'nao_feito', 'atrasado'];
 
 const filtro = z.object({ data: data.optional().describe('Dia das tarefas (padrão: hoje)') });

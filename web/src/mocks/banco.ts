@@ -17,6 +17,7 @@ import type {
   Recorrencia,
   Rotina,
   StatusPagamento,
+  TarefaCorpo,
   Usuario,
   Viagem,
 } from '@/lib/tipos'
@@ -107,6 +108,13 @@ export type RecebivelMock = RecebivelCorpo & {
   atualizadoEm: string
 }
 export type RecebimentoMock = Recebimento & { recebivelId: string }
+export type TarefaMock = TarefaCorpo & {
+  id: string
+  usuarioId: string
+  concluidaEm: string | null
+  criadoEm: string
+  atualizadoEm: string
+}
 export type ComprovanteRecebivelMock = Omit<AnexoViagemMock, 'viagemId'> & { recebivelId: string }
 
 export type CategoriaMock = CategoriaPagamento & { usuarioId: string }
@@ -167,6 +175,7 @@ export const banco = {
   recebiveis: [] as RecebivelMock[],
   recebimentos: [] as RecebimentoMock[],
   comprovantesRecebivel: [] as ComprovanteRecebivelMock[],
+  tarefas: [] as TarefaMock[],
   compras: [] as ItemCompraMock[],
   inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
   // Resumo da manhã por usuário; sem entrada = o padrão do back-end (ligado às 07:00).
@@ -554,6 +563,7 @@ export function resetarBancoMock() {
   banco.recebiveis.length = 0
   banco.recebimentos.length = 0
   banco.comprovantesRecebivel.length = 0
+  banco.tarefas.length = 0
   banco.compras.length = 0
   banco.inscricoesPush.length = 0
   banco.resumos.clear()
@@ -564,6 +574,30 @@ export function resetarBancoMock() {
   semearViagens()
   semearCompras()
   semearRecebiveis()
+  semearTarefas()
+}
+
+/** Tarefas avulsas só em dias seguintes: a tela Hoje dos dados de exemplo continua a mesma. */
+function semearTarefas() {
+  const agora = agoraISO()
+  const dia = (n: number) => deDataISO(hojeISO()).plus({ days: n }).toISODate()!
+  const tarefa = (titulo: string, data: string, extra: Partial<TarefaMock> = {}): TarefaMock => ({
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    titulo,
+    detalhes: null,
+    data,
+    hora: null,
+    lembrete: false,
+    concluidaEm: null,
+    criadoEm: agora,
+    atualizadoEm: agora,
+    ...extra,
+  })
+  banco.tarefas.push(
+    tarefa('Conferir pagamentos no banco', dia(1), { hora: '10:00', lembrete: true }),
+    tarefa('Organizar documentos do imposto', dia(3), { detalhes: 'Recibos médicos e informes de rendimento' }),
+  )
 }
 
 /** Recebíveis da Maria no mês: aluguel recebido em parte, dividendo já recebido, honorário atrasado. */

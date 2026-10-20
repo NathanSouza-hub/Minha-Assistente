@@ -10,6 +10,7 @@ import { ocorrenciasDoPeriodo } from './eventos'
 import { dosesDoDia } from './medicamentos'
 import { garantirProxima, listarPagamentos } from './pagamentos'
 import { tarefasDoDia } from './rotinas'
+import { concluirTarefa, tarefasAvulsasDoDia } from './tarefas'
 import { autenticado, erro, naoEncontrado } from './util'
 
 const CATEGORIA_DO_TIPO: Record<string, CategoriaTarefa> = {
@@ -22,7 +23,17 @@ const LINK_DA_CATEGORIA: Partial<Record<CategoriaTarefa, string>> = {
   atividade: '/atividade-fisica',
   fisioterapia: '/fisioterapia',
 }
-const ORDEM: CategoriaTarefa[] = ['remedio', 'agenda', 'radio', 'atividade', 'fisioterapia', 'compromisso', 'viagem', 'despesa']
+const ORDEM: CategoriaTarefa[] = [
+  'remedio',
+  'agenda',
+  'radio',
+  'atividade',
+  'fisioterapia',
+  'compromisso',
+  'tarefa',
+  'viagem',
+  'despesa',
+]
 
 const inicialMaiuscula = (texto: string) => texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1)
 const juntar = (partes: (string | null | false)[]) => partes.filter(Boolean).join(' · ') || null
@@ -100,6 +111,15 @@ function doModulos(usuarioId: string, data: string): Ocorrencia[] {
         feito: t.concluida,
       }),
     ),
+    ...tarefasAvulsasDoDia(usuarioId, data).map((t) =>
+      ocorrencia('tarefa', t.id, t.data, t.hora, {
+        exibido: t.data === data ? t.hora : null,
+        titulo: inicialMaiuscula(t.titulo),
+        detalhe: juntar([t.detalhes, t.data < data && `Era para ${deDataISO(t.data).toFormat('dd/MM')}`]),
+        link: `/tarefas/${t.id}`,
+        feito: t.concluida,
+      }),
+    ),
     ...banco.viagens
       .filter((v) => v.usuarioId === usuarioId && (v.ida === data || v.volta === data))
       .map((v) =>
@@ -155,6 +175,7 @@ function marcarNaArea(usuarioId: string, o: Ocorrencia, feito: boolean) {
     banco.conclusoesRotina = banco.conclusoesRotina.filter((c) => !(c.rotinaId === o.itemId && c.data === o.data))
     if (feito) banco.conclusoesRotina.push({ rotinaId: o.itemId, data: o.data, concluidaEm: agoraISO() })
   }
+  if (o.categoria === 'tarefa') concluirTarefa(usuarioId, o.itemId, feito)
   if (o.categoria === 'despesa') {
     const p = banco.pagamentos.find((x) => x.id === o.itemId && x.usuarioId === usuarioId)!
     if (feito && p.status === 'pendente') {

@@ -60,6 +60,11 @@ npm run lint                                  # oxlint
   `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
   ("Contas que vencem em outubro", "Pela data do pagamento"). Imóvel e "pessoais" levam à Lista de
   despesas filtrada (`?imovel=<id>` ou `?imovel=pessoal`, que vira `destino=pessoal`).
+- **Tarefas avulsas** (`/tarefas`, `/tarefas/nova`, `/tarefas/:id`; `paginas/tarefas/`, decisão 28): lista
+  "A fazer" (Atrasadas, Hoje, Próximas) e "Feitas", com o ✓ grande em cada linha e "Nova tarefa para
+  hoje" em uma linha; o formulário completo tem dia, hora, lembrete (só liga com hora; depois de
+  salvar chama `convidar()`) e detalhes. Na tela Hoje é a categoria `tarefa` (`LinhaTarefa`); o mock
+  dela fica em `mocks/tarefas.ts` (`tarefasAvulsasDoDia`, usado por `mocks/hoje.ts`).
 - **Residências** (`/imoveis/:id`, `paginas/imoveis/DetalheImovel.tsx`, decisão 27): resumo do imóvel
   no período (Este mês / 6 meses / Este ano, em `?periodo=`), por categoria, mês a mês (barras
   horizontais com o valor escrito) e as contas do período (`ItemPagamento`), mais os dados do

@@ -35,6 +35,8 @@ const paginaRemedio = () =>
 const rotina = () => import('@/paginas/rotina/Rotina').then((m) => ({ Component: m.Rotina }))
 const paginaRotina = () =>
   import('@/paginas/rotina/PaginaRotina').then((m) => ({ Component: m.PaginaRotina }))
+const tarefas = () => import('@/paginas/tarefas/Tarefas').then((m) => ({ Component: m.Tarefas }))
+const paginaTarefa = () => import('@/paginas/tarefas/PaginaTarefa').then((m) => ({ Component: m.PaginaTarefa }))
 const viagens = () => import('@/paginas/viagens/Viagens').then((m) => ({ Component: m.Viagens }))
 const detalheViagem = () =>
   import('@/paginas/viagens/DetalheViagem').then((m) => ({ Component: m.DetalheViagem }))
@@ -101,6 +103,9 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'rotina', lazy: rotina },
           { path: 'rotina/nova', lazy: paginaRotina },
           { path: 'rotina/:id', lazy: paginaRotina },
+          { path: 'tarefas', lazy: tarefas },
+          { path: 'tarefas/nova', lazy: paginaTarefa },
+          { path: 'tarefas/:id', lazy: paginaTarefa },
           { path: 'viagens', lazy: viagens },
           { path: 'viagens/nova', lazy: paginaViagem },
           { path: 'viagens/:id', lazy: detalheViagem },

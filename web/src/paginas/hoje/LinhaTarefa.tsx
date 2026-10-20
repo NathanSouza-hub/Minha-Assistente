@@ -5,6 +5,7 @@ import {
   CheckIcon,
   CheckSquareIcon,
   HeartbeatIcon,
+  ListChecksIcon,
   MicrophoneStageIcon,
   PersonSimpleRunIcon,
   PillIcon,
@@ -28,6 +29,7 @@ const CATEGORIAS: Record<CategoriaTarefa, { icone: Icon; area: Area; feito: stri
   fisioterapia: { icone: HeartbeatIcon, area: 'fisioterapia', feito: 'Fiz', naoFeito: 'Não fiz' },
   radio: { icone: MicrophoneStageIcon, area: 'radio', feito: 'Realizado', naoFeito: 'Não realizado' },
   viagem: { icone: AirplaneTiltIcon, area: 'viagens', feito: 'Realizado', naoFeito: 'Não realizado' },
+  tarefa: { icone: ListChecksIcon, area: 'tarefas', feito: 'Fiz', naoFeito: 'Não fiz' },
 }
 
 /**

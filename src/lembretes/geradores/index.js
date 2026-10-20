@@ -6,6 +6,7 @@ const geradores = [
   require('./evento'),
   require('./medicamento'),
   require('./rotina'),
+  require('./tarefa'),
   require('./pagamento'),
   require('./resumo'),
 ];

@@ -9,12 +9,23 @@ const eventos = require('../eventos/service');
 const medicamentos = require('../medicamentos/service');
 const rotinas = require('../rotinas/service');
 const pagamentos = require('../pagamentos/service');
+const tarefasAvulsas = require('../tarefas/service');
 
 // Tipos de evento com tela própria; os outros ficam como "agenda".
 const CATEGORIA_DO_TIPO = { programa_radio: 'radio', atividade_fisica: 'atividade', fisioterapia: 'fisioterapia' };
 const LINK_DA_CATEGORIA = { radio: '/radio', atividade: '/atividade-fisica', fisioterapia: '/fisioterapia' };
 // Desempate no mesmo horário.
-const ORDEM_CATEGORIA = ['remedio', 'agenda', 'radio', 'atividade', 'fisioterapia', 'compromisso', 'viagem', 'despesa'];
+const ORDEM_CATEGORIA = [
+  'remedio',
+  'agenda',
+  'radio',
+  'atividade',
+  'fisioterapia',
+  'compromisso',
+  'tarefa',
+  'viagem',
+  'despesa',
+];
 
 const inicialMaiuscula = (texto) => texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1);
 const juntar = (partes) => partes.filter(Boolean).join(' · ') || null;
@@ -37,7 +48,8 @@ function ocorrencia(categoria, itemId, data, horario, campos) {
 async function doModulos(usuarioId, data) {
   const ehHoje = data === hoje();
   const ontem = somarDias(data, -1);
-  const [doDiaEventos, doses, compromissos, contas, vencidas, pagasHoje, viagens] = await Promise.all([
+  const [doDiaEventos, doses, compromissos, contas, vencidas, pagasHoje, viagens, avulsas, avulsasAnteriores] =
+    await Promise.all([
     eventos.listar(usuarioId, { inicio: data, fim: data }),
     medicamentos.doDia(usuarioId, { data }),
     rotinas.doDia(usuarioId, { data }),
@@ -50,6 +62,15 @@ async function doModulos(usuarioId, data) {
       .where({ usuarioId })
       .where((w) => w.where('ida', data).orWhere('volta', data))
       .select('id', 'destino', 'ida', 'volta', 'transporte'),
+    tarefasAvulsas.listar(usuarioId, { inicio: data, fim: data }),
+    // Como as contas: olhando hoje, as tarefas de dias anteriores ainda abertas entram (atrasadas),
+    // e as concluídas hoje continuam (para o ✓ poder ser desfeito).
+    ehHoje
+      ? Promise.all([
+          tarefasAvulsas.listar(usuarioId, { fim: ontem, situacao: 'pendente' }),
+          tarefasAvulsas.listar(usuarioId, { fim: ontem, concluidaNoDia: data }),
+        ]).then(([abertas, concluidasHoje]) => [...abertas, ...concluidasHoje])
+      : [],
   ]);
 
   return [
@@ -77,6 +98,16 @@ async function doModulos(usuarioId, data) {
         titulo: inicialMaiuscula(t.titulo),
         detalhe: null,
         link: `/rotina/${t.rotinaId}`,
+        feito: t.concluida,
+      }),
+    ),
+    ...[...avulsasAnteriores, ...avulsas].map((t) =>
+      ocorrencia('tarefa', t.id, t.data, t.hora, {
+        // A atrasada de outro dia aparece no "Dia todo" de hoje, dizendo para quando era.
+        exibido: t.data === data ? t.hora : null,
+        titulo: inicialMaiuscula(t.titulo),
+        detalhe: juntar([t.detalhes, t.data < data && `Era para ${dataCurta(t.data)}`]),
+        link: `/tarefas/${t.id}`,
         feito: t.concluida,
       }),
     ),
@@ -172,6 +203,7 @@ async function listar(usuarioId, { data = hoje() } = {}) {
 async function marcarNoModulo(usuarioId, { categoria, itemId, data }, feito) {
   if (categoria === 'remedio') await medicamentos.registrar(usuarioId, { horarioId: itemId, data, tomado: feito });
   if (categoria === 'compromisso') await rotinas.concluir(usuarioId, itemId, { data, concluida: feito });
+  if (categoria === 'tarefa') await tarefasAvulsas.concluir(usuarioId, itemId, { concluida: feito });
   if (categoria === 'despesa') {
     const conta = await pagamentos.buscar(usuarioId, itemId);
     if (feito && conta.status === 'pendente') await pagamentos.pagar(usuarioId, itemId, {});

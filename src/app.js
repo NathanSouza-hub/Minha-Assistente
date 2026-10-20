@@ -16,6 +16,7 @@ const { rotasCartoes } = require('./modules/cartoes/routes');
 const { rotasEquipe } = require('./modules/equipe/routes');
 const { rotasRelatorios } = require('./modules/relatorios/routes');
 const { rotasRecebiveis } = require('./modules/recebiveis/routes');
+const { rotasTarefas } = require('./modules/tarefas/routes');
 const { rotasEventos } = require('./modules/eventos/routes');
 const { rotasMedicamentos } = require('./modules/medicamentos/routes');
 const { rotasRotinas } = require('./modules/rotinas/routes');
@@ -61,6 +62,7 @@ function criarApp({ cadastroAberto = env.CADASTRO_ABERTO } = {}) {
   app.use('/eventos', autenticar, rotasEventos());
   app.use('/medicamentos', autenticar, rotasMedicamentos());
   app.use('/rotinas', autenticar, rotasRotinas());
+  app.use('/tarefas', autenticar, rotasTarefas());
   app.use('/hoje', autenticar, rotasHoje());
   app.use('/viagens', autenticar, rotasViagens());
   app.use('/compras', autenticar, rotasCompras());
