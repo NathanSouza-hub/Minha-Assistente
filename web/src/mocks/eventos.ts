@@ -59,6 +59,11 @@ const TIPOS = [
   'programa_radio',
   'fisioterapia',
   'atividade_fisica',
+  'videoconferencia',
+  'podcast',
+  'gravacao',
+  'entrevista',
+  'outro',
 ]
 const DATA_HORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
 
@@ -67,6 +72,7 @@ function validar(c: Partial<EventoCorpo>): Response | EventoCorpo {
   const problemas: string[] = []
   if (!c.titulo?.trim()) problemas.push('titulo: Informe o título.')
   if (!TIPOS.includes(c.tipo ?? '')) problemas.push('tipo: Escolha o tipo.')
+  if (c.tipo === 'outro' && !c.tipoDescricao?.trim()) problemas.push('tipoDescricao: Descreva o compromisso.')
   if (!DATA_HORA.test(c.inicio ?? ''))
     problemas.push('inicio: Data e hora inválidas: use ISO 8601 com fuso, ex.: 2026-10-20T10:00:00-03:00.')
   if (c.fim && !DATA_HORA.test(c.fim)) problemas.push('fim: Data e hora inválidas.')
@@ -87,6 +93,7 @@ function validar(c: Partial<EventoCorpo>): Response | EventoCorpo {
   return {
     titulo: c.titulo!.trim(),
     tipo: c.tipo!,
+    tipoDescricao: c.tipo === 'outro' ? c.tipoDescricao!.trim() : null,
     modalidade: c.modalidade ?? null,
     inicio: c.inicio!,
     fim: c.fim ?? null,

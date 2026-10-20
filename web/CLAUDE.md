@@ -48,6 +48,10 @@ npm run lint                                  # oxlint
 - **Vocabulário de quem usa o app**: itens da Agenda são "agendamentos" ("Novo agendamento",
   "Agendar") e a Rotina aparece como **"Compromissos"** (rota `/rotina`, API `/rotinas`, código
   continua `rotina`). Não use "compromisso" para evento da agenda.
+- **Tipos de agendamento** (decisão 30): o campo "Tipo" usa `TIPOS_DO_FORMULARIO` (`textos.ts`);
+  "Outro tipo" mostra "Descreva o compromisso" (obrigatório no front, na API e no banco) e
+  `nomeDoTipo()` exibe essa descrição no lugar do tipo. "Viagem" no campo navega para
+  `/viagens/nova`. Videoconferência mostra o link sem escolher modalidade.
 - **Rotina/Compromissos**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista
   (`useRotinas`). As sugestões (`paginas/rotina/sugestoes.ts`) abrem `/rotina/nova?titulo=...`.
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só

@@ -370,6 +370,15 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
       (cancelado com "Aviso desta categoria desligado.") — sem aviso duplicado nem atrasado. Religar
       volta a gerar no ciclo seguinte. Editar ou excluir a origem continua cancelando os pendentes.
 
+30. **Tipos da Agenda** (migration 28): além dos antigos (`reuniao_pessoal` — "Reunião" —,
+    `consulta`, `exame`, `fisioterapia`, `atividade_fisica`, `programa_radio` e `video`, que continua
+    valendo nos antigos mas não é mais oferecido), entram `videoconferencia`, `podcast`, `gravacao`,
+    `entrevista` e `outro`. No `outro`, `tipoDescricao` ("Descreva o compromisso") é obrigatório:
+    `400` com `tipoDescricao: Descreva o compromisso.` (vazio ou só espaços) e, no banco,
+    `evento_tipo_descricao_check`. Nos outros tipos o service grava `tipoDescricao` nulo (trocar de
+    tipo apaga a descrição). **Viagem** não é tipo de evento: no formulário, escolher "Viagem" leva
+    ao cadastro de viagem (`/viagens/nova`), que é da área Agenda — sem segundo cadastro.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -397,7 +406,7 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 | membro_equipe_dia | membro_id, dia, valor_previsto_centavos?, desde | unique (membro_id, dia); dia 1–31 |
 | membro_equipe_dispensa | membro_id, vencimento | pk (membro_id, vencimento) |
 | pagamento | descricao, categoria_id? (nulo na fatura e na equipe), cartao_id?, competencia?, membro_id?, valor_centavos? (nulo só na equipe pendente), imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
-| evento | titulo, tipo, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
+| evento | titulo, tipo, tipo_descricao?, modalidade?, inicio, fim?, local, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
 | rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |
 | rotina_conclusao | rotina_id, data, concluida_em | unique (rotina_id, data) |
 | medicamento | nome, dose, observacoes, ativo | |

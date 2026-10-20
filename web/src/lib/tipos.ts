@@ -277,6 +277,11 @@ export type TipoEvento =
   | 'programa_radio'
   | 'fisioterapia'
   | 'atividade_fisica'
+  | 'videoconferencia'
+  | 'podcast'
+  | 'gravacao'
+  | 'entrevista'
+  | 'outro'
 export type ModalidadeEvento = 'presencial' | 'telemedicina' | 'videoconferencia' | 'podcast' | 'gravacao'
 export type RecorrenciaEvento = 'nenhuma' | 'diaria' | 'semanal' | 'mensal' | 'anual'
 
@@ -284,6 +289,8 @@ export type RecorrenciaEvento = 'nenhuma' | 'diaria' | 'semanal' | 'mensal' | 'a
 export type EventoCorpo = {
   titulo: string
   tipo: TipoEvento
+  /** Só no tipo "outro": o que é o compromisso (obrigatório nele). */
+  tipoDescricao: string | null
   modalidade: ModalidadeEvento | null
   inicio: string
   fim: string | null

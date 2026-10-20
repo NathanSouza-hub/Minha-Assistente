@@ -10,6 +10,7 @@ const COLUNAS = [
   'id',
   'titulo',
   'tipo',
+  'tipoDescricao',
   'modalidade',
   'inicio',
   'fim',
@@ -35,6 +36,8 @@ const serie = (linha) => ({
 const camposGravaveis = (d) => ({
   titulo: d.titulo,
   tipo: d.tipo,
+  // A descrição só existe no tipo "outro" (trocar de tipo apaga a antiga).
+  tipoDescricao: d.tipo === 'outro' ? d.tipoDescricao : null,
   modalidade: d.modalidade,
   inicio: d.inicio,
   fim: d.fim,

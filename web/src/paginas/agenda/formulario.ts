@@ -12,6 +12,7 @@ export const esquemaEvento = z
   .object({
     titulo: z.string().trim().min(1, 'Informe o título.').max(200, 'Título longo demais.'),
     tipo: z.string().min(1, 'Escolha o tipo.'),
+    tipoDescricao: z.string().max(100, 'Use no máximo 100 caracteres.'),
     modalidade: z.string(),
     data: z.string().regex(DATA, 'Informe a data.'),
     horaInicio: z.string().regex(HORA, 'Informe a hora.'),
@@ -32,6 +33,10 @@ export const esquemaEvento = z
       .max(MAXIMO_LEMBRETES, 'No máximo 5 lembretes.'),
   })
   .superRefine((v, ctx) => {
+    // Mesma regra do back-end (e do banco): "Outro tipo" exige dizer o que é.
+    if (v.tipo === 'outro' && !v.tipoDescricao.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['tipoDescricao'], message: 'Descreva o compromisso.' })
+    }
     if (v.horaFim && v.horaFim === v.horaInicio) {
       ctx.addIssue({ code: 'custom', path: ['horaFim'], message: 'O fim precisa ser depois do início.' })
     }
@@ -62,6 +67,7 @@ export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO(), tipoPad
     return {
       titulo: '',
       tipo: tipoPadrao,
+      tipoDescricao: '',
       modalidade: '',
       data: dataPadrao,
       horaInicio: '',
@@ -79,6 +85,7 @@ export function valoresIniciais(evento?: Evento, dataPadrao = hojeISO(), tipoPad
   return {
     titulo: evento.titulo,
     tipo: evento.tipo,
+    tipoDescricao: evento.tipoDescricao ?? '',
     modalidade: evento.modalidade ?? '',
     data,
     horaInicio: hora,
@@ -98,6 +105,7 @@ export function paraCorpo(d: DadosEvento): EventoCorpo {
   return {
     titulo: d.titulo.trim(),
     tipo: d.tipo as TipoEvento,
+    tipoDescricao: d.tipo === 'outro' ? d.tipoDescricao.trim() : null,
     modalidade: (d.modalidade || null) as ModalidadeEvento | null,
     inicio: combinarDataHora(d.data, d.horaInicio),
     fim: d.horaFim ? combinarDataHora(diaDoFim, d.horaFim) : null,

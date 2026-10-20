@@ -316,6 +316,7 @@ function semearAgenda() {
   ): EventoMock => ({
     id: crypto.randomUUID(),
     usuarioId: MARIA_ID,
+    tipoDescricao: null,
     modalidade: null,
     fim: null,
     local: null,

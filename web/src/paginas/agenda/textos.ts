@@ -5,10 +5,38 @@ export const TIPOS: Record<TipoEvento, string> = {
   exame: 'Exame',
   fisioterapia: 'Fisioterapia',
   atividade_fisica: 'Atividade física',
-  reuniao_pessoal: 'Reunião pessoal',
-  video: 'Vídeo',
+  reuniao_pessoal: 'Reunião',
+  video: 'Vídeo (antigo)',
   programa_radio: 'Programa de rádio',
+  videoconferencia: 'Videoconferência',
+  podcast: 'Podcast',
+  gravacao: 'Gravação',
+  entrevista: 'Entrevista',
+  outro: 'Outro tipo',
 }
+
+/**
+ * Ordem do campo "Tipo" no formulário. "video" (antigo) só aparece ao editar um que já é dele;
+ * "Viagem" leva ao cadastro de viagem (as viagens têm módulo próprio, dentro da Agenda).
+ */
+export const TIPOS_DO_FORMULARIO: TipoEvento[] = [
+  'reuniao_pessoal',
+  'videoconferencia',
+  'podcast',
+  'gravacao',
+  'entrevista',
+  'programa_radio',
+  'consulta',
+  'exame',
+  'fisioterapia',
+  'atividade_fisica',
+  'outro',
+]
+export const TIPO_VIAGEM = 'viagem'
+
+/** Nome do tipo para mostrar: no "outro", a descrição que a pessoa escreveu. */
+export const nomeDoTipo = (e: { tipo: TipoEvento; tipoDescricao?: string | null }) =>
+  e.tipo === 'outro' && e.tipoDescricao ? e.tipoDescricao : TIPOS[e.tipo]
 
 export const MODALIDADES: Record<ModalidadeEvento, string> = {
   presencial: 'Presencial',
@@ -37,6 +65,12 @@ export const MODALIDADES_DO_TIPO: Record<TipoEvento, ModalidadeEvento[]> = {
   reuniao_pessoal: ['presencial', 'videoconferencia'],
   video: ['videoconferencia', 'podcast', 'gravacao'],
   programa_radio: ['presencial', 'gravacao'],
+  // Videoconferência é sempre online (o link aparece sozinho).
+  videoconferencia: [],
+  podcast: ['presencial', 'videoconferencia'],
+  gravacao: ['presencial', 'videoconferencia'],
+  entrevista: ['presencial', 'videoconferencia'],
+  outro: ['presencial', 'videoconferencia'],
 }
 
 /** Tipos com área própria no menu ("a agenda só daquele tipo"). As rotas são as de app/navegacao.ts. */

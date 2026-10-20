@@ -178,3 +178,36 @@ test('isolamento entre usuários', async () => {
   assert.equal(daBia.length, 0);
   await request(app).get('/eventos').expect(401);
 });
+
+test('tipos novos; "outro" exige a descrição (API e banco) e a guarda; trocar de tipo a apaga', async () => {
+  const sessao = await criarSessao(app);
+  const base = { titulo: 'Compromisso', inicio: '2099-05-10T10:00:00-03:00' };
+  for (const tipo of ['videoconferencia', 'podcast', 'gravacao', 'entrevista']) {
+    await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo }).expect(201);
+  }
+
+  const semDescricao = await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo: 'outro' }).expect(400);
+  assert.match(semDescricao.body.erro.mensagem, /tipoDescricao: Descreva o compromisso/);
+  await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo: 'outro', tipoDescricao: '   ' }).expect(400);
+
+  const outro = (
+    await request(app).post('/eventos').set(sessao.auth).send({ ...base, tipo: 'outro', tipoDescricao: '  Aula de canto ' }).expect(201)
+  ).body;
+  assert.equal(outro.tipoDescricao, 'Aula de canto');
+  assert.equal((await request(app).get(`/eventos/${outro.id}`).set(sessao.auth)).body.tipoDescricao, 'Aula de canto');
+
+  const virouReuniao = (
+    await request(app)
+      .put(`/eventos/${outro.id}`)
+      .set(sessao.auth)
+      .send({ ...base, tipo: 'reuniao_pessoal', tipoDescricao: 'Aula de canto' })
+      .expect(200)
+  ).body;
+  assert.equal(virouReuniao.tipoDescricao, null);
+
+  // O banco também recusa "outro" sem descrição (mesmo fora da API).
+  await assert.rejects(
+    db('evento').where({ id: outro.id }).update({ tipo: 'outro', tipoDescricao: null }),
+    /evento_tipo_descricao_check/,
+  );
+});

@@ -27,7 +27,16 @@ import {
   type DadosEvento,
 } from './formulario'
 import { ATALHOS, MAXIMO_LEMBRETES, rotuloDoLembrete, type Lembrete } from './lembretes'
-import { AREAS_DO_TIPO, MODALIDADES, MODALIDADES_DO_TIPO, ONLINE, RECORRENCIAS, TIPOS } from './textos'
+import {
+  AREAS_DO_TIPO,
+  MODALIDADES,
+  MODALIDADES_DO_TIPO,
+  ONLINE,
+  RECORRENCIAS,
+  TIPO_VIAGEM,
+  TIPOS,
+  TIPOS_DO_FORMULARIO,
+} from './textos'
 
 /** /agenda/novo e /agenda/:id */
 export function PaginaEvento() {
@@ -93,7 +102,11 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
     control,
     name: ['tipo', 'modalidade', 'recorrencia', 'horaInicio', 'horaFim', 'data'],
   })
-  const online = ONLINE.includes(modalidade as never)
+  // Videoconferência é sempre online: o campo do link aparece mesmo sem escolher a modalidade.
+  const online = ONLINE.includes(modalidade as never) || tipo === 'videoconferencia'
+  const campoTipo = register('tipo')
+  // O tipo antigo "video" só aparece ao editar um agendamento que já é dele.
+  const tiposDoCampo = evento?.tipo && !TIPOS_DO_FORMULARIO.includes(evento.tipo) ? [...TIPOS_DO_FORMULARIO, evento.tipo] : TIPOS_DO_FORMULARIO
   const recorrente = recorrencia !== 'nenhuma'
   // Só as modalidades do tipo; a que já estava salva continua aparecendo para não sumir na edição.
   const modalidades = useMemo(() => {
@@ -173,16 +186,34 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
         />
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Selecao rotulo="Tipo" erro={errors.tipo?.message} {...register('tipo')}>
+          <Selecao
+            rotulo="Tipo"
+            erro={errors.tipo?.message}
+            {...campoTipo}
+            onChange={(e) => {
+              // "Viagem" tem cadastro próprio (com ida, volta, hospedagem e anexos).
+              if (e.target.value === TIPO_VIAGEM) return navegar('/viagens/nova')
+              void campoTipo.onChange(e)
+            }}
+          >
             <option value="" disabled>
               Escolha o tipo
             </option>
-            {Object.entries(TIPOS).map(([valor, rotulo]) => (
+            {tiposDoCampo.map((valor) => (
               <option key={valor} value={valor}>
-                {rotulo}
+                {TIPOS[valor]}
               </option>
             ))}
+            {!editando && <option value={TIPO_VIAGEM}>Viagem</option>}
           </Selecao>
+          {tipo === 'outro' && (
+            <Campo
+              rotulo="Descreva o compromisso"
+              placeholder="Ex.: Aula de canto"
+              erro={errors.tipoDescricao?.message}
+              {...register('tipoDescricao')}
+            />
+          )}
           {modalidades.length > 0 && (
             <Selecao rotulo="Como vai ser? (opcional)" {...register('modalidade')}>
               <option value="">Não informar</option>

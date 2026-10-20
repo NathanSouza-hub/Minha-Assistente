@@ -78,7 +78,7 @@ describe('modalidade de acordo com o tipo', () => {
   const opcoes = (campo: HTMLElement) =>
     within(campo).getAllByRole('option').map((o) => o.textContent)
 
-  test('consulta: presencial ou telemedicina; vídeo: videoconferência, podcast ou gravação', async () => {
+  test('consulta: presencial ou telemedicina; podcast: presencial ou videoconferência', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda/novo')
     const tipo = await screen.findByLabelText('Tipo')
@@ -93,9 +93,9 @@ describe('modalidade de acordo com o tipo', () => {
     await usuario.selectOptions(screen.getByLabelText('Como vai ser? (opcional)'), 'Telemedicina')
 
     // Trocar para um tipo em que a escolha não vale apaga a modalidade
-    await usuario.selectOptions(tipo, 'Vídeo')
+    await usuario.selectOptions(tipo, 'Podcast')
     const modalidade = screen.getByLabelText('Como vai ser? (opcional)')
-    expect(opcoes(modalidade)).toEqual(['Não informar', 'Videoconferência', 'Podcast', 'Gravação'])
+    expect(opcoes(modalidade)).toEqual(['Não informar', 'Presencial', 'Videoconferência'])
     expect(modalidade).toHaveDisplayValue('Não informar')
 
     await usuario.selectOptions(tipo, 'Atividade física')

@@ -113,7 +113,7 @@ describe('formulário de agendamento', () => {
     renderizarApp('/agenda/novo?data=2026-10-20')
 
     await usuario.type(await screen.findByLabelText('O que é?'), 'Plantão de leitura')
-    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Reunião pessoal')
+    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Reunião')
     await usuario.type(screen.getByLabelText('Começa às'), '22:00')
     await usuario.type(screen.getByLabelText('Termina às (opcional)'), '01:00')
     expect(screen.getByText('Termina no dia seguinte.')).toBeInTheDocument()
@@ -214,5 +214,45 @@ describe('formulário de agendamento', () => {
     expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()
     await cartao('Consulta com cardiologista')
     expect(within(screen.getByRole('main')).queryByRole('link', { name: /Fisioterapia/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('tipos do agendamento', () => {
+  test('"Outro tipo" exige "Descreva o compromisso", salva e mostra a descrição', async () => {
+    const enviados = espiarEnvio('post', '/eventos')
+    const usuario = userEvent.setup()
+    renderizarApp('/agenda/novo?data=2026-10-20')
+    await usuario.type(await screen.findByLabelText('O que é?'), 'Ensaio')
+    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Outro tipo')
+    await usuario.type(screen.getByLabelText('Começa às'), '10:00')
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
+    expect(await screen.findByText('Descreva o compromisso.')).toBeInTheDocument()
+    expect(enviados).toHaveLength(0)
+
+    // Só espaços também não vale.
+    await usuario.type(screen.getByLabelText('Descreva o compromisso'), '   ')
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
+    expect(await screen.findByText('Descreva o compromisso.')).toBeInTheDocument()
+
+    await usuario.clear(screen.getByLabelText('Descreva o compromisso'))
+    await usuario.type(screen.getByLabelText('Descreva o compromisso'), 'Aula de canto')
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
+    expect(await screen.findByText('Agendamento marcado.')).toBeInTheDocument()
+    expect(enviados[0]).toMatchObject({ tipo: 'outro', tipoDescricao: 'Aula de canto' })
+    expect(await screen.findByText(/Aula de canto/)).toBeInTheDocument()
+  })
+
+  test('os tipos novos estão no campo; "Viagem" abre o cadastro de viagem', async () => {
+    const usuario = userEvent.setup()
+    const { roteador } = renderizarApp('/agenda/novo')
+    const tipo = await screen.findByLabelText('Tipo')
+    const opcoes = within(tipo).getAllByRole('option').map((o) => o.textContent)
+    for (const nome of ['Reunião', 'Videoconferência', 'Podcast', 'Gravação', 'Entrevista', 'Programa de rádio', 'Viagem', 'Outro tipo'])
+      expect(opcoes).toContain(nome)
+    expect(opcoes).not.toContain('Vídeo (antigo)')
+
+    await usuario.selectOptions(tipo, 'Viagem')
+    expect(await screen.findByRole('heading', { name: 'Nova viagem' })).toBeInTheDocument()
+    expect(roteador.state.location.pathname).toBe('/viagens/nova')
   })
 })

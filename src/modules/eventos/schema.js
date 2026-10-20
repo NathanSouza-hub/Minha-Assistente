@@ -11,6 +11,12 @@ const TIPOS = [
   'programa_radio',
   'fisioterapia',
   'atividade_fisica',
+  // Migration 28: "video" continua valendo nos antigos, mas o formulário oferece estes.
+  'videoconferencia',
+  'podcast',
+  'gravacao',
+  'entrevista',
+  'outro',
 ];
 const MODALIDADES = ['presencial', 'telemedicina', 'videoconferencia', 'podcast', 'gravacao'];
 const RECORRENCIAS = ['nenhuma', 'diaria', 'semanal', 'mensal', 'anual'];
@@ -27,6 +33,7 @@ const corpo = z
   .object({
     titulo: z.string().trim().min(1, 'Informe o título.').max(200, 'Título longo demais.'),
     tipo: z.enum(TIPOS),
+    tipoDescricao: textoOpcional(100).describe('Obrigatório quando o tipo é "outro" ("Descreva o compromisso")'),
     modalidade: z.enum(MODALIDADES).nullish().transform((v) => v ?? null),
     inicio: dataHora,
     fim: dataHora.nullish().transform((v) => v ?? null),
@@ -54,6 +61,9 @@ const corpo = z
       .default([]),
   })
   .superRefine((v, ctx) => {
+    if (v.tipo === 'outro' && !v.tipoDescricao) {
+      ctx.addIssue({ code: 'custom', path: ['tipoDescricao'], message: 'Descreva o compromisso.' });
+    }
     const inicio = DateTime.fromISO(v.inicio);
     if (v.fim && DateTime.fromISO(v.fim) <= inicio) {
       ctx.addIssue({ code: 'custom', path: ['fim'], message: 'O fim precisa ser depois do início.' });
@@ -105,6 +115,7 @@ const evento = z.object({
   id: z.uuid().describe('Id da série (o mesmo em todas as ocorrências)'),
   titulo: z.string(),
   tipo: z.enum(TIPOS),
+  tipoDescricao: z.string().nullable().describe('Descrição do tipo "outro"; nulo nos demais'),
   modalidade: z.enum(MODALIDADES).nullable(),
   inicio: instante.describe('Início desta ocorrência'),
   fim: instante.nullable().describe('Fim desta ocorrência'),
