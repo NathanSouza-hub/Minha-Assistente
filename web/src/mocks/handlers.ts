@@ -14,7 +14,23 @@ import { handlersRotinas } from './rotinas'
 import { handlersTarefas } from './tarefas'
 import { handlersViagens } from './viagens'
 
-export { resetarBancoMock } from './banco'
+import { banco, resetarBancoMock as recriarBanco } from './banco'
+import { garantirContasEquipe } from './equipe'
+
+/** Como src/jobs/manutencao.js: cria as contas da equipe de quem tem alguém ativo. */
+function manutencao() {
+  for (const usuarioId of new Set(banco.membros.filter((m) => m.ativo).map((m) => m.usuarioId))) {
+    garantirContasEquipe(usuarioId)
+  }
+}
+
+/** Dados de exemplo do zero, com a manutenção já rodada (como o servidor ao subir). */
+export function resetarBancoMock() {
+  recriarBanco()
+  manutencao()
+}
+
+manutencao()
 
 export const handlers = [
   ...handlersAuth,

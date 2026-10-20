@@ -150,7 +150,8 @@ npm run lint                                  # oxlint
   pode ter `valorCentavos: null` ("A definir"): some com `?? 0`, o item mostra "Pagar…" pedindo o
   valor (`usePagarPagamento` aceita `valorCentavos`) e `/pagamentos/:id` abre
   `FormularioContaEquipe` (valor, data, observações e a chave PIX). O mock cria as contas em
-  `garantirContasEquipe` (`mocks/equipe.ts`), chamado ao listar contas e no relatório.
+  `garantirContasEquipe` (`mocks/equipe.ts`), chamado ao salvar a pessoa e na "manutenção" do
+  `resetarBancoMock` (`mocks/handlers.ts`), como o servidor; listar não grava.
 - Após salvar, atualize a lista em cache com a resposta (além de invalidar), para a lista não
   mostrar o dado antigo por um instante ao voltar do formulário.
 - **Formulários**: esquema Zod em `src/lib/esquemas/` espelhando o `schema.js` do módulo no

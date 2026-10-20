@@ -4,7 +4,7 @@ const db = require('../../config/db');
 const { hoje } = require('../../lib/tempo');
 const { AppError, naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
 const comprovantes = require('./comprovantes');
-const { garantirContas, dispensar } = require('../equipe/contas');
+const { dispensar } = require('../equipe/contas');
 
 const COLUNAS = [
   'p.id',
@@ -61,10 +61,10 @@ async function buscar(usuarioId, id, conexao = db) {
   return pagamento;
 }
 
-// Antes de listar, garante as contas da equipe do mês atual e do seguinte.
+// Só lê: as contas da equipe nascem ao salvar a pessoa e na manutenção do servidor
+// (src/jobs/manutencao.js), nunca ao abrir uma tela.
 // `dataPagamento` não é filtro da rota: a tela Hoje usa para achar as vencidas pagas no dia.
 async function listar(usuarioId, { inicio, fim, status, categoriaId, imovelId, destino, dataPagamento }) {
-  await garantirContas(db, usuarioId);
   const q = consulta(db, usuarioId).orderBy(ORDEM);
   if (inicio) q.where('p.vencimento', '>=', inicio);
   if (fim) q.where('p.vencimento', '<=', fim);

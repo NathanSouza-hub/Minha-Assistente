@@ -48,4 +48,15 @@ async function apagarFuturas(trx, membroId, dataDeHoje = hoje()) {
 const dispensar = (conexao, membroId, vencimento) =>
   conexao('membroEquipeDispensa').insert({ membroId, vencimento }).onConflict(['membroId', 'vencimento']).ignore();
 
-module.exports = { garantirContas, apagarFuturas, dispensar, cancelarLembretes };
+/**
+ * Garante as contas de todos os usuários com alguém ativo na equipe. Roda no servidor
+ * (src/jobs/manutencao.js), não ao abrir uma tela: consultar não grava nada.
+ */
+async function garantirContasDeTodos(conexao, dataDeHoje = hoje()) {
+  // (pluck não passa pela conversão de nomes do Knex: lê as linhas e pega o campo.)
+  const linhas = await conexao('membroEquipe').where({ ativo: true }).distinct('usuarioId');
+  for (const { usuarioId } of linhas) await garantirContas(conexao, usuarioId, dataDeHoje);
+  return linhas.length;
+}
+
+module.exports = { garantirContas, garantirContasDeTodos, apagarFuturas, dispensar, cancelarLembretes };

@@ -263,3 +263,26 @@ test('relatório por categoria junta a equipe em "Salários equipe"', async () =
   assert.deepEqual(body.itens, [{ id: null, nome: 'Salários equipe', pagoCentavos: 0, previstoCentavos: 4000 }]);
   assert.ok(membro.id);
 });
+
+test('abrir telas não grava: listar contas, Hoje e relatórios não criam conta da equipe; a manutenção cria', async () => {
+  const { garantirContasDeTodos } = require('../src/modules/equipe/contas');
+  const sessao = await criarSessao(app);
+  const membro = await criarMembro(sessao, { nome: 'Dora', dias: [{ dia: 10, valorPrevistoCentavos: 90000 }] });
+  // Simula a virada do mês: as contas que o cadastro criou ainda não existem.
+  await db('pagamento').where({ membroId: membro.id }).del();
+
+  const mes = DateTime.fromISO(hoje()).toFormat('yyyy-MM');
+  const periodo = { inicio: `${mes}-01`, fim: DateTime.fromISO(hoje()).endOf('month').toISODate() };
+  await request(app).get('/pagamentos').set(sessao.auth).expect(200);
+  await request(app).get('/hoje').set(sessao.auth).expect(200);
+  await request(app).get('/relatorios/financeiro').query(periodo).set(sessao.auth).expect(200);
+  await request(app).get('/relatorios/gastos').query({ ...periodo, agruparPor: 'categoria' }).set(sessao.auth).expect(200);
+  assert.equal((await contasDe(membro.id)).length, 0, 'nenhuma tela criou conta');
+
+  // Conta do mês atual só se o dia 10 ainda não passou desde o cadastro; a do mês seguinte sempre.
+  await garantirContasDeTodos(db);
+  const criadas = (await contasDe(membro.id)).length;
+  assert.ok(criadas >= 1, 'a manutenção cria as contas');
+  await garantirContasDeTodos(db);
+  assert.equal((await contasDe(membro.id)).length, criadas, 'rodar de novo não duplica');
+});

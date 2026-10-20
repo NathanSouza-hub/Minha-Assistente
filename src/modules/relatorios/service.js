@@ -1,5 +1,4 @@
 const db = require('../../config/db');
-const { garantirContas } = require('../equipe/contas');
 const { ORIGENS } = require('../recebiveis/schema');
 const imoveis = require('../imoveis/service');
 const { DateTime } = require('luxon');
@@ -11,8 +10,6 @@ const SALARIOS_EQUIPE = 'Salários equipe';
 // Pago = status pago com data de pagamento no período.
 // Previsto = pendente com vencimento no período.
 async function gastos(usuarioId, { inicio, fim, agruparPor }) {
-  // As contas da equipe do mês atual e do seguinte entram no previsto mesmo sem abrir Contas antes.
-  await garantirContas(db, usuarioId);
   const pago = "p.status = 'pago' AND p.data_pagamento BETWEEN ? AND ?";
   const previsto = "p.status = 'pendente' AND p.vencimento BETWEEN ? AND ?";
 
@@ -131,7 +128,6 @@ async function entradasDoPeriodo(usuarioId, inicio, fim) {
 // vencido), o realizado (pago no período, pela data do pagamento), cada imóvel e as despesas
 // pessoais (sem imóvel) por categoria.
 async function financeiro(usuarioId, { inicio, fim }) {
-  await garantirContas(db, usuarioId);
   const doPeriodo = () =>
     db('pagamento as p').where('p.usuarioId', usuarioId).whereBetween('p.vencimento', [inicio, fim]);
   const somas = () => SOMAS_CONTAS.map((s) => db.raw(s));

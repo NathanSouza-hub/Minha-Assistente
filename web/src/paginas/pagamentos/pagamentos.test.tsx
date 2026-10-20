@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
 import { banco } from '@/mocks/banco'
+import { garantirContasEquipe } from '@/mocks/equipe'
 import { entrarComoMaria, renderizarApp } from '@/test/renderizarApp'
 
 const servidor = setupServer(...handlers)
@@ -85,7 +86,10 @@ describe('lista de pagamentos', () => {
 describe('tabela de contas', () => {
   test('mostra as colunas e a conta da equipe "A definir", paga informando o valor', async () => {
     const usuario = userEvent.setup()
+    // Como salvar a pessoa com o valor "a definir": as contas dela são refeitas (abrir a lista não grava).
     banco.membros[0].dias[0].valorPrevistoCentavos = null
+    banco.pagamentos = banco.pagamentos.filter((p) => p.membroId !== banco.membros[0].id)
+    garantirContasEquipe(banco.membros[0].usuarioId)
     renderizarApp('/despesas')
     const tabela = await screen.findByRole('table', { name: 'Despesas do mês' })
     expect(within(tabela).getAllByRole('columnheader').map((c) => c.textContent)).toEqual([
@@ -367,7 +371,7 @@ describe('contas residenciais', () => {
     expect(await cartao('Conta de luz')).toBeInTheDocument()
 
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
-    expect(await screen.findByLabelText('Imóvel (opcional)')).toHaveDisplayValue('Casa da Serra')
+    expect(await screen.findByLabelText('Destino')).toHaveDisplayValue('Casa da Serra')
     expect(screen.getByLabelText('Categoria')).toHaveDisplayValue('Contas residenciais')
   })
 })

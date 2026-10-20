@@ -272,17 +272,19 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
               )}
             </div>
             <Selecao
-              rotulo="Imóvel (opcional)"
+              rotulo="Destino"
               dica={
                 imoveis.length === 0 ? (
                   <Link to="/imoveis" className="font-semibold text-primary underline underline-offset-4">
-                    Cadastrar imóvel
+                    Cadastrar residência
                   </Link>
-                ) : undefined
+                ) : (
+                  'Pessoal, ou a residência onde o gasto foi feito (entra nos totais dela).'
+                )
               }
               {...register('imovelId')}
             >
-              <option value="">Nenhum</option>
+              <option value="">Pessoal</option>
               {imoveis.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.nome}

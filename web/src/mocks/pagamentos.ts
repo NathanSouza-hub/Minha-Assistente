@@ -13,7 +13,6 @@ import {
   type PagamentoMock,
 } from './banco'
 import { detectarTipo, lerUpload, nomeSeguro, respostaArquivo, tipoNaoAceito } from './arquivos'
-import { garantirContasEquipe } from './equipe'
 import { entradasDoPeriodo } from './recebiveis'
 import { autenticado, erro, naoEncontrado } from './util'
 
@@ -174,8 +173,7 @@ type Filtros = Partial<Record<'inicio' | 'fim' | 'status' | 'categoriaId' | 'imo
 
 /** Mesmo que listar() no back-end: filtros pelo vencimento, em ordem de vencimento. */
 export function listarPagamentos(usuarioId: string, f: Filtros = {}) {
-  // Como no back-end: antes de listar, garante as contas da equipe.
-  garantirContasEquipe(usuarioId)
+  // Como no back-end: só lê (as contas da equipe nascem ao salvar a pessoa e na manutenção).
   return banco.pagamentos
     .filter((p) => p.usuarioId === usuarioId)
     .filter((p) => !f.inicio || p.vencimento >= f.inicio)
@@ -510,7 +508,6 @@ export const handlersPagamentos = [
       const agruparPor = q.get('agruparPor') === 'categoria' ? 'categoria' : 'imovel'
       if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
       if (inicio > fim) return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
-      garantirContasEquipe(u.id)
 
       const noPeriodo = (d: string | null) => d !== null && d >= inicio && d <= fim
       const grupos = new Map<string | null, { pagoCentavos: number; previstoCentavos: number }>()
@@ -561,7 +558,6 @@ export const handlersPagamentos = [
       const fim = q.get('fim') ?? ''
       if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
       if (inicio > fim) return erro(400, 'VALIDACAO', 'fim: O início precisa ser anterior ou igual ao fim.')
-      garantirContasEquipe(u.id)
 
       const hoje = hojeISO()
       const doUsuario = banco.pagamentos.filter((p) => p.usuarioId === u.id)

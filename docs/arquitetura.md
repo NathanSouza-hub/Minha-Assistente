@@ -240,8 +240,9 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
       ativa e cada dia, a conta do mês atual e do seguinte em `pagamento` (`membro_id`, descrição =
       nome, valor = previsto ou **nulo = a definir**). Só a partir de `desde` (cadastro novo não
       cria conta vencida); dia 31 em mês curto vira o último dia. Idempotente
-      (`unique (membro_id, vencimento)` + `ON CONFLICT`); roda ao listar `/pagamentos` (e, por ela,
-      `/hoje`), no relatório e ao salvar a pessoa.
+      (`unique (membro_id, vencimento)` + `ON CONFLICT`); roda ao salvar a pessoa e na manutenção do
+      servidor (`src/jobs/manutencao.js`, ao subir e a cada 6 h, `garantirContasDeTodos`). **Abrir
+      uma tela nunca grava**: `/pagamentos`, `/hoje` e os relatórios só leem.
     - Mudar dias/valores ou desativar apaga as contas pendentes de hoje em diante e recria as que
       couberem; vencidas e pagas ficam. Reativar volta a criar só a partir de hoje. Excluir a pessoa
       só se nunca recebeu (senão `409 REFERENCIA_INVALIDA`: desative).
@@ -307,8 +308,8 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
       cartão só entram pela fatura, então imóveis + pessoal = total, sem contar nada duas vezes.
       Rateio de uma conta entre imóveis não existe. `GET /pagamentos?destino=pessoal|imovel` filtra
       pelo mesmo critério.
-    - Como `/pagamentos` e o relatório de gastos, roda `garantirContas` da equipe (idempotente)
-      antes de somar, para as contas do mês da equipe entrarem no total.
+    - Só lê. As contas da equipe já existem (criadas ao salvar a pessoa e pela manutenção do
+      servidor, decisão 23), então entram no total sem a consulta gravar nada.
 
 26. **Recebíveis** (valores a receber — "receitas" aqui nunca é receita médica; migration 24,
     `src/modules/recebiveis/`):
