@@ -18,11 +18,23 @@ function CabecalhoHoje({ resumo }: { resumo: string | null }) {
   const hoje = agora()
   const primeiroNome = usuario?.nome.trim().split(/\s+/)[0]
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <p className="text-lg font-semibold text-muted-foreground">
-        {saudacao(hoje.hour)}
-        {primeiroNome && `, ${primeiroNome}`}
-      </p>
+    <div className="flex w-full min-w-0 flex-col gap-1">
+      {/* Saudação discreta com os botões na mesma linha: a data fica com a largura toda. */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 text-lg font-semibold text-muted-foreground">
+          {saudacao(hoje.hour)}
+          {primeiroNome && `, ${primeiroNome}`}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
+          <Button asChild variant="ghost" size="icon" aria-label="Configurações" className="md:hidden">
+            <Link to="/configuracoes">
+              <GearSixIcon className="size-6" weight="bold" aria-hidden />
+            </Link>
+          </Button>
+          <NovaAtividade />
+        </div>
+      </div>
       <h1 className="text-[1.75rem] leading-tight font-[750] tracking-[-0.01em] md:text-[2.25rem]">
         {dataPorExtenso(hoje.toISODate()!)}
       </h1>
@@ -60,17 +72,6 @@ export function Hoje() {
     <Pagina
       titulo="Início"
       cabecalho={<CabecalhoHoje resumo={consulta.data ? frase(consulta.data.resumo, ehHoje) : null} />}
-      acoes={
-        <div className="flex items-center gap-2">
-          {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
-          <Button asChild variant="ghost" size="icon" aria-label="Configurações" className="md:hidden">
-            <Link to="/configuracoes">
-              <GearSixIcon className="size-6" weight="bold" aria-hidden />
-            </Link>
-          </Button>
-          <NovaAtividade />
-        </div>
-      }
     >
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">

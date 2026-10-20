@@ -32,7 +32,16 @@ export type Area =
 export type ItemSecao = { rota: string; rotulo: string; prefixos?: string[] }
 
 /** Uma das 6 áreas principais (barra do celular e barra lateral). */
-export type Secao = { id: string; rota: string; rotulo: string; icone: Icon; area: Area; itens: ItemSecao[] }
+/** `rotuloCurto`: o nome na barra do celular, quando o completo não cabe (5 itens em 360px). */
+export type Secao = {
+  id: string
+  rota: string
+  rotulo: string
+  rotuloCurto?: string
+  icone: Icon
+  area: Area
+  itens: ItemSecao[]
+}
 
 export const SECOES: Secao[] = [
   // Só as atividades do dia (tela Hoje).
@@ -86,6 +95,7 @@ export const SECOES: Secao[] = [
     id: 'compromissos',
     rota: '/rotina',
     rotulo: 'Compromissos',
+    rotuloCurto: 'Lembretes',
     icone: CheckSquareIcon,
     area: 'compromissos',
     itens: [

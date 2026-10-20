@@ -126,7 +126,7 @@ function ItemBarra({ secao, ativa }: { secao: Secao; ativa: boolean }) {
         >
           <Icone className="size-7" weight={ativa ? 'fill' : 'regular'} aria-hidden />
         </span>
-        {secao.rotulo}
+        {secao.rotuloCurto ?? secao.rotulo}
       </Link>
     </li>
   )
