@@ -222,13 +222,13 @@ test('cadastro fechado: 403 CADASTRO_FECHADO e GET /auth/cadastro diz que está 
 test('criar conta (comando do administrador) gera senha temporária e as categorias padrão', async () => {
   const { criarConta } = require('../src/modules/auth/service');
 
-  const { usuario, senha } = await criarConta({ nome: ' Débora ', email: ' Debora@Exemplo.com ' });
-  assert.equal(usuario.nome, 'Débora');
-  assert.equal(usuario.email, 'debora@exemplo.com');
+  const { usuario, senha } = await criarConta({ nome: ' Joana ', email: ' Joana@Exemplo.com ' });
+  assert.equal(usuario.nome, 'Joana');
+  assert.equal(usuario.email, 'joana@exemplo.com');
   assert.match(senha, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
   assert.ok((await db('categoriaPagamento').where({ usuarioId: usuario.id })).length > 0);
-  await request(app).post('/auth/login').send({ email: 'debora@exemplo.com', senha }).expect(200);
+  await request(app).post('/auth/login').send({ email: 'joana@exemplo.com', senha }).expect(200);
 
-  await assert.rejects(criarConta({ nome: 'Outra', email: 'debora@exemplo.com' }), { codigo: 'EMAIL_EM_USO' });
+  await assert.rejects(criarConta({ nome: 'Outra', email: 'joana@exemplo.com' }), { codigo: 'EMAIL_EM_USO' });
   await assert.rejects(criarConta({ nome: 'Sem e-mail', email: 'nao-e-email' }), { name: 'ZodError' });
 });

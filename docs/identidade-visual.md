@@ -7,7 +7,7 @@ mudança de direção se combina aqui primeiro. Decidido com o Isaque em 2026-10
 
 **"Agenda de couro numa mesa de madeira"**: acolhedor e caloroso, mas organizado. A capa é
 azul-petróleo (cabeçalho de cada tela), as folhas são creme, e a terracota é o marcador de página
-e o toque de calor. Tem que parecer um app feito para a Débora, não um painel genérico.
+e o toque de calor. Tem que parecer um app feito para uma pessoa, não um painel genérico.
 
 O que deixa o app com "cara de IA" hoje, e que este redesign elimina:
 
@@ -22,7 +22,7 @@ O que deixa o app com "cara de IA" hoje, e que este redesign elimina:
 2. **Menos caixas.** Listas são linhas sobre o papel, separadas por respiro ou fio fino. Cartão só
    quando o bloco é de fato um objeto (um cartão de crédito, o resumo do dia).
 3. **Cada área tem cor.** Reconhecer Agenda, Remédios ou Contas de relance, pela cor e pelo ícone.
-4. **Falar como gente.** "Bom dia, Débora", "Nada marcado para hoje. Aproveite!" — nunca jargão.
+4. **Falar como gente.** "Bom dia", "Nada marcado para hoje. Aproveite!" — nunca jargão.
 5. **Legibilidade não se negocia.** Base de 18px, Atkinson, toque ≥ 44px, contraste AA (≥ 4,5:1
    em texto, ≥ 3:1 em bordas de campo e ícones).
 6. **Só tema claro.** Não há modo escuro.
@@ -125,12 +125,12 @@ toque de terracota. Onde: telas vazias de cada área, login/cadastro, página n�
 ## Tom dos textos
 
 - Segunda pessoa, frases curtas, calor sem exagero. Sem emoji na interface.
-- Hoje: "Bom dia, Débora" (bom dia / boa tarde / boa noite pelo horário) + data por extenso
+- Hoje: "Bom dia" (bom dia / boa tarde / boa noite pelo horário) + data por extenso
   ("sexta-feira, 16 de outubro").
 - Vazio: diga o que está acontecendo e o próximo passo. "Nenhuma conta neste mês." →
   "Nenhuma conta para outubro. Quer cadastrar uma?"
 - Confirmação: "Pronto, conta paga." em vez de "Pagamento atualizado com sucesso".
-- Respeitar o vocabulário da Débora (agendamentos, Compromissos — ver `web/CLAUDE.md`).
+- Respeitar o vocabulário de quem usa o app (agendamentos, Compromissos — ver `web/CLAUDE.md`).
 
 ## Marca
 

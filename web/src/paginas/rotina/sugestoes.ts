@@ -1,4 +1,4 @@
-// Compromissos do dia a dia da Débora, oferecidos prontos enquanto ainda não foram cadastrados.
+// Compromissos do dia a dia, oferecidos prontos enquanto ainda não foram cadastrados.
 import { chaveCategoria } from '@/lib/compras'
 import type { Rotina } from '@/lib/tipos'
 

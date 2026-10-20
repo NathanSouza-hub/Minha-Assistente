@@ -46,7 +46,7 @@ export const navegacaoPrincipal: ItemNavegacao[] = [
 export const itemMais: ItemNavegacao = { rota: '/mais', rotulo: 'Mais', icone: SquaresFourIcon, area: 'geral' }
 
 /** Áreas que ficam em "Mais" no celular e direto na barra lateral do computador. */
-// Na ordem da lista da Débora. Rádio, Atividade física e Fisioterapia são a agenda só daquele tipo
+// Na ordem da lista combinada com quem usa o app. Rádio, Atividade física e Fisioterapia são a agenda só daquele tipo
 // (paginas/agenda/AgendaDoTipo.tsx; rotas em AREAS_DO_TIPO de paginas/agenda/textos.ts).
 export const navegacaoSecundaria: ItemNavegacao[] = [
   { rota: '/pagamentos', rotulo: 'Cadastro de despesas', icone: WalletIcon, area: 'contas' },

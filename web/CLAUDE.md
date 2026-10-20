@@ -45,7 +45,7 @@ npm run lint                                  # oxlint
   horário e o histórico de "tomei" se perde (o formulário guarda o `id` em cada linha do
   `useFieldArray`). `diaSemana` 0 = domingo. "Tomei" é otimista (`useRegistrarDose`): muda a tela
   na hora e volta atrás se o servidor recusar.
-- **Vocabulário da Débora** (a dona do app): itens da Agenda são "agendamentos" ("Novo agendamento",
+- **Vocabulário de quem usa o app**: itens da Agenda são "agendamentos" ("Novo agendamento",
   "Agendar") e a Rotina aparece como **"Compromissos"** (rota `/rotina`, API `/rotinas`, código
   continua `rotina`). Não use "compromisso" para evento da agenda.
 - **Rotina/Compromissos**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista
@@ -87,6 +87,12 @@ npm run lint                                  # oxlint
   lembrete chama `convidar()` de `useConvidarNotificacoes` depois de salvar (uma vez por aparelho,
   nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. Nos testes,
   `src/test/pushFalso.ts` simula `Notification`, `PushManager` e o service worker.
+- **Versão nova do app** (`registerType: 'prompt'` no `vite.config.ts`): o worker novo fica esperando
+  e `components/AvisoAtualizacao.tsx` mostra "Nova versão do app disponível"; só o toque em
+  "Atualizar" troca a versão e recarrega. Procura versão nova de hora em hora e ao voltar o app para
+  a frente. Se há `<form>` com campo alterado (`lib/formularios.ts`, sem nada a fazer em cada tela),
+  pergunta antes de recarregar. Não volte para `autoUpdate`: ele trocava o cache por baixo da tela
+  aberta e o app antigo quebrava. Para testar: build + `npx vite preview`, abrir, gerar outro build.
 - **Lista de despesas** (`/despesas`, "Despesas" na barra do celular, `paginas/pagamentos/ListaDespesas.tsx`):
   tudo do mês em tabela (`TabelaContas.tsx`: contas, faturas e equipe, com pagar/desfazer/editar/excluir
   na linha), com mês, status e filtros recolhidos de categoria (`?categoria=`) e imóvel. No celular a

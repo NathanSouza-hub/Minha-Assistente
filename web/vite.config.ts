@@ -9,7 +9,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // A versão nova espera a pessoa tocar em "Atualizar" (components/AvisoAtualizacao.tsx). Com
+      // 'autoUpdate' o worker novo trocava o cache por baixo da tela aberta, que seguia com o JS
+      // antigo e quebrava ao carregar uma tela sob demanda ou ao receber dados num formato novo.
+      registerType: 'prompt',
+      // O registro é feito pelo useRegisterSW do aviso, não por um script injetado no index.html.
+      injectRegister: false,
       // Ícones e <link>s gerados a partir de public/favicon.svg (pwa-assets.config.ts).
       pwaAssets: { config: true, overrideManifestIcons: true },
       manifest: {
