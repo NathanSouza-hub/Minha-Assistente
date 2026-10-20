@@ -1,7 +1,5 @@
 import {
   BuildingsIcon,
-  CheckCircleIcon,
-  ClockIcon,
   HandCoinsIcon,
   ReceiptIcon,
   UserIcon,
@@ -14,8 +12,9 @@ import { usePagamentos } from '@/consultas/pagamentos'
 import { useRecebiveis } from '@/consultas/recebiveis'
 import { dataCurta, descreverVencimento, hojeISO, nomeDoMes, somarDias } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
-import type { Pagamento, RelatorioFinanceiro, ValoresContas } from '@/lib/tipos'
+import type { Pagamento, RelatorioFinanceiro } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { BarraPago, PagoPendente, SituacaoContas } from '@/components/ResumoValores'
 import { IMOVEL_PESSOAL } from '@/paginas/pagamentos/filtros'
 import { ORIGENS } from '@/paginas/recebiveis/formulario'
 import { Bloco, Vazio } from './Bloco'
@@ -107,60 +106,8 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
   )
 }
 
-/** Situação de um conjunto de contas, sempre com texto e ícone além da cor. */
-function Situacao({ v }: { v: ValoresContas }) {
-  if (v.vencidoCentavos > 0)
-    return (
-      <span className="flex items-center gap-1.5 font-semibold text-atraso">
-        <WarningCircleIcon className="size-5" weight="fill" aria-hidden />
-        Conta vencida
-      </span>
-    )
-  if (v.pendenteCentavos > 0)
-    return (
-      <span className="flex items-center gap-1.5 font-semibold text-alerta">
-        <ClockIcon className="size-5" weight="fill" aria-hidden />
-        Contas a pagar
-      </span>
-    )
-  if (v.totalCentavos > 0)
-    return (
-      <span className="flex items-center gap-1.5 font-semibold text-ok">
-        <CheckCircleIcon className="size-5" weight="fill" aria-hidden />
-        Tudo pago
-      </span>
-    )
-  return <span className="text-muted-foreground">Sem contas no mês</span>
-}
-
-/** Barra de quanto do total já foi pago. */
-function BarraPago({ v }: { v: ValoresContas }) {
-  const parte = v.totalCentavos > 0 ? Math.round((v.pagoCentavos / v.totalCentavos) * 100) : 0
-  return (
-    <div className="h-2 overflow-hidden rounded-full bg-suave" aria-hidden>
-      <div className="h-full rounded-full bg-ok" style={{ width: `${parte}%` }} />
-    </div>
-  )
-}
-
-/** Pago e pendente lado a lado. */
-function PagoPendente({ v }: { v: ValoresContas }) {
-  return (
-    <dl className="grid grid-cols-2 gap-2 text-base">
-      <div>
-        <dt className="text-muted-foreground">Pago</dt>
-        <dd className="font-bold text-ok tabular-nums">{formatarCentavos(v.pagoCentavos)}</dd>
-      </div>
-      <div>
-        <dt className="text-muted-foreground">A pagar</dt>
-        <dd className="font-bold tabular-nums">{formatarCentavos(v.pendenteCentavos)}</dd>
-      </div>
-    </dl>
-  )
-}
-
 /** Um cartão por imóvel, com os totais calculados das contas dele no mês. */
-export function BlocoResidencias({ consulta, mes }: { consulta: Financeiro; mes: string }) {
+export function BlocoResidencias({ consulta }: { consulta: Financeiro }) {
   return (
     <Bloco
       titulo="Residências"
@@ -186,7 +133,7 @@ export function BlocoResidencias({ consulta, mes }: { consulta: Financeiro; mes:
             {imoveis.map((i) => (
               <li key={i.id}>
                 <Link
-                  to={despesasDoMes(mes, `&imovel=${i.id}`)}
+                  to={`/imoveis/${i.id}`}
                   className="flex h-full flex-col gap-3 rounded-xl border border-linha p-4 hover:border-primary/40 hover:bg-suave/40"
                 >
                   <span className="flex items-start justify-between gap-3">
@@ -195,7 +142,7 @@ export function BlocoResidencias({ consulta, mes }: { consulta: Financeiro; mes:
                   </span>
                   <BarraPago v={i} />
                   <PagoPendente v={i} />
-                  <Situacao v={i} />
+                  <SituacaoContas v={i} />
                 </Link>
               </li>
             ))}

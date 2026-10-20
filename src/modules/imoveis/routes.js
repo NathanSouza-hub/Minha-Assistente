@@ -8,6 +8,7 @@ function rotasImoveis() {
   const rotas = express.Router();
   rotas.get('/', controller.listar);
   rotas.post('/', validar({ body: corpo }), controller.criar);
+  rotas.get('/:id', validar({ params: paramsId }), controller.buscar);
   rotas.put('/:id', validar({ params: paramsId, body: corpo }), controller.atualizar);
   rotas.delete('/:id', validar({ params: paramsId }), controller.remover);
   return rotas;

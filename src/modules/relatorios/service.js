@@ -1,6 +1,8 @@
 const db = require('../../config/db');
 const { garantirContas } = require('../equipe/contas');
 const { ORIGENS } = require('../recebiveis/schema');
+const imoveis = require('../imoveis/service');
+const { DateTime } = require('luxon');
 
 const SEM_IMOVEL = 'Sem imóvel';
 const CARTAO_DE_CREDITO = 'Cartão de crédito';
@@ -186,4 +188,66 @@ async function financeiro(usuarioId, { inicio, fim }) {
   };
 }
 
-module.exports = { gastos, financeiro };
+// Meses AAAA-MM de inicio a fim (inclusive), para a evolução não pular mês sem conta.
+function mesesDoPeriodo(inicio, fim) {
+  const meses = [];
+  for (let m = DateTime.fromISO(inicio).startOf('month'); m <= DateTime.fromISO(fim); m = m.plus({ months: 1 })) {
+    meses.push(m.toFormat('yyyy-MM'));
+  }
+  return meses;
+}
+
+// Resumo de um imóvel no período, só das contas dele (vencimento no período): situação, por
+// categoria, mês a mês e quantos comprovantes. Imóvel de outro usuário → 404.
+async function imovel(usuarioId, id, { inicio, fim }) {
+  const dados = await imoveis.buscar(usuarioId, id);
+  const doPeriodo = () =>
+    db('pagamento as p')
+      .where({ 'p.usuarioId': usuarioId, 'p.imovelId': id })
+      .whereBetween('p.vencimento', [inicio, fim]);
+  const somas = () => SOMAS_CONTAS.map((s) => db.raw(s));
+
+  const [geral, categorias, porMes, comprovantes] = await Promise.all([
+    doPeriodo().first(...somas()),
+    doPeriodo()
+      .leftJoin('categoriaPagamento as g', 'g.id', 'p.categoriaId')
+      .select(
+        'g.id',
+        db.raw("COALESCE(g.nome, 'Sem categoria') AS nome"),
+        db.raw('COALESCE(SUM(p.valor_centavos), 0) AS total_centavos'),
+        db.raw("COALESCE(SUM(p.valor_centavos) FILTER (WHERE p.status = 'pago'), 0) AS pago_centavos"),
+      )
+      .groupBy('g.id', 'g.nome', 'g.ordem')
+      .orderByRaw('g.ordem NULLS LAST, nome'),
+    doPeriodo()
+      .select(
+        db.raw("to_char(p.vencimento, 'YYYY-MM') AS mes"),
+        db.raw('COALESCE(SUM(p.valor_centavos), 0) AS total_centavos'),
+        db.raw("COALESCE(SUM(p.valor_centavos) FILTER (WHERE p.status = 'pago'), 0) AS pago_centavos"),
+      )
+      .groupByRaw("to_char(p.vencimento, 'YYYY-MM')"),
+    doPeriodo()
+      .join('pagamentoComprovante as c', 'c.pagamentoId', 'p.id')
+      .first(db.raw('COUNT(*)::int AS total')),
+  ]);
+
+  return {
+    inicio,
+    fim,
+    imovel: dados,
+    ...valores(geral),
+    totalComprovantes: comprovantes.total,
+    categorias: categorias.map(({ id: categoriaId, nome, totalCentavos, pagoCentavos }) => ({
+      id: categoriaId,
+      nome,
+      totalCentavos,
+      pagoCentavos,
+    })),
+    meses: mesesDoPeriodo(inicio, fim).map((mes) => {
+      const linha = porMes.find((l) => l.mes === mes);
+      return { mes, totalCentavos: linha?.totalCentavos ?? 0, pagoCentavos: linha?.pagoCentavos ?? 0 };
+    }),
+  };
+}
+
+module.exports = { gastos, financeiro, imovel };

@@ -33,13 +33,14 @@ GET  /hoje | PATCH /hoje/:id  (tarefas do dia, decisão 24)
 GET/POST /pagamentos (inicio, fim, status, categoriaId, imovelId, destino) | GET/PUT/DELETE /pagamentos/:id
 PATCH /pagamentos/:id/pagar
 POST /pagamentos/:id/comprovantes | GET/DELETE /pagamentos/:id/comprovantes/:comprovanteId  (decisão 22)
-GET/POST /imoveis | PUT/DELETE /imoveis/:id  (escrita acrescentada)
+GET/POST /imoveis | GET/PUT/DELETE /imoveis/:id  (escrita acrescentada; GET /:id e endereço na decisão 27)
 GET/POST /categorias-pagamento | PUT/DELETE /categorias-pagamento/:id
 GET/POST /cartoes | GET/PUT/DELETE /cartoes/:id | GET /cartoes/:id/faturas/:AAAA-MM   (acrescentadas)
 POST /cartoes/:id/compras | GET/PUT/DELETE /cartoes/:id/compras/:compraId            (acrescentadas)
 GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                          (acrescentadas)
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET /relatorios/financeiro?inicio=&fim=  (visão financeira do período, decisão 25)
+GET /relatorios/imoveis/:id?inicio=&fim=  (resumo de um imóvel, decisão 27)
 GET/POST /recebiveis (inicio, fim, status, origem) | GET/PUT/DELETE /recebiveis/:id  (decisão 26)
 POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebimentoId
 POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
@@ -328,6 +329,18 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
       `recorrencia_origem_id`, então desfazer e receber de novo não duplica). O `PUT` muda só aquela
       ocorrência; as próximas nascem dela.
 
+27. **Residências** (migration 25): `imovel` ganhou `endereco` e `complemento` (identificação
+    complementar, ex.: "Apto 302"), ambos opcionais. No `POST`/`PUT /imoveis`, campo **ausente** não
+    muda (quem só renomeia — inclusive uma versão antiga do app — não apaga o endereço); vazio ou
+    `null` apaga. `GET /imoveis/:id` devolve um imóvel.
+    - `GET /relatorios/imoveis/:id?inicio=&fim=` (ambos obrigatórios): só as contas do imóvel com
+      `vencimento` no período → `{ inicio, fim, imovel, totalCentavos, pagoCentavos, pendenteCentavos,
+      vencidoCentavos, totalComprovantes, categorias: [{ id, nome, totalCentavos, pagoCentavos }],
+      meses: [{ mes: "AAAA-MM", totalCentavos, pagoCentavos }] }` (todo mês do período, mesmo
+      zerado). Mesmos critérios da decisão 25; imóvel de outro usuário → `404`.
+    - Tudo calculado das contas vinculadas: não existe total digitado à mão. Rateio de uma conta
+      entre imóveis não existe (cada conta tem no máximo um imóvel), então nada conta duas vezes.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -347,7 +360,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
 | usuario | id, nome, email (citext unique), senha_hash, versao_sessao, resumo_ativo, resumo_hora | |
-| imovel | id, usuario_id, nome, ordem | unique (usuario_id, nome); unique (id, usuario_id) |
+| imovel | id, usuario_id, nome, ordem, endereco?, complemento? | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |
 | cartao_compra | cartao_id, descricao, categoria_id?, valor_total_centavos, parcelas, data_compra, observacoes | parcelas 1–48; idx (cartao_id, data_compra) |

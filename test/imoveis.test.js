@@ -41,7 +41,7 @@ test('CRUD de imóveis do próprio usuário', async () => {
     .set(ana.auth)
     .send({ nome: ' Casa da Serra ', ordem: 2 })
     .expect(201);
-  assert.deepEqual(Object.keys(criado.body).sort(), ['id', 'nome', 'ordem']);
+  assert.deepEqual(Object.keys(criado.body).sort(), ['complemento', 'endereco', 'id', 'nome', 'ordem']);
   assert.equal(criado.body.nome, 'Casa da Serra');
 
   await request(app).post('/imoveis').set(ana.auth).send({ nome: 'Apartamento cobertura', ordem: 1 }).expect(201);
@@ -94,4 +94,69 @@ test('não apaga imóvel com pagamentos ligados (409 REFERENCIA_INVALIDA)', asyn
 test('id malformado devolve 400', async () => {
   const res = await request(app).put('/imoveis/123').set(ana.auth).send({ nome: 'X' }).expect(400);
   assert.match(res.body.erro.mensagem, /id: ID inválido/);
+});
+
+test('endereço e complemento: opcionais, editáveis e mantidos no PUT que não os envia', async () => {
+  const criado = (
+    await request(app)
+      .post('/imoveis')
+      .set(ana.auth)
+      .send({ nome: 'Sala comercial', endereco: '  Av. Paulista, 1000  ', complemento: 'Conj. 52' })
+      .expect(201)
+  ).body;
+  assert.equal(criado.endereco, 'Av. Paulista, 1000');
+  assert.equal(criado.complemento, 'Conj. 52');
+
+  // Quem só renomeia (ex.: a versão antiga do app) não apaga o endereço.
+  const renomeado = (await request(app).put(`/imoveis/${criado.id}`).set(ana.auth).send({ nome: 'Sala 52' }).expect(200)).body;
+  assert.equal(renomeado.endereco, 'Av. Paulista, 1000');
+  assert.equal(renomeado.complemento, 'Conj. 52');
+
+  // Vazio apaga.
+  const limpo = (
+    await request(app).put(`/imoveis/${criado.id}`).set(ana.auth).send({ nome: 'Sala 52', endereco: '', complemento: null }).expect(200)
+  ).body;
+  assert.equal(limpo.endereco, null);
+  assert.equal(limpo.complemento, null);
+
+  const sem = (await request(app).post('/imoveis').set(ana.auth).send({ nome: 'Terreno' }).expect(201)).body;
+  assert.equal(sem.endereco, null);
+
+  assert.equal((await request(app).get(`/imoveis/${criado.id}`).set(ana.auth).expect(200)).body.nome, 'Sala 52');
+  await request(app).get(`/imoveis/${criado.id}`).set(bia.auth).expect(404);
+});
+
+test('resumo do imóvel: só as contas dele no período, por categoria e mês a mês', async () => {
+  const carla = await criarSessao(app);
+  const [contas, outros] = (await request(app).get('/categorias-pagamento').set(carla.auth)).body;
+  const casa = (await request(app).post('/imoveis').set(carla.auth).send({ nome: 'Casa' })).body;
+  const sitio = (await request(app).post('/imoveis').set(carla.auth).send({ nome: 'Sítio' })).body;
+  const criar = (dados) => request(app).post('/pagamentos').set(carla.auth).send(dados).expect(201);
+  await criar({ descricao: 'Luz jan', categoriaId: contas.id, imovelId: casa.id, valorCentavos: 10000, vencimento: '2020-01-10', status: 'pago', dataPagamento: '2020-01-10' });
+  await criar({ descricao: 'Água fev', categoriaId: contas.id, imovelId: casa.id, valorCentavos: 4000, vencimento: '2020-02-10' });
+  await criar({ descricao: 'Jardim fev', categoriaId: outros.id, imovelId: casa.id, valorCentavos: 6000, vencimento: '2020-02-15' });
+  await criar({ descricao: 'Do sítio', categoriaId: contas.id, imovelId: sitio.id, valorCentavos: 99900, vencimento: '2020-02-10' });
+  await criar({ descricao: 'Pessoal', categoriaId: outros.id, valorCentavos: 88800, vencimento: '2020-02-10' });
+
+  const r = (
+    await request(app).get(`/relatorios/imoveis/${casa.id}`).query({ inicio: '2020-01-01', fim: '2020-03-31' }).set(carla.auth).expect(200)
+  ).body;
+  assert.equal(r.imovel.nome, 'Casa');
+  assert.equal(r.totalCentavos, 20000);
+  assert.equal(r.pagoCentavos, 10000);
+  assert.equal(r.pendenteCentavos, 10000);
+  assert.equal(r.vencidoCentavos, 10000);
+  assert.equal(r.totalComprovantes, 0);
+  assert.deepEqual(r.categorias, [
+    { id: contas.id, nome: contas.nome, totalCentavos: 14000, pagoCentavos: 10000 },
+    { id: outros.id, nome: outros.nome, totalCentavos: 6000, pagoCentavos: 0 },
+  ]);
+  assert.deepEqual(r.meses, [
+    { mes: '2020-01', totalCentavos: 10000, pagoCentavos: 10000 },
+    { mes: '2020-02', totalCentavos: 10000, pagoCentavos: 0 },
+    { mes: '2020-03', totalCentavos: 0, pagoCentavos: 0 },
+  ]);
+
+  await request(app).get(`/relatorios/imoveis/${casa.id}`).query({ inicio: '2020-01-01', fim: '2020-03-31' }).set(ana.auth).expect(404);
+  await request(app).get(`/relatorios/imoveis/${casa.id}`).set(carla.auth).expect(400);
 });

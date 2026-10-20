@@ -1,5 +1,11 @@
-const { filtrosGastos, relatorioGastos, filtrosFinanceiro, relatorioFinanceiro } = require('./schema');
-const { respostaJson, respostasErro, parametrosQuery, ERRO_AUTH } = require('../../docs/helpers');
+const {
+  filtrosGastos,
+  relatorioGastos,
+  filtrosFinanceiro,
+  relatorioFinanceiro,
+  relatorioImovel,
+} = require('./schema');
+const { respostaJson, respostasErro, parametrosQuery, paramId, ERRO_AUTH } = require('../../docs/helpers');
 
 module.exports = {
   paths: {
@@ -34,6 +40,18 @@ module.exports = {
         responses: {
           200: respostaJson('Relatório financeiro', relatorioFinanceiro),
           ...respostasErro({ 400: 'Parâmetros inválidos (VALIDACAO)', ...ERRO_AUTH }),
+        },
+      },
+    },
+    '/relatorios/imoveis/{id}': {
+      get: {
+        tags: ['Relatórios'],
+        summary: 'Resumo de um imóvel no período: situação, categorias, mês a mês',
+        description: 'Só as contas do imóvel com `vencimento` no período, com os mesmos critérios de /relatorios/financeiro.',
+        parameters: [paramId, ...parametrosQuery(filtrosFinanceiro)],
+        responses: {
+          200: respostaJson('Resumo do imóvel', relatorioImovel),
+          ...respostasErro({ 400: 'Parâmetros inválidos (VALIDACAO)', ...ERRO_AUTH, 404: 'Imóvel não encontrado (NAO_ENCONTRADO)' }),
         },
       },
     },

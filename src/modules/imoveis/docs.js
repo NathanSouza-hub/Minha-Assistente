@@ -34,9 +34,18 @@ module.exports = {
       },
     },
     '/imoveis/{id}': {
+      get: {
+        tags: TAG,
+        summary: 'Um imóvel',
+        parameters: [paramId],
+        responses: {
+          200: respostaJson('Imóvel', imovel),
+          ...respostasErro({ ...ERRO_AUTH, 404: 'Imóvel não encontrado (NAO_ENCONTRADO)' }),
+        },
+      },
       put: {
         tags: TAG,
-        summary: 'Edita um imóvel',
+        summary: 'Edita um imóvel (endereço e complemento ausentes ficam como estão)',
         parameters: [paramId],
         requestBody: corpoJson(corpo),
         responses: {

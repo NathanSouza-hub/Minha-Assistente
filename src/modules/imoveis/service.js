@@ -1,16 +1,24 @@
 const db = require('../../config/db');
 const { AppError, naoEncontrado } = require('../../lib/erros');
 
-const CAMPOS = ['id', 'nome', 'ordem'];
+const CAMPOS = ['id', 'nome', 'ordem', 'endereco', 'complemento'];
 
 const duplicado = () => new AppError(409, 'IMOVEL_DUPLICADO', 'Você já tem um imóvel com esse nome.');
 
 const listar = (usuarioId) =>
   db('imovel').select(CAMPOS).where({ usuarioId }).orderBy([{ column: 'ordem' }, { column: 'nome' }]);
 
-async function criar(usuarioId, { nome, ordem = 0 }) {
+async function buscar(usuarioId, id) {
+  const imovel = await db('imovel').where({ id, usuarioId }).first(CAMPOS);
+  if (!imovel) throw naoEncontrado('Imóvel');
+  return imovel;
+}
+
+async function criar(usuarioId, { nome, ordem = 0, endereco = null, complemento = null }) {
   try {
-    const [imovel] = await db('imovel').insert({ usuarioId, nome, ordem }).returning(CAMPOS);
+    const [imovel] = await db('imovel')
+      .insert({ usuarioId, nome, ordem, endereco, complemento })
+      .returning(CAMPOS);
     return imovel;
   } catch (erro) {
     if (erro.code === '23505') throw duplicado();
@@ -18,11 +26,17 @@ async function criar(usuarioId, { nome, ordem = 0 }) {
   }
 }
 
-async function atualizar(usuarioId, id, { nome, ordem }) {
+// Campos ausentes ficam como estão (quem só renomeia não manda o endereço).
+async function atualizar(usuarioId, id, { nome, ordem, endereco, complemento }) {
   try {
     const [imovel] = await db('imovel')
       .where({ id, usuarioId })
-      .update({ nome, ...(ordem !== undefined && { ordem }) })
+      .update({
+        nome,
+        ...(ordem !== undefined && { ordem }),
+        ...(endereco !== undefined && { endereco }),
+        ...(complemento !== undefined && { complemento }),
+      })
       .returning(CAMPOS);
     if (!imovel) throw naoEncontrado('Imóvel');
     return imovel;
@@ -48,4 +62,4 @@ async function remover(usuarioId, id) {
   }
 }
 
-module.exports = { listar, criar, atualizar, remover };
+module.exports = { listar, buscar, criar, atualizar, remover };

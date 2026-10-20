@@ -64,8 +64,8 @@ describe('Início (painel)', () => {
 
     const residencias = await bloco('Residências')
     for (const imovel of esperado.imoveis) {
-      const cartao = within(residencias).getByRole('link', { name: new RegExp(imovel.nome) })
-      expect(cartao).toHaveAttribute('href', `/despesas?mes=2026-10&imovel=${imovel.id}`)
+      const cartao = await within(residencias).findByRole('link', { name: new RegExp(imovel.nome) })
+      expect(cartao).toHaveAttribute('href', `/imoveis/${imovel.id}`)
       expect(within(cartao).getAllByText(reais(imovel.totalCentavos)).length).toBeGreaterThan(0)
     }
 

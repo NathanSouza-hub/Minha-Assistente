@@ -2,8 +2,16 @@
 import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import { deDataISO, hojeISO } from '@/lib/datas'
-import type { Pagamento, PagamentoCriacao, PagamentoEdicao, Comprovante } from '@/lib/tipos'
-import { agoraISO, banco, novoPagamento, type CategoriaMock, type PagamentoMock, type ComprovanteMock } from './banco'
+import type { Comprovante, Imovel, Pagamento, PagamentoCriacao, PagamentoEdicao } from '@/lib/tipos'
+import {
+  agoraISO,
+  banco,
+  novoPagamento,
+  type CategoriaMock,
+  type ComprovanteMock,
+  type ImovelMock,
+  type PagamentoMock,
+} from './banco'
 import { detectarTipo, lerUpload, nomeSeguro, respostaArquivo, tipoNaoAceito } from './arquivos'
 import { garantirContasEquipe } from './equipe'
 import { entradasDoPeriodo } from './recebiveis'
@@ -18,11 +26,10 @@ const imoveisDo = (usuarioId: string) =>
     .filter((i) => i.usuarioId === usuarioId)
     .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
 
-const publicoImovel = ({ id, nome, ordem }: { id: string; nome: string; ordem: number }) => ({
-  id,
-  nome,
-  ordem,
-})
+const publicoImovel = ({ usuarioId: _u, ...imovel }: ImovelMock): Imovel => imovel
+
+// Como o schema do back-end: ausente = não mexe; vazio = apaga.
+const textoParcial = (v: unknown) => (v === undefined ? undefined : typeof v === 'string' ? v.trim() || null : null)
 
 const nomeRepetido = (usuarioId: string, nome: string, exceto?: string) =>
   banco.imoveis.some((i) => i.usuarioId === usuarioId && i.nome === nome && i.id !== exceto)
@@ -247,20 +254,35 @@ export const handlersPagamentos = [
   http.post(
     `${API_URL}/imoveis`,
     autenticado(async ({ request }, u) => {
-      const { nome, ordem = 0 } = (await request.json()) as { nome?: string; ordem?: number }
+      const { nome, ordem = 0, endereco, complemento } = (await request.json()) as Partial<Imovel>
       const limpo = nome?.trim()
       if (!limpo) return erro(400, 'VALIDACAO', 'nome: Informe o nome do imóvel.')
       if (nomeRepetido(u.id, limpo)) return imovelDuplicado()
-      const imovel = { id: crypto.randomUUID(), usuarioId: u.id, nome: limpo, ordem }
+      const imovel: ImovelMock = {
+        id: crypto.randomUUID(),
+        usuarioId: u.id,
+        nome: limpo,
+        ordem,
+        endereco: textoParcial(endereco) ?? null,
+        complemento: textoParcial(complemento) ?? null,
+      }
       banco.imoveis.push(imovel)
       return HttpResponse.json(publicoImovel(imovel), { status: 201 })
+    }),
+  ),
+
+  http.get(
+    `${API_URL}/imoveis/:id`,
+    autenticado(({ params }, u) => {
+      const imovel = banco.imoveis.find((i) => i.id === idDe(params) && i.usuarioId === u.id)
+      return imovel ? HttpResponse.json(publicoImovel(imovel)) : naoEncontrado('Imóvel')
     }),
   ),
 
   http.put(
     `${API_URL}/imoveis/:id`,
     autenticado(async ({ request, params }, u) => {
-      const { nome, ordem } = (await request.json()) as { nome?: string; ordem?: number }
+      const { nome, ordem, endereco, complemento } = (await request.json()) as Partial<Imovel>
       const imovel = banco.imoveis.find((i) => i.id === idDe(params) && i.usuarioId === u.id)
       if (!imovel) return naoEncontrado('Imóvel')
       const limpo = nome?.trim()
@@ -268,6 +290,8 @@ export const handlersPagamentos = [
       if (nomeRepetido(u.id, limpo, imovel.id)) return imovelDuplicado()
       imovel.nome = limpo
       if (ordem !== undefined) imovel.ordem = ordem
+      if (endereco !== undefined) imovel.endereco = textoParcial(endereco)!
+      if (complemento !== undefined) imovel.complemento = textoParcial(complemento)!
       return HttpResponse.json(publicoImovel(imovel))
     }),
   ),
@@ -589,6 +613,50 @@ export const handlersPagamentos = [
             .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
             .map(({ ordem: _o, ...c }) => c),
         },
+      })
+    }),
+  ),
+
+  // Mesmas regras de imovel() em src/modules/relatorios/service.js.
+  http.get(
+    `${API_URL}/relatorios/imoveis/:id`,
+    autenticado(({ request, params }, u) => {
+      const imovel = banco.imoveis.find((i) => i.id === idDe(params) && i.usuarioId === u.id)
+      if (!imovel) return naoEncontrado('Imóvel')
+      const q = new URL(request.url).searchParams
+      const inicio = q.get('inicio') ?? ''
+      const fim = q.get('fim') ?? ''
+      if (!inicio || !fim) return erro(400, 'VALIDACAO', 'inicio: Data inválida: use o formato AAAA-MM-DD.')
+      const hoje = hojeISO()
+      const contas = banco.pagamentos.filter(
+        (p) => p.usuarioId === u.id && p.imovelId === imovel.id && p.vencimento >= inicio && p.vencimento <= fim,
+      )
+      const somar = (lista: PagamentoMock[]) => lista.reduce((s, p) => s + (p.valorCentavos ?? 0), 0)
+      const pagas = (lista: PagamentoMock[]) => lista.filter((p) => p.status === 'pago')
+      const categorias = categoriasDo(u.id)
+        .map((c) => {
+          const daCategoria = contas.filter((p) => p.categoriaId === c.id)
+          return { id: c.id, nome: c.nome, quantas: daCategoria.length, totalCentavos: somar(daCategoria), pagoCentavos: somar(pagas(daCategoria)) }
+        })
+        .filter((c) => c.quantas > 0)
+        .map(({ quantas: _q, ...c }) => c)
+      const meses: string[] = []
+      for (let m = deDataISO(inicio).startOf('month'); m <= deDataISO(fim); m = m.plus({ months: 1 })) meses.push(m.toFormat('yyyy-MM'))
+      const ids = new Set(contas.map((p) => p.id))
+      return HttpResponse.json({
+        inicio,
+        fim,
+        imovel: publicoImovel(imovel),
+        totalCentavos: somar(contas),
+        pagoCentavos: somar(pagas(contas)),
+        pendenteCentavos: somar(contas.filter((p) => p.status === 'pendente')),
+        vencidoCentavos: somar(contas.filter((p) => p.status === 'pendente' && p.vencimento < hoje)),
+        totalComprovantes: banco.comprovantes.filter((c) => ids.has(c.pagamentoId)).length,
+        categorias,
+        meses: meses.map((mes) => {
+          const doMes = contas.filter((p) => p.vencimento.startsWith(mes))
+          return { mes, totalCentavos: somar(doMes), pagoCentavos: somar(pagas(doMes)) }
+        }),
       })
     }),
   ),

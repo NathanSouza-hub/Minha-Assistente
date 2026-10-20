@@ -15,11 +15,13 @@ import type {
   PagamentoEdicao,
   RelatorioFinanceiro,
   RelatorioGastos,
+  RelatorioImovel,
 } from '@/lib/tipos'
 
 export const chaves = {
   categorias: ['categorias-pagamento'] as const,
   imoveis: ['imoveis'] as const,
+  imovel: (id: string) => ['imoveis', 'item', id] as const,
   pagamentos: ['pagamentos'] as const,
   listaPagamentos: (filtros: FiltrosPagamento) => ['pagamentos', 'lista', filtros] as const,
   pagamento: (id: string) => ['pagamentos', 'item', id] as const,
@@ -257,17 +259,37 @@ function useInvalidarImoveis() {
     ])
 }
 
+/** Endereço e complemento ausentes ficam como estão no servidor (renomear não os apaga). */
 export function useSalvarImovel() {
   const invalidar = useInvalidarImoveis()
+  const cliente = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, nome }: { id?: string; nome: string }) =>
+    mutationFn: ({ id, ...corpo }: { id?: string; nome: string; endereco?: string | null; complemento?: string | null }) =>
       id
-        ? api<Imovel>(`/imoveis/${id}`, { method: 'PUT', corpo: { nome } })
-        : api<Imovel>('/imoveis', { method: 'POST', corpo: { nome } }),
+        ? api<Imovel>(`/imoveis/${id}`, { method: 'PUT', corpo })
+        : api<Imovel>('/imoveis', { method: 'POST', corpo }),
     meta: { semAviso: true },
-    onSuccess: invalidar,
+    onSuccess: (salvo) => {
+      cliente.setQueryData(chaves.imovel(salvo.id), salvo)
+      return invalidar()
+    },
   })
 }
+
+export const useImovel = (id: string | undefined) =>
+  useQuery({
+    queryKey: chaves.imovel(id ?? ''),
+    queryFn: () => api<Imovel>(`/imoveis/${id}`),
+    enabled: Boolean(id),
+  })
+
+/** Resumo de um imóvel no período (só as contas dele): situação, categorias e mês a mês. */
+export const useRelatorioImovel = (id: string, periodo: { inicio: string; fim: string }) =>
+  useQuery({
+    queryKey: [...chaves.relatorio, 'imovel', id, periodo],
+    queryFn: () => api<RelatorioImovel>(`/relatorios/imoveis/${id}`, { query: periodo }),
+    placeholderData: (anterior) => anterior,
+  })
 
 export function useExcluirImovel() {
   const invalidar = useInvalidarImoveis()

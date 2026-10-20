@@ -45,6 +45,8 @@ const paginaItemCompra = () =>
   import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
 const notificacoes = () => import('@/paginas/Notificacoes').then((m) => ({ Component: m.Notificacoes }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
+const detalheImovel = () =>
+  import('@/paginas/imoveis/DetalheImovel').then((m) => ({ Component: m.DetalheImovel }))
 const categorias = () =>
   import('@/paginas/categorias/Categorias').then((m) => ({ Component: m.Categorias }))
 const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
@@ -107,6 +109,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'compras/:id', lazy: paginaItemCompra },
           { path: 'notificacoes', lazy: notificacoes },
           { path: 'imoveis', lazy: imoveis },
+          { path: 'imoveis/:id', lazy: detalheImovel },
           { path: 'categorias', lazy: categorias },
           { path: 'relatorio', lazy: relatorio },
           { path: 'conta/senha', lazy: trocarSenha },

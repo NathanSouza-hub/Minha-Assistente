@@ -209,8 +209,22 @@ function semear() {
   })
   criarCategoriasPadrao(MARIA_ID, true)
 
-  const cobertura = { id: crypto.randomUUID(), usuarioId: MARIA_ID, nome: 'Apartamento cobertura', ordem: 1 }
-  const serra = { id: crypto.randomUUID(), usuarioId: MARIA_ID, nome: 'Casa da Serra', ordem: 2 }
+  const cobertura = {
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    nome: 'Apartamento cobertura',
+    ordem: 1,
+    endereco: 'Rua das Acácias, 450',
+    complemento: 'Apto 1201',
+  }
+  const serra = {
+    id: crypto.randomUUID(),
+    usuarioId: MARIA_ID,
+    nome: 'Casa da Serra',
+    ordem: 2,
+    endereco: null,
+    complemento: null,
+  }
   banco.imoveis.push(cobertura, serra)
 
   const hoje = deDataISO(hojeISO())

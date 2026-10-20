@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { HouseIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
+import { BuildingsIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react'
+import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
@@ -100,12 +101,23 @@ function LinhaImovel({ imovel }: { imovel: Imovel }) {
 
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
-      <span className="flex flex-1 items-center gap-3 text-lg font-semibold">
+      {/* O nome abre o resumo do imóvel (quanto custa, por categoria e mês a mês, e as contas). */}
+      <Link
+        to={`/imoveis/${imovel.id}`}
+        className="-mx-2 flex flex-1 items-center gap-3 rounded-lg px-2 py-1 hover:bg-suave/60"
+      >
         <span className="selo-area size-11" aria-hidden>
-          <HouseIcon className="size-6" />
+          <BuildingsIcon className="size-6" />
         </span>
-        {imovel.nome}
-      </span>
+        <span className="flex flex-col">
+          <span className="text-lg font-semibold">{imovel.nome}</span>
+          {(imovel.endereco || imovel.complemento) && (
+            <span className="text-base text-muted-foreground">
+              {[imovel.endereco, imovel.complemento].filter(Boolean).join(' · ')}
+            </span>
+          )}
+        </span>
+      </Link>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${imovel.nome}`}>
           <PencilSimpleIcon aria-hidden />
@@ -138,7 +150,7 @@ export function Imoveis() {
     <Pagina titulo="Imóveis">
       <div className="flex flex-col gap-8">
         <p className="max-w-prose text-lg text-muted-foreground">
-          Separe os pagamentos por imóvel para saber quanto cada um custa no relatório de gastos.
+          Separe as contas por imóvel para saber quanto cada um custa. Toque no nome para ver o resumo.
         </p>
 
         <section className="rounded-2xl bg-folha p-4 shadow-folha">
@@ -148,7 +160,7 @@ export function Imoveis() {
         {consulta.isPending ? (
           <Skeleton className="h-40" />
         ) : imoveis.length === 0 ? (
-          <EstadoVazio icone={HouseIcon} titulo="Nenhum imóvel cadastrado">
+          <EstadoVazio icone={BuildingsIcon} titulo="Nenhum imóvel cadastrado">
             Adicione o primeiro acima. Pagamentos sem imóvel aparecem como "Sem imóvel" no relatório.
           </EstadoVazio>
         ) : (

@@ -60,7 +60,7 @@ export function Inicio() {
         <BlocoRemedios consulta={dia} />
         <BlocoContasPendentes />
         <BlocoAgenda />
-        <BlocoResidencias consulta={financeiro} mes={mes} />
+        <BlocoResidencias consulta={financeiro} />
         <BlocoPessoais consulta={financeiro} mes={mes} />
         <BlocoRecebiveis consulta={financeiro} mes={mes} />
       </div>

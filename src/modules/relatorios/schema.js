@@ -93,4 +93,24 @@ const relatorioFinanceiro = z.object({
     .describe('Contas sem imóvel (despesas pessoais, inclusive faturas de cartão e equipe)'),
 });
 
-module.exports = { filtrosGastos, relatorioGastos, filtrosFinanceiro, relatorioFinanceiro };
+const relatorioImovel = z.object({
+  inicio: z.iso.date(),
+  fim: z.iso.date(),
+  imovel: z.object({
+    id: z.uuid(),
+    nome: z.string(),
+    ordem: z.number().int(),
+    endereco: z.string().nullable(),
+    complemento: z.string().nullable(),
+  }),
+  ...valoresContas,
+  totalComprovantes: z.number().int().describe('Comprovantes anexados às contas do período'),
+  categorias: z.array(
+    z.object({ id: z.uuid().nullable(), nome: z.string(), totalCentavos: centavos, pagoCentavos: centavos }),
+  ),
+  meses: z
+    .array(z.object({ mes: z.string().describe('AAAA-MM'), totalCentavos: centavos, pagoCentavos: centavos }))
+    .describe('Cada mês do período, mesmo sem contas (evolução)'),
+});
+
+module.exports = { filtrosGastos, relatorioGastos, filtrosFinanceiro, relatorioFinanceiro, relatorioImovel };

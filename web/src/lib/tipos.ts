@@ -12,7 +12,25 @@ export type Sessao = {
   usuario: Usuario
 }
 
-export type Imovel = { id: string; nome: string; ordem: number }
+export type Imovel = {
+  id: string
+  nome: string
+  ordem: number
+  endereco: string | null
+  /** Identificação complementar, ex.: "Apto 302". */
+  complemento: string | null
+}
+
+/** GET /relatorios/imoveis/:id: só as contas do imóvel com vencimento no período. */
+export type RelatorioImovel = ValoresContas & {
+  inicio: string
+  fim: string
+  imovel: Imovel
+  totalComprovantes: number
+  categorias: { id: string | null; nome: string; totalCentavos: number; pagoCentavos: number }[]
+  /** Cada mês do período (AAAA-MM), mesmo sem contas. */
+  meses: { mes: string; totalCentavos: number; pagoCentavos: number }[]
+}
 
 export type CategoriaPagamento = { id: string; nome: string; ordem: number }
 
