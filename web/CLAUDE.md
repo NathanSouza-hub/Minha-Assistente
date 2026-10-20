@@ -110,7 +110,8 @@ npm run lint                                  # oxlint
   `public/sw-push.js` (eventos `push` e `notificationclick`). `ativar()` pede a permissão como
   primeira coisa, porque o Safari só pede dentro de um toque. Formulário que cria algo com
   lembrete chama `convidar()` de `useConvidarNotificacoes` depois de salvar (uma vez por aparelho,
-  nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. Nos testes,
+  nunca ao abrir o app). Sair da conta desliga as notificações do aparelho. "O que avisar" liga/desliga cada categoria
+  (`useAvisos`/`useSalvarAvisos`, otimista; decisão 29) — preferência da conta, não do aparelho. Nos testes,
   `src/test/pushFalso.ts` simula `Notification`, `PushManager` e o service worker.
 - **Versão nova do app** (`registerType: 'prompt'` no `vite.config.ts`): o worker novo fica esperando
   e `components/AvisoAtualizacao.tsx` mostra "Nova versão do app disponível"; só o toque em

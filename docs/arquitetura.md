@@ -55,6 +55,7 @@ GET/POST /compras | PUT/DELETE /compras/:id | PATCH /compras/:id/comprado
 POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, Web Push)
 GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
+GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 ```
 
 ## Decisões acordadas
@@ -357,6 +358,17 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
       tarefa com `lembrete`; tarefa concluída, apagada, sem lembrete ou com dia/hora mudados não é
       avisada. Editar ou excluir cancela os pendentes (o agendador gera de novo).
 
+29. **Avisos por categoria** (migration 27, `src/lembretes/categorias.js`): `usuario.avisos_desligados`
+    guarda as categorias desligadas (`agenda` = evento, `remedios` = medicamento_horario, `contas` =
+    pagamento, `compromissos` = rotina, `tarefas` = tarefa); vazio = tudo ligado, como antes. O
+    resumo da manhã continua com a preferência própria (decisão 21).
+    - `GET /notificacoes/avisos` → `{ agenda, remedios, contas, compromissos, tarefas }` (booleans).
+      `PUT` aceita qualquer subconjunto (ausente fica como está; vazio → `400`).
+    - Desligar cancela na hora os lembretes pendentes daquelas origens; o agendador não gera mais
+      para quem desligou (`quemRecebe` em `agendador.js`) e, na hora de enviar, confere de novo
+      (cancelado com "Aviso desta categoria desligado.") — sem aviso duplicado nem atrasado. Religar
+      volta a gerar no ciclo seguinte. Editar ou excluir a origem continua cancelando os pendentes.
+
 ## Convenções de banco
 
 - IDs `uuid` (`gen_random_uuid()`).
@@ -375,7 +387,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 
 | Tabela | Colunas principais | Restrições / índices |
 |---|---|---|
-| usuario | id, nome, email (citext unique), senha_hash, versao_sessao, resumo_ativo, resumo_hora | |
+| usuario | id, nome, email (citext unique), senha_hash, versao_sessao, resumo_ativo, resumo_hora, avisos_desligados text[] | avisos_desligados ⊆ categorias de aviso |
 | imovel | id, usuario_id, nome, ordem, endereco?, complemento? | unique (usuario_id, nome); unique (id, usuario_id) |
 | categoria_pagamento | id, usuario_id, nome, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id) |
 | cartao | id, usuario_id, nome, final?, cor, dia_fechamento, dia_vencimento, limite_centavos?, ordem | unique (usuario_id, lower(nome)); unique (id, usuario_id); dias 1–31 |

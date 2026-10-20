@@ -6,6 +6,7 @@ const db = require('../config/db');
 const { agora: agoraSP, paraISO } = require('../lib/tempo');
 const { geradores, porTipo } = require('./geradores');
 const { canaisAtivos } = require('./canais');
+const { CATEGORIA_DA_ORIGEM } = require('./categorias');
 
 const HORIZONTE_HORAS = 24;
 // Lembrete que passou da hora há mais que isso (ex.: servidor parado) não é mais enviado.
@@ -14,6 +15,14 @@ const MAXIMO_TENTATIVAS = 3;
 const LOTE = 200;
 
 const CHAVE = ['origemTipo', 'origemId', 'ocorrencia', 'agendadoPara', 'canal'];
+
+/** Quem tem o canal e não desligou a categoria desta origem (Notificações → O que avisar). */
+function quemRecebe(canal, origemTipo) {
+  const categoria = CATEGORIA_DA_ORIGEM[origemTipo];
+  const doCanal = canal.usuarios(db);
+  if (!categoria) return doCanal;
+  return db('usuario').whereIn('id', doCanal).whereRaw('NOT (? = ANY(avisos_desligados))', [categoria]).select('id');
+}
 
 /**
  * Cria os lembretes com agendadoPara de agora até 24h depois. Os que já existem ficam como estão,
@@ -26,7 +35,7 @@ async function gerar(agora = agoraSP(), { canais = canaisAtivos() } = {}) {
   let total = 0;
   for (const canal of canais) {
     for (const gerador of geradores) {
-      const itens = await gerador.gerar(db, { de, ate, usuarios: canal.usuarios(db) });
+      const itens = await gerador.gerar(db, { de, ate, usuarios: quemRecebe(canal, gerador.tipo) });
       const linhas = itens.map((i) => ({
         usuarioId: i.usuarioId,
         origemTipo: gerador.tipo,
@@ -65,6 +74,12 @@ async function enviarUm(id, agora, canais) {
     }
     const canal = canais.find((c) => c.nome === lembrete.canal);
     if (!canal) return cancelar('Canal desligado.');
+    // A pessoa pode ter desligado a categoria depois de o lembrete ser gerado.
+    const categoria = CATEGORIA_DA_ORIGEM[lembrete.origemTipo];
+    if (categoria) {
+      const { avisosDesligados } = await trx('usuario').where({ id: lembrete.usuarioId }).first('avisosDesligados');
+      if (avisosDesligados.includes(categoria)) return cancelar('Aviso desta categoria desligado.');
+    }
     const mensagem = await porTipo[lembrete.origemTipo].mensagem(trx, lembrete);
     if (!mensagem) return cancelar('Não vale mais (a origem mudou ou já foi resolvida).');
 

@@ -69,5 +69,24 @@ module.exports = {
         },
       },
     },
+    '/notificacoes/avisos': {
+      get: {
+        tags: TAG,
+        summary: 'O que avisar, por categoria',
+        description:
+          'agenda (eventos), remedios (doses), contas (vencimentos), compromissos (rotina) e tarefas (avulsas). Vem tudo ligado. O resumo da manhã tem preferência própria.',
+        responses: { 200: respostaJson('Preferências', esquemas.avisos), ...respostasErro(ERRO_AUTH) },
+      },
+      put: {
+        tags: TAG,
+        summary: 'Liga ou desliga categorias de aviso (as ausentes ficam como estão)',
+        description: 'Desligar cancela os lembretes pendentes da categoria; religar volta a gerar no próximo minuto.',
+        requestBody: corpoJson(esquemas.avisosParcial),
+        responses: {
+          200: respostaJson('Preferências salvas', esquemas.avisos),
+          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH }),
+        },
+      },
+    },
   },
 };

@@ -5,9 +5,9 @@ import {
   CalendarDotsIcon,
   CheckSquareIcon,
   ExportIcon,
+  ListChecksIcon,
   PillIcon,
   PlusSquareIcon,
-  SunIcon,
   WalletIcon,
   type Icon,
 } from '@phosphor-icons/react'
@@ -20,21 +20,25 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import {
   useAtivarNotificacoes,
+  useAvisos,
   useDesativarNotificacoes,
   useEstadoNotificacoes,
   useResumo,
+  useSalvarAvisos,
   useSalvarResumo,
   useTestarNotificacao,
 } from '@/consultas/notificacoes'
+import type { CategoriaAviso } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
-// Cada aviso no selo da sua área, para reconhecer de relance.
-const O_QUE_AVISA: { icone: Icon; area: Area; texto: string }[] = [
-  { icone: CalendarDotsIcon, area: 'agenda', texto: 'Agendamentos, com a antecedência que você escolher' },
-  { icone: PillIcon, area: 'remedios', texto: 'Remédios, na hora de cada dose' },
-  { icone: CheckSquareIcon, area: 'compromissos', texto: 'Compromissos que têm lembrete' },
-  { icone: WalletIcon, area: 'contas', texto: 'Contas a pagar, na véspera e no dia, às 9h' },
-  { icone: SunIcon, area: 'hoje', texto: 'O resumo do dia, de manhã, na hora que você escolher' },
+// Cada categoria no selo da sua área, para reconhecer de relance (o resumo tem seção própria).
+const O_QUE_AVISA: { categoria: CategoriaAviso; icone: Icon; area: Area; titulo: string; texto: string }[] = [
+  { categoria: 'agenda', icone: CalendarDotsIcon, area: 'agenda', titulo: 'Agendamentos', texto: 'Com a antecedência escolhida em cada um' },
+  { categoria: 'remedios', icone: PillIcon, area: 'remedios', titulo: 'Remédios', texto: 'Na hora de cada dose' },
+  { categoria: 'compromissos', icone: CheckSquareIcon, area: 'compromissos', titulo: 'Compromissos', texto: 'Os que têm lembrete, na hora marcada' },
+  { categoria: 'tarefas', icone: ListChecksIcon, area: 'tarefas', titulo: 'Tarefas', texto: 'As que têm lembrete, na hora marcada' },
+  { categoria: 'contas', icone: WalletIcon, area: 'contas', titulo: 'Contas a pagar', texto: 'Na véspera e no dia do vencimento, às 9h' },
 ]
 
 /** Mais → Notificações: liga, testa e desliga os lembretes neste aparelho. */
@@ -67,21 +71,52 @@ export function Notificacoes() {
 
         <ResumoDaManha />
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-bold">O que é avisado</h2>
-          <ul className="flex flex-col divide-y divide-linha">
-            {O_QUE_AVISA.map(({ icone: Icone, area, texto }) => (
-              <li key={texto} className={`area-${area} flex items-center gap-4 py-3 first:pt-0`}>
-                <span className="selo-area size-11" aria-hidden>
-                  <Icone className="size-6" weight="fill" />
-                </span>
-                {texto}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <OQueAvisar />
       </div>
     </Pagina>
+  )
+}
+
+/** Liga e desliga cada categoria de aviso (preferência da conta: vale em todos os aparelhos). */
+function OQueAvisar() {
+  const consulta = useAvisos()
+  const salvar = useSalvarAvisos()
+  return (
+    <section aria-labelledby="avisos-titulo" className="flex flex-col gap-3">
+      <h2 id="avisos-titulo" className="text-xl font-bold">
+        O que avisar
+      </h2>
+      <p className="text-base text-muted-foreground">Desligue o que não quer receber. Vale para todos os seus aparelhos.</p>
+      {consulta.isPending ? (
+        <Skeleton className="h-60" />
+      ) : consulta.isError ? (
+        <p className="text-muted-foreground">Não foi possível carregar as preferências.</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha">
+          {O_QUE_AVISA.map(({ categoria, icone: Icone, area, titulo, texto }) => (
+            <li key={categoria} className={`area-${area} flex items-center gap-4 py-3`}>
+              <span className="selo-area size-11" aria-hidden>
+                <Icone className="size-6" weight="fill" />
+              </span>
+              <Label htmlFor={`aviso-${categoria}`} className="flex flex-1 flex-col items-start gap-0.5">
+                <span className="text-lg">{titulo}</span>
+                <span className="text-base font-normal text-muted-foreground">{texto}</span>
+              </Label>
+              <Switch
+                id={`aviso-${categoria}`}
+                checked={consulta.data[categoria]}
+                onCheckedChange={(ligar) =>
+                  salvar.mutate(
+                    { [categoria]: ligar },
+                    { onSuccess: () => toast.success(ligar ? `Avisos de ${titulo.toLowerCase()} ligados.` : `Avisos de ${titulo.toLowerCase()} desligados.`) },
+                  )
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

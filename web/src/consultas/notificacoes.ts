@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { api, ApiError } from '@/lib/api'
 import { ativar, desativar, jaConvidou, lerEstado, marcarConvidado, type EstadoPush } from '@/lib/notificacoes'
-import type { PreferenciaResumo } from '@/lib/tipos'
+import type { PreferenciaResumo, PreferenciaAvisos } from '@/lib/tipos'
 
 export const chavesNotificacoes = {
   estado: ['notificacoes', 'estado'] as const,
   resumo: ['notificacoes', 'resumo'] as const,
+  avisos: ['notificacoes', 'avisos'] as const,
 }
 
 /** Relido ao voltar para o app: a permissão pode ter mudado nas configurações do aparelho. */
@@ -73,6 +74,28 @@ export function useSalvarResumo() {
     },
     // Volta a mostrar o que está salvo se o servidor recusou.
     onError: () => cliente.invalidateQueries({ queryKey: chavesNotificacoes.resumo }),
+  })
+}
+
+export const useAvisos = () =>
+  useQuery({ queryKey: chavesNotificacoes.avisos, queryFn: () => api<PreferenciaAvisos>('/notificacoes/avisos') })
+
+/** Liga/desliga uma categoria. Otimista: o interruptor muda na hora e volta se o servidor recusar. */
+export function useSalvarAvisos() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (mudanca: Partial<PreferenciaAvisos>) =>
+      api<PreferenciaAvisos>('/notificacoes/avisos', { method: 'PUT', corpo: mudanca }),
+    onMutate: async (mudanca) => {
+      await cliente.cancelQueries({ queryKey: chavesNotificacoes.avisos })
+      const antes = cliente.getQueryData<PreferenciaAvisos>(chavesNotificacoes.avisos)
+      if (antes) cliente.setQueryData(chavesNotificacoes.avisos, { ...antes, ...mudanca })
+      return { antes }
+    },
+    onError: (_erro, _mudanca, contexto) => {
+      if (contexto?.antes) cliente.setQueryData(chavesNotificacoes.avisos, contexto.antes)
+    },
+    onSuccess: (salvo) => cliente.setQueryData(chavesNotificacoes.avisos, salvo),
   })
 }
 

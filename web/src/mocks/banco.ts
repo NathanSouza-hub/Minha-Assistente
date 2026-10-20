@@ -180,6 +180,8 @@ export const banco = {
   inscricoesPush: [] as { id: string; usuarioId: string; endpoint: string; p256dh: string; auth: string }[],
   // Resumo da manhã por usuário; sem entrada = o padrão do back-end (ligado às 07:00).
   resumos: new Map<string, { ativo: boolean; hora: string }>(),
+  // Categorias de aviso desligadas por usuário (usuario.avisos_desligados); sem entrada = tudo ligado.
+  avisosDesligados: new Map<string, string[]>(),
 }
 
 export function novoPagamento(
@@ -567,6 +569,7 @@ export function resetarBancoMock() {
   banco.compras.length = 0
   banco.inscricoesPush.length = 0
   banco.resumos.clear()
+  banco.avisosDesligados.clear()
   semear()
   semearAgenda()
   semearRemedios()

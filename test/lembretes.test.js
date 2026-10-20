@@ -310,3 +310,61 @@ test('falha no envio tenta de novo e desiste depois de 3 tentativas', async () =
 test('sem canal ativo o ciclo não faz nada', async () => {
   assert.deepEqual(await executarCiclo(em('2026-12-28T09:00'), { canais: [] }), { gerados: 0, enviados: {} });
 });
+
+test('avisos por categoria: tudo ligado por padrão; PUT parcial; validação', async () => {
+  const lidos = (await request(app).get('/notificacoes/avisos').set(bia.auth).expect(200)).body;
+  assert.deepEqual(lidos, { agenda: true, remedios: true, contas: true, compromissos: true, tarefas: true });
+
+  const salvos = (await request(app).put('/notificacoes/avisos').set(bia.auth).send({ tarefas: false }).expect(200)).body;
+  assert.deepEqual(salvos, { agenda: true, remedios: true, contas: true, compromissos: true, tarefas: false });
+  assert.equal((await request(app).get('/notificacoes/avisos').set(bia.auth)).body.tarefas, false);
+
+  await request(app).put('/notificacoes/avisos').set(bia.auth).send({}).expect(400);
+  await request(app).put('/notificacoes/avisos').set(bia.auth).send({ agenda: 'sim' }).expect(400);
+  await request(app).get('/notificacoes/avisos').expect(401);
+});
+
+test('desligar "contas" cancela os pendentes e não gera mais; religar volta a gerar; agenda segue', async () => {
+  const { body: conta } = await post(ana, '/pagamentos', {
+    descricao: 'Condomínio jan',
+    categoriaId: categorias['Contas residenciais'],
+    valorCentavos: 50000,
+    vencimento: '2027-01-12',
+  });
+  const { body: consulta } = await post(ana, '/eventos', {
+    titulo: 'Consulta',
+    tipo: 'consulta',
+    inicio: '2027-01-11T15:00:00-03:00',
+    lembretesMinutosAntes: [60],
+  });
+
+  // Véspera às 9h: gera o da conta e o da consulta.
+  await gerar(em('2027-01-11T08:00'), opcoes());
+  assert.deepEqual((await lembretesDe(conta.id)).map((l) => l.status), ['pendente']);
+
+  await request(app).put('/notificacoes/avisos').set(ana.auth).send({ contas: false }).expect(200);
+  assert.deepEqual((await lembretesDe(conta.id)).map((l) => l.status), ['cancelado']);
+  await gerar(em('2027-01-11T08:01'), opcoes());
+  assert.deepEqual((await lembretesDe(conta.id)).map((l) => l.status), ['cancelado'], 'desligado não volta a pendente');
+
+  await enviarPendentes(em('2027-01-11T14:00'), opcoes());
+  assert.deepEqual(enviadosDe(conta.id, consulta.id).map((e) => e.titulo), ['Consulta']);
+
+  // Religar: o próximo ciclo gera de novo (o do dia do vencimento).
+  await request(app).put('/notificacoes/avisos').set(ana.auth).send({ contas: true }).expect(200);
+  await gerar(em('2027-01-12T08:00'), opcoes());
+  assert.ok((await lembretesDe(conta.id)).some((l) => l.status === 'pendente'));
+});
+
+test('categoria desligada depois de gerar: o envio confere e cancela', async () => {
+  const { body: rotina } = await post(ana, '/rotinas', { titulo: 'Alongar', hora: '07:30', lembrete: true });
+  await gerar(em('2027-01-20T06:00'), opcoes());
+  // Desliga direto no banco (sem passar pelo PUT, que já cancelaria): simula a corrida.
+  await db('usuario').where({ id: ana.usuario.id }).update({ avisosDesligados: ['compromissos'] });
+  await enviarPendentes(em('2027-01-20T07:30'), opcoes());
+  assert.deepEqual(enviadosDe(rotina.id), []);
+  const [lembrete] = await lembretesDe(rotina.id);
+  assert.equal(lembrete.status, 'cancelado');
+  assert.equal(lembrete.erro, 'Aviso desta categoria desligado.');
+  await db('usuario').where({ id: ana.usuario.id }).update({ avisosDesligados: [] });
+});

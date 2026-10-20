@@ -1,6 +1,7 @@
 const { z } = require('../../lib/zod');
 const { endpointPermitido } = require('../../lib/push');
 const esquemas = require('../../lib/esquemas');
+const { CATEGORIAS } = require('../../lembretes/categorias');
 
 // Chaves da inscrição do navegador (PushSubscription.toJSON().keys), em base64url. O tamanho é
 // conferido aqui: com uma chave malformada, todo envio para o usuário falharia depois.
@@ -44,4 +45,12 @@ const resumo = z
   })
   .meta({ example: { ativo: true, hora: '07:00' } });
 
-module.exports = { inscricao, cancelamento, chavePublica, inscricaoSalva, resumo };
+// O que avisar, por categoria (usuario.avisos_desligados). No PUT, categoria ausente fica como está.
+const avisos = z
+  .object(Object.fromEntries(CATEGORIAS.map((c) => [c, z.boolean()])))
+  .meta({ example: { agenda: true, remedios: true, contas: true, compromissos: true, tarefas: false } });
+const avisosParcial = avisos
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Informe pelo menos uma categoria.');
+
+module.exports = { inscricao, cancelamento, chavePublica, inscricaoSalva, resumo, avisos, avisosParcial };

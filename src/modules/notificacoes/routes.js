@@ -11,6 +11,8 @@ function rotasNotificacoes() {
   rotas.post('/teste', controller.testar);
   rotas.get('/resumo', controller.lerResumo);
   rotas.put('/resumo', validar({ body: esquemas.resumo }), controller.salvarResumo);
+  rotas.get('/avisos', controller.lerAvisos);
+  rotas.put('/avisos', validar({ body: esquemas.avisosParcial }), controller.salvarAvisos);
   return rotas;
 }
 

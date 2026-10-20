@@ -2,6 +2,7 @@ const db = require('../../config/db');
 const env = require('../../config/env');
 const app = require('../../lembretes/canais/app');
 const { AppError } = require('../../lib/erros');
+const { CATEGORIAS, origensDa } = require('../../lembretes/categorias');
 
 function exigirConfiguracao() {
   if (!app.ativo()) {
@@ -56,4 +57,27 @@ async function testar(usuarioId) {
   if (!resultado.entregue) throw new AppError(409, 'SEM_INSCRICAO', resultado.motivo);
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo };
+async function lerAvisos(usuarioId, conexao = db) {
+  const { avisosDesligados } = await conexao('usuario').where({ id: usuarioId }).first('avisosDesligados');
+  return Object.fromEntries(CATEGORIAS.map((c) => [c, !avisosDesligados.includes(c)]));
+}
+
+// Desligar uma categoria cancela os lembretes pendentes dela; religar volta a gerar no próximo ciclo.
+async function salvarAvisos(usuarioId, mudancas) {
+  return db.transaction(async (trx) => {
+    const atuais = await lerAvisos(usuarioId, trx);
+    const novos = { ...atuais, ...mudancas };
+    const desligados = CATEGORIAS.filter((c) => !novos[c]);
+    await trx('usuario').where({ id: usuarioId }).update({ avisosDesligados: desligados });
+    const origens = desligados.filter((c) => atuais[c]).flatMap(origensDa);
+    if (origens.length) {
+      await trx('lembreteEnvio')
+        .where({ usuarioId, status: 'pendente' })
+        .whereIn('origemTipo', origens)
+        .update({ status: 'cancelado', erro: 'Aviso desta categoria desligado.' });
+    }
+    return novos;
+  });
+}
+
+module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo, lerAvisos, salvarAvisos };

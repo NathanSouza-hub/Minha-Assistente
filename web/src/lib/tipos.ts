@@ -492,3 +492,7 @@ export type ItemCompraCorpo = Pick<ItemCompra, 'nome' | 'categoria' | 'quantidad
 
 /** GET/PUT /notificacoes/resumo: o resumo da manhã (vem ligado às 07:00). */
 export type PreferenciaResumo = { ativo: boolean; hora: string }
+
+/** Categorias de aviso que a pessoa liga e desliga (GET/PUT /notificacoes/avisos, decisão 29). */
+export type CategoriaAviso = 'agenda' | 'remedios' | 'compromissos' | 'tarefas' | 'contas'
+export type PreferenciaAvisos = Record<CategoriaAviso, boolean>

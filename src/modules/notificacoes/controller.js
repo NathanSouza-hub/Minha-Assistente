@@ -26,4 +26,12 @@ async function salvarResumo(req, res) {
   res.json(await service.salvarResumo(req.usuario.id, req.validado.body));
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo };
+async function lerAvisos(req, res) {
+  res.json(await service.lerAvisos(req.usuario.id));
+}
+
+async function salvarAvisos(req, res) {
+  res.json(await service.salvarAvisos(req.usuario.id, req.validado.body));
+}
+
+module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo, lerAvisos, salvarAvisos };

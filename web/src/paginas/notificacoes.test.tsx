@@ -196,3 +196,25 @@ describe('resumo da manhã', () => {
     expect(banco.resumos.get(MARIA_ID)).toEqual({ ativo: false, hora: '08:30' })
   })
 })
+
+describe('o que avisar (por categoria)', () => {
+  test('vem tudo ligado; desligar uma categoria salva na conta e religar volta', async () => {
+    instalarPushFalso({ inscrito: true })
+    const usuario = userEvent.setup()
+    renderizarApp('/notificacoes')
+    const secao = await screen.findByRole('region', { name: 'O que avisar' })
+    const contas = await within(secao).findByRole('switch', { name: /Contas a pagar/ })
+    for (const nome of [/Agendamentos/, /Remédios/, /Compromissos/, /Tarefas/, /Contas a pagar/]) {
+      expect(within(secao).getByRole('switch', { name: nome })).toBeChecked()
+    }
+
+    await usuario.click(contas)
+    expect(await screen.findByText('Avisos de contas a pagar desligados.')).toBeInTheDocument()
+    expect(contas).not.toBeChecked()
+    expect(banco.avisosDesligados.get(MARIA_ID)).toEqual(['contas'])
+
+    await usuario.click(contas)
+    expect(await screen.findByText('Avisos de contas a pagar ligados.')).toBeInTheDocument()
+    expect(banco.avisosDesligados.get(MARIA_ID)).toEqual([])
+  })
+})

@@ -5,6 +5,12 @@ import { API_URL } from '@/lib/api'
 import { banco } from './banco'
 import { autenticado, erro } from './util'
 
+const CATEGORIAS_AVISO = ['agenda', 'remedios', 'contas', 'compromissos', 'tarefas']
+const avisosDe = (usuarioId: string) => {
+  const desligados = banco.avisosDesligados.get(usuarioId) ?? []
+  return Object.fromEntries(CATEGORIAS_AVISO.map((c) => [c, !desligados.includes(c)]))
+}
+
 /** Chave pública VAPID de exemplo (um ponto P-256 válido, 65 bytes). */
 export const CHAVE_PUBLICA_MOCK =
   'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM'
@@ -87,6 +93,28 @@ export const handlersNotificacoes = [
       }
       banco.resumos.set(u.id, { ativo, hora })
       return HttpResponse.json({ ativo, hora })
+    }),
+  ),
+
+  // Como lerAvisos/salvarAvisos do back-end: tudo ligado por padrão; PUT parcial.
+  http.get(
+    `${API_URL}/notificacoes/avisos`,
+    autenticado((_ctx, u) => HttpResponse.json(avisosDe(u.id))),
+  ),
+
+  http.put(
+    `${API_URL}/notificacoes/avisos`,
+    autenticado(async ({ request }, u) => {
+      const mudanca = (await request.json()) as Record<string, unknown>
+      const chaves = Object.keys(mudanca)
+      if (!chaves.length) return erro(400, 'VALIDACAO', 'Informe pelo menos uma categoria.')
+      for (const chave of chaves) {
+        if (!CATEGORIAS_AVISO.includes(chave) || typeof mudanca[chave] !== 'boolean')
+          return erro(400, 'VALIDACAO', `${chave}: Opção inválida.`)
+      }
+      const novos = { ...avisosDe(u.id), ...mudanca } as Record<string, boolean>
+      banco.avisosDesligados.set(u.id, CATEGORIAS_AVISO.filter((c) => !novos[c]))
+      return HttpResponse.json(avisosDe(u.id))
     }),
   ),
 ]
