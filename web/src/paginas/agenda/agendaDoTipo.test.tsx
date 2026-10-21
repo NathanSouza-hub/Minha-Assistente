@@ -42,9 +42,12 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     expect(await main.findByText('Gravação do programa')).toBeInTheDocument()
     await usuario.click(main.getByRole('link', { name: 'Novo' }))
 
-    expect(await screen.findByLabelText('Tipo')).toHaveDisplayValue('Programa de rádio')
+    // O formulário do rádio: sem o campo "Tipo", com "Nome do programa" e "Emissora".
+    expect(await screen.findByRole('heading', { name: 'Novo programa de rádio' })).toBeInTheDocument()
+    expect(screen.queryByLabelText('Tipo')).not.toBeInTheDocument()
     expect((await principal()).getByRole('link', { name: 'Programa de rádio' })).toHaveAttribute('href', '/radio')
-    await usuario.type(screen.getByLabelText('O que é?'), 'Programa ao vivo')
+    await usuario.type(screen.getByLabelText('Nome do programa'), 'Programa ao vivo')
+    await usuario.type(screen.getByLabelText('Emissora (opcional)'), 'Rádio Cidade')
     await usuario.type(screen.getByLabelText('Começa às'), '10:00')
     await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
 
@@ -53,14 +56,11 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     expect(screen.getByRole('heading', { name: 'Programa de rádio', level: 1 })).toBeInTheDocument()
   })
 
-  test('Rádio fica no menu da Agenda; Fisioterapia, Consultas e Exames no menu da Saúde', async () => {
+  test('Viagens e Rádio saíram do menu da Agenda; Fisioterapia, Consultas e Exames ficam no da Saúde', async () => {
     renderizarApp('/agenda')
-    const agenda = await screen.findByRole('navigation', { name: 'Telas de Agenda' })
-    expect(within(agenda).getAllByRole('link').map((l) => l.textContent)).toEqual([
-      'Agendamentos',
-      'Viagens',
-      'Programa de rádio',
-    ])
+    await screen.findByRole('heading', { name: 'Agenda', level: 1 })
+    // Só "Agendamentos": a fileira de telas some (viagens e rádio nascem no "+ Novo").
+    expect(screen.queryByRole('navigation', { name: 'Telas de Agenda' })).not.toBeInTheDocument()
     cleanup()
     renderizarApp('/remedios')
     const saude = await screen.findByRole('navigation', { name: 'Telas de Saúde' })
@@ -80,25 +80,30 @@ describe('modalidade de acordo com o tipo', () => {
 
   test('consulta: presencial ou telemedicina; podcast: presencial ou videoconferência', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/agenda/novo')
-    const tipo = await screen.findByLabelText('Tipo')
-    expect(screen.queryByLabelText('Como vai ser? (opcional)')).not.toBeInTheDocument()
-
-    await usuario.selectOptions(tipo, 'Consulta')
-    expect(opcoes(screen.getByLabelText('Como vai ser? (opcional)'))).toEqual([
+    renderizarApp('/agenda/novo?tipo=consulta')
+    expect(opcoes(await screen.findByLabelText('Como vai ser? (opcional)'))).toEqual([
       'Não informar',
       'Presencial',
       'Telemedicina',
     ])
-    await usuario.selectOptions(screen.getByLabelText('Como vai ser? (opcional)'), 'Telemedicina')
 
-    // Trocar para um tipo em que a escolha não vale apaga a modalidade
+    cleanup()
+    renderizarApp('/agenda/novo')
+    const tipo = await screen.findByLabelText('Tipo')
+    expect(screen.queryByLabelText('Como vai ser? (opcional)')).not.toBeInTheDocument()
     await usuario.selectOptions(tipo, 'Podcast')
-    const modalidade = screen.getByLabelText('Como vai ser? (opcional)')
-    expect(opcoes(modalidade)).toEqual(['Não informar', 'Presencial', 'Videoconferência'])
-    expect(modalidade).toHaveDisplayValue('Não informar')
+    expect(opcoes(screen.getByLabelText('Como vai ser? (opcional)'))).toEqual([
+      'Não informar',
+      'Presencial',
+      'Videoconferência',
+    ])
+    // Videoconferência é sempre online: sem a escolha.
+    await usuario.selectOptions(tipo, 'Videoconferência')
+    expect(screen.queryByLabelText('Como vai ser? (opcional)')).not.toBeInTheDocument()
 
-    await usuario.selectOptions(tipo, 'Atividade física')
+    cleanup()
+    renderizarApp('/agenda/novo?tipo=atividade_fisica')
+    await screen.findByLabelText('Tipo de atividade')
     expect(screen.queryByLabelText('Como vai ser? (opcional)')).not.toBeInTheDocument()
   })
 })

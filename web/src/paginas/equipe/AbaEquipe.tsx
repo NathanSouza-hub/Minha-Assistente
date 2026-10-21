@@ -49,7 +49,7 @@ function ListaEquipe() {
       </EstadoVazio>
     )
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Pessoas da equipe">
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Integrantes da equipe">
       {equipe.map((m) => (
         <li key={m.id}>
           <Link
@@ -114,12 +114,12 @@ function PagamentosDoMes({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: s
   )
 }
 
-/** Grupo "Salários equipe" do Cadastro de despesas: os pagamentos do mês e, em outra aba, as pessoas. */
+/** Grupo "Salários equipe" do Cadastro de despesas: os pagamentos do mês e, em outra aba, os integrantes. */
 export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: string) => void }) {
   // Busca já aqui: conta as pessoas na aba e deixa a equipe em cache para a conta aberta (chave PIX).
   const { data: equipe } = useEquipe()
   return (
-    <Abas<'pagamentos' | 'pessoas'>
+    <Abas<'pagamentos' | 'integrantes'>
       rotulo="Partes da Equipe"
       abas={[
         {
@@ -128,7 +128,7 @@ export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: 
           icone: ReceiptIcon,
           conteudo: <PagamentosDoMes mes={mes} aoMudarMes={aoMudarMes} />,
         },
-        { valor: 'pessoas', rotulo: 'Pessoas', icone: UsersIcon, contador: equipe?.length, conteudo: <ListaEquipe /> },
+        { valor: 'integrantes', rotulo: 'Integrantes', icone: UsersIcon, contador: equipe?.length, conteudo: <ListaEquipe /> },
       ]}
     />
   )

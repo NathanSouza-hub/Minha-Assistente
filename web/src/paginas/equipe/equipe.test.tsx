@@ -40,10 +40,10 @@ describe('aba Salários equipe', () => {
     expect(within(joana).getByText('R$ 1.800,00')).toBeInTheDocument()
     expect(within(joana).getByText('Vence em 5 dias')).toBeInTheDocument()
 
-    // As pessoas ficam na outra aba.
-    expect(screen.queryByRole('list', { name: 'Pessoas da equipe' })).not.toBeInTheDocument()
-    await abrirAba('Pessoas')
-    const equipe = await screen.findByRole('list', { name: 'Pessoas da equipe' })
+    // Os integrantes ficam na outra aba.
+    expect(screen.queryByRole('list', { name: 'Integrantes da equipe' })).not.toBeInTheDocument()
+    await abrirAba('Integrantes')
+    const equipe = await screen.findByRole('list', { name: 'Integrantes da equipe' })
     expect(within(equipe).getByText('Cuidadora · Por mês · dia 18')).toBeInTheDocument()
   })
 
@@ -61,8 +61,8 @@ describe('aba Salários equipe', () => {
     await usuario.type(screen.getByLabelText('Chave PIX (opcional)'), '11999990000')
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar pessoa' }))
 
-    // Volta para a aba Pessoas, com ela na lista; as contas ficam em Pagamentos do mês.
-    expect(await within(await screen.findByRole('list', { name: 'Pessoas da equipe' })).findByText('Carla')).toBeInTheDocument()
+    // Volta para a aba Integrantes, com ela na lista; as contas ficam em Pagamentos do mês.
+    expect(await within(await screen.findByRole('list', { name: 'Integrantes da equipe' })).findByText('Carla')).toBeInTheDocument()
     await abrirAba('Pagamentos do mês')
     // Cadastrada em 13/10: o dia 5 de outubro já passou, então só a de 20/10 aparece neste mês.
     const carla = await itemDe('Carla')
@@ -110,8 +110,8 @@ describe('aba Salários equipe', () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos?aba=equipe')
     await itemDe('Joana')
-    await abrirAba('Pessoas')
-    const equipe = await screen.findByRole('list', { name: 'Pessoas da equipe' })
+    await abrirAba('Integrantes')
+    const equipe = await screen.findByRole('list', { name: 'Integrantes da equipe' })
     await usuario.click(within(equipe).getByRole('link', { name: /Joana/ }))
 
     await usuario.click(await screen.findByRole('switch', { name: /Ativa/ }))

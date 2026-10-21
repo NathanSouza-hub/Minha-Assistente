@@ -15,25 +15,6 @@ export const TIPOS: Record<TipoEvento, string> = {
   outro: 'Outro tipo',
 }
 
-/**
- * Ordem do campo "Tipo" no formulário. "video" (antigo) só aparece ao editar um que já é dele;
- * "Viagem" leva ao cadastro de viagem (as viagens têm módulo próprio, dentro da Agenda).
- */
-export const TIPOS_DO_FORMULARIO: TipoEvento[] = [
-  'reuniao_pessoal',
-  'videoconferencia',
-  'podcast',
-  'gravacao',
-  'entrevista',
-  'programa_radio',
-  'consulta',
-  'exame',
-  'fisioterapia',
-  'atividade_fisica',
-  'outro',
-]
-export const TIPO_VIAGEM = 'viagem'
-
 /** Tipos de saúde: o formulário pede profissional e especialidade (a API guarda só neles). */
 export const TIPOS_SAUDE: TipoEvento[] = ['consulta', 'exame', 'fisioterapia']
 

@@ -408,6 +408,14 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     compra do cartão). Recebíveis não usam categoria (têm a `origem`, fixa). "Gerar PDF" no Relatório
     é feito no navegador (jsPDF, carregado só ao gerar) com os números já devolvidos por
     `/relatorios/financeiro` e `/relatorios/gastos` — nada recalculado.
+34. **Agenda com calendário e um "+ Novo" só** (só front, nenhuma rota ou tabela mudou): a Agenda
+    abre num calendário mensal (agendamentos e viagens marcados; o dia escolhido embaixo/ao lado),
+    com Semana e Próximos em abas. O único botão de cadastro oferece 7 opções — Compromissos e
+    eventos, Consultas, Exames, Fisioterapia, Atividades físicas, Viagens e Programas de rádio —, cada
+    uma com formulário próprio sobre o mesmo `POST /eventos` (a viagem usa o cadastro de viagens).
+    No rádio, a emissora vai em `local`; na consulta e na fisioterapia sem título, o front monta um
+    ("Consulta de Cardiologia"). Viagens e Programa de rádio saíram do menu; `/viagens` e `/radio`
+    continuam. Na Equipe a aba de pessoas chama "Integrantes" e Recebíveis mostra também o atrasado.
 
 ## Convenções de banco
 

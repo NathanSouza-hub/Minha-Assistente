@@ -81,11 +81,9 @@ export const SECOES: Secao[] = [
     rotulo: 'Agenda',
     icone: CalendarDotsIcon,
     area: 'agenda',
-    itens: [
-      { rota: '/agenda', rotulo: 'Agendamentos' },
-      { rota: '/viagens', rotulo: 'Viagens' },
-      { rota: '/radio', rotulo: 'Programa de rádio' },
-    ],
+    // Viagens e Programa de rádio saíram do menu (decisão 34): nascem no "+ Novo" da Agenda e aparecem
+    // no calendário; as telas /viagens e /radio continuam e contam como Agenda.
+    itens: [{ rota: '/agenda', rotulo: 'Agendamentos', prefixos: ['/viagens', '/radio'] }],
   },
   {
     id: 'saude',

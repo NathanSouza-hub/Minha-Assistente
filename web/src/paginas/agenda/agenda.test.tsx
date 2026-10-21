@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { cleanup, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
@@ -42,10 +42,16 @@ function espiarEnvio(metodo: 'post' | 'put', caminho: string) {
   return enviados
 }
 
-describe('visões da agenda', () => {
-  test('dia mostra os agendamentos com hora, local e botão de entrar na telemedicina', async () => {
+describe('calendário da agenda', () => {
+  test('mês: grade com os dias marcados e, embaixo, o dia escolhido com hora, local e telemedicina', async () => {
     renderizarApp('/agenda')
-    expect(await screen.findByRole('heading', { name: 'Hoje, 13 de outubro' })).toBeInTheDocument()
+    const calendario = await screen.findByRole('grid', { name: 'Dias de outubro de 2026' })
+    expect(screen.getByRole('heading', { name: 'Outubro de 2026' })).toBeInTheDocument()
+    expect(await within(calendario).findByRole('button', { name: 'Hoje, 13 de outubro, 2 compromissos' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('heading', { name: 'Hoje, 13 de outubro' })).toBeInTheDocument()
 
     const consulta = await cartao('Consulta com cardiologista')
     expect(within(consulta).getByText('15:00')).toBeInTheDocument()
@@ -54,55 +60,107 @@ describe('visões da agenda', () => {
       'href',
       'https://meet.google.com/abc-defg-hij',
     )
-
     const fisio = await cartao('Fisioterapia')
     expect(within(fisio).getByText('Clínica Movimento, sala 4')).toBeInTheDocument()
     expect(within(fisio).getByText('Toda semana')).toBeInTheDocument()
   })
 
-  test('navega entre dias e volta para hoje', async () => {
+  test('tocar num dia mostra os agendamentos e as viagens dele; volta para hoje', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
-    await usuario.click(await screen.findByRole('button', { name: 'Próximo dia' }))
-    expect(await screen.findByRole('heading', { name: 'Amanhã, 14 de outubro' })).toBeInTheDocument()
+    const calendario = await screen.findByRole('grid', { name: 'Dias de outubro de 2026' })
+    // Sexta, 16/10: caminhada (todo dia desde quarta) e a ida para Ribeirão Preto.
+    await usuario.click(await within(calendario).findByRole('button', { name: /^Sexta, 16 de outubro, \d+ compromissos/ }))
+    expect(await screen.findByRole('heading', { name: 'Sexta, 16 de outubro' })).toBeInTheDocument()
     expect(await cartao('Caminhada no parque')).toBeInTheDocument()
+    const viagens = screen.getByRole('list', { name: 'Viagens de Sexta, 16 de outubro' })
+    expect(within(viagens).getByRole('link', { name: /Viagem: Ribeirão Preto/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^\/viagens\//),
+    )
 
     await usuario.click(screen.getByRole('button', { name: 'Voltar para hoje' }))
     expect(await screen.findByRole('heading', { name: 'Hoje, 13 de outubro' })).toBeInTheDocument()
   })
 
-  test('faixa da semana: conta os agendamentos de cada dia e abre o dia tocado', async () => {
+  test('navega entre os meses', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
-    const faixa = await screen.findByRole('list', { name: 'Dias da semana' })
-    expect(await within(faixa).findByRole('button', { name: 'Hoje, 13 de outubro, 2 agendamentos' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
-    expect(within(faixa).getByRole('button', { name: 'Segunda, 12 de outubro' })).toBeInTheDocument()
-    await usuario.click(within(faixa).getByRole('button', { name: /^Sexta, 16 de outubro/ }))
-    expect(await screen.findByRole('heading', { name: 'Sexta, 16 de outubro' })).toBeInTheDocument()
-    expect(await cartao('Caminhada no parque')).toBeInTheDocument()
+    await usuario.click(await screen.findByRole('button', { name: 'Próximo mês' }))
+    expect(await screen.findByRole('grid', { name: 'Dias de novembro de 2026' })).toBeInTheDocument()
+    // Mês que não é o atual abre no dia 1.
+    expect(screen.getByRole('button', { name: /1 de novembro/, pressed: true })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Mês anterior' }))
+    await usuario.click(screen.getByRole('button', { name: 'Mês anterior' }))
+    expect(await screen.findByRole('grid', { name: 'Dias de setembro de 2026' })).toBeInTheDocument()
   })
 
   test('semana mostra os 7 dias, inclusive os livres, e expande as repetições', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda')
-    await usuario.click(await screen.findByRole('radio', { name: 'Semana' }))
+    await usuario.click(await screen.findByRole('tab', { name: 'Semana' }))
     expect(await screen.findByRole('heading', { name: '12 a 18 de outubro' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Segunda, 12 de outubro' })).toBeInTheDocument()
-    expect(screen.getByText('Nada marcado.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Segunda, 12 de outubro' })).toBeInTheDocument()
+    expect((await screen.findAllByText('Nada marcado.')).length).toBeGreaterThan(0)
     // Caminhada diária de quarta (14) a domingo (18)
     expect(await screen.findAllByRole('link', { name: /Caminhada no parque/ })).toHaveLength(5)
   })
 
-  test('dia sem agendamentos convida a adicionar', async () => {
+  test('dia sem agendamentos convida a usar o "Novo", que já leva o dia', async () => {
+    const usuario = userEvent.setup()
     renderizarApp('/agenda?data=2026-10-12')
     expect(await screen.findByText('Nada marcado para este dia')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Novo agendamento' })).toHaveAttribute(
+    await usuario.click(screen.getByRole('button', { name: 'Novo' }))
+    const opcoes = await screen.findByRole('list', { name: 'Tipos de cadastro' })
+    expect(within(opcoes).getByRole('link', { name: /Consultas/ })).toHaveAttribute(
       'href',
-      '/agenda/novo?data=2026-10-12',
+      '/agenda/novo?tipo=consulta&data=2026-10-12',
     )
+  })
+})
+
+describe('"+ Novo" da agenda', () => {
+  test('um botão só, com as 7 opções; Viagens abre o cadastro de viagem', async () => {
+    const usuario = userEvent.setup()
+    const { roteador } = renderizarApp('/agenda')
+    await usuario.click(await screen.findByRole('button', { name: 'Novo' }))
+    const opcoes = await screen.findByRole('list', { name: 'Tipos de cadastro' })
+    expect(within(opcoes).getAllByRole('link').map((l) => l.querySelector('.text-lg')?.textContent)).toEqual([
+      'Compromissos e eventos',
+      'Consultas',
+      'Exames',
+      'Fisioterapia',
+      'Atividades físicas',
+      'Viagens',
+      'Programas de rádio',
+    ])
+    await usuario.click(within(opcoes).getByRole('link', { name: /Viagens/ }))
+    expect(await screen.findByRole('heading', { name: 'Nova viagem' })).toBeInTheDocument()
+    expect(roteador.state.location.pathname).toBe('/viagens/nova')
+  })
+
+  test('cada opção abre um formulário com as perguntas dela', async () => {
+    const formulario = async (tipo: string) => {
+      cleanup()
+      renderizarApp(`/agenda/novo?tipo=${tipo}`)
+      return screen.findByRole('heading', { level: 1 })
+    }
+    expect(await formulario('exame')).toHaveTextContent('Novo exame')
+    expect(screen.getByLabelText('Tipo de exame')).toBeInTheDocument()
+    expect(screen.getByLabelText('Orientações (opcional)')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Tipo')).not.toBeInTheDocument()
+
+    expect(await formulario('atividade_fisica')).toHaveTextContent('Nova atividade física')
+    expect(screen.getByLabelText('Tipo de atividade')).toBeInTheDocument()
+    expect(screen.getByLabelText('Frequência')).toBeInTheDocument()
+
+    expect(await formulario('programa_radio')).toHaveTextContent('Novo programa de rádio')
+    expect(screen.getByLabelText('Nome do programa')).toBeInTheDocument()
+    expect(screen.getByLabelText('Emissora (opcional)')).toBeInTheDocument()
+
+    expect(await formulario('fisioterapia')).toHaveTextContent('Nova fisioterapia')
+    expect(screen.getByLabelText('Sobre as sessões (opcional)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Frequência das sessões')).toBeInTheDocument()
   })
 })
 
@@ -112,7 +170,7 @@ describe('formulário de agendamento', () => {
     const usuario = userEvent.setup()
     renderizarApp('/agenda/novo?data=2026-10-20')
 
-    await usuario.type(await screen.findByLabelText('O que é?'), 'Plantão de leitura')
+    await usuario.type(await screen.findByLabelText('Título'), 'Plantão de leitura')
     await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Reunião')
     await usuario.type(screen.getByLabelText('Começa às'), '22:00')
     await usuario.type(screen.getByLabelText('Termina às (opcional)'), '01:00')
@@ -138,10 +196,8 @@ describe('formulário de agendamento', () => {
 
   test('telemedicina pede o link e valida o endereço', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/agenda/novo')
-    await usuario.type(await screen.findByLabelText('O que é?'), 'Consulta')
-    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Consulta')
-    await usuario.selectOptions(screen.getByLabelText('Como vai ser? (opcional)'), 'Telemedicina')
+    renderizarApp('/agenda/novo?tipo=consulta')
+    await usuario.selectOptions(await screen.findByLabelText('Como vai ser? (opcional)'), 'Telemedicina')
     expect(screen.queryByLabelText('Local (opcional)')).not.toBeInTheDocument()
     await usuario.type(screen.getByLabelText('Link da chamada'), 'meet.google.com/abc')
     await usuario.type(screen.getByLabelText('Começa às'), '10:00')
@@ -188,10 +244,12 @@ describe('formulário de agendamento', () => {
     renderizarApp('/agenda')
     await usuario.click((await cartao('Fisioterapia')).querySelector('a')!)
 
+    expect(await screen.findByRole('heading', { name: 'Editar fisioterapia' })).toBeInTheDocument()
     expect(await screen.findByText(/As mudanças valem para/)).toHaveTextContent('todas as datas')
     // A série começou há uma semana (06/10), não na ocorrência clicada (13/10)
     expect(screen.getByLabelText('Primeiro dia')).toHaveValue('2026-10-06')
-    const titulo = screen.getByLabelText('O que é?')
+    // Fisioterapia: o nome na agenda é opcional (perfil próprio).
+    const titulo = screen.getByLabelText('Nome na agenda (opcional)')
     await usuario.clear(titulo)
     await usuario.type(titulo, 'Fisioterapia do joelho')
     await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
@@ -222,7 +280,7 @@ describe('tipos do agendamento', () => {
     const enviados = espiarEnvio('post', '/eventos')
     const usuario = userEvent.setup()
     renderizarApp('/agenda/novo?data=2026-10-20')
-    await usuario.type(await screen.findByLabelText('O que é?'), 'Ensaio')
+    await usuario.type(await screen.findByLabelText('Título'), 'Ensaio')
     await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Outro tipo')
     await usuario.type(screen.getByLabelText('Começa às'), '10:00')
     await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
@@ -242,34 +300,41 @@ describe('tipos do agendamento', () => {
     expect(await screen.findByText(/Aula de canto/)).toBeInTheDocument()
   })
 
-  test('os tipos novos estão no campo; "Viagem" abre o cadastro de viagem', async () => {
-    const usuario = userEvent.setup()
-    const { roteador } = renderizarApp('/agenda/novo')
-    const tipo = await screen.findByLabelText('Tipo')
-    const opcoes = within(tipo).getAllByRole('option').map((o) => o.textContent)
-    for (const nome of ['Reunião', 'Videoconferência', 'Podcast', 'Gravação', 'Entrevista', 'Programa de rádio', 'Viagem', 'Outro tipo'])
-      expect(opcoes).toContain(nome)
-    expect(opcoes).not.toContain('Vídeo (antigo)')
-
-    await usuario.selectOptions(tipo, 'Viagem')
-    expect(await screen.findByRole('heading', { name: 'Nova viagem' })).toBeInTheDocument()
-    expect(roteador.state.location.pathname).toBe('/viagens/nova')
+  test('Compromissos e eventos: só os tipos de compromisso no campo (saúde, atividade e rádio têm formulário próprio)', async () => {
+    renderizarApp('/agenda/novo')
+    expect(await screen.findByRole('heading', { name: 'Novo compromisso' })).toBeInTheDocument()
+    const opcoes = within(screen.getByLabelText('Tipo')).getAllByRole('option').map((o) => o.textContent)
+    expect(opcoes).toEqual(['Escolha o tipo', 'Reunião', 'Videoconferência', 'Podcast', 'Gravação', 'Entrevista', 'Outro tipo'])
+    expect(screen.getByLabelText('Descrição (opcional)')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Profissional (opcional)')).not.toBeInTheDocument()
   })
-  test('consulta pede profissional e especialidade e mostra na lista; reunião não', async () => {
+
+  test('consulta: especialidade e profissional; sem nome, o título é montado e aparece na lista', async () => {
     const enviados = espiarEnvio('post', '/eventos')
     const usuario = userEvent.setup()
-    renderizarApp('/agenda/novo?data=2026-10-20')
-    await usuario.type(await screen.findByLabelText('O que é?'), 'Retorno')
-    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Reunião')
-    expect(screen.queryByLabelText('Profissional (opcional)')).not.toBeInTheDocument()
-    await usuario.selectOptions(screen.getByLabelText('Tipo'), 'Consulta')
-    await usuario.type(screen.getByLabelText('Profissional (opcional)'), 'Dra. Lima')
+    renderizarApp('/agenda/novo?tipo=consulta&data=2026-10-20')
+    expect(await screen.findByRole('heading', { name: 'Nova consulta' })).toBeInTheDocument()
     await usuario.type(screen.getByLabelText('Especialidade (opcional)'), 'Cardiologia')
-    expect(screen.getByLabelText('Endereço (opcional)')).toBeInTheDocument()
+    await usuario.type(screen.getByLabelText('Profissional (opcional)'), 'Dra. Lima')
     await usuario.type(screen.getByLabelText('Começa às'), '10:00')
     await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
     expect(await screen.findByText('Agendamento marcado.')).toBeInTheDocument()
-    expect(enviados[0]).toMatchObject({ tipo: 'consulta', profissional: 'Dra. Lima', especialidade: 'Cardiologia' })
+    expect(enviados[0]).toMatchObject({
+      tipo: 'consulta',
+      titulo: 'Consulta de Cardiologia com Dra. Lima',
+      profissional: 'Dra. Lima',
+      especialidade: 'Cardiologia',
+    })
     expect(await screen.findByText('Dra. Lima · Cardiologia')).toBeInTheDocument()
+  })
+
+  test('exame sem o tipo de exame não salva', async () => {
+    const enviados = espiarEnvio('post', '/eventos')
+    const usuario = userEvent.setup()
+    renderizarApp('/agenda/novo?tipo=exame')
+    await usuario.type(await screen.findByLabelText('Começa às'), '07:00')
+    await usuario.click(screen.getByRole('button', { name: 'Agendar' }))
+    expect(await screen.findByText('Informe o tipo de exame.')).toBeInTheDocument()
+    expect(enviados).toHaveLength(0)
   })
 })
