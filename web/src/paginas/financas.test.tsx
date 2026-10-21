@@ -51,16 +51,20 @@ describe('Finanças → Visão geral', () => {
     expect(within(financas).getByText('Contas que vencem em outubro')).toBeInTheDocument()
     expect(within(financas).getByText('Pela data do pagamento')).toBeInTheDocument()
 
-    const residencias = await bloco('Residências')
-    for (const imovel of esperado.imoveis) {
-      const cartao = await within(residencias).findByRole('link', { name: new RegExp(imovel.nome) })
-      expect(cartao).toHaveAttribute('href', `/imoveis/${imovel.id}`)
-      expect(within(cartao).getAllByText(reais(imovel.totalCentavos)).length).toBeGreaterThan(0)
-    }
+    // Os números que têm lista com o mesmo critério levam a ela, no mesmo mês.
+    expect(within(financas).getByRole('link', { name: /A pagar/ })).toHaveAttribute(
+      'href',
+      '/despesas?mes=2026-10&status=pendente',
+    )
+    expect(within(financas).getByRole('link', { name: /Previsto a receber/ })).toHaveAttribute(
+      'href',
+      '/recebiveis?mes=2026-10',
+    )
+    expect(within(financas).queryByRole('link', { name: /Pago no mês/ })).not.toBeInTheDocument()
 
-    const pessoais = await bloco('Despesas pessoais')
-    expect(within(pessoais).getAllByText(reais(esperado.pessoal.totalCentavos)).length).toBeGreaterThan(0)
-    expect(await within(await bloco('Contas a pagar')).findByText('Condomínio')).toBeInTheDocument()
+    // O detalhe mora nas telas de cada área: a Visão geral só tem os indicadores.
+    for (const titulo of ['Contas a pagar', 'Recebíveis', 'Residências', 'Despesas pessoais'])
+      expect(screen.queryByRole('region', { name: titulo })).not.toBeInTheDocument()
 
     // Atividades do dia ficam no Início, não aqui.
     expect(screen.queryByRole('region', { name: 'Remédios de hoje' })).not.toBeInTheDocument()
@@ -85,7 +89,16 @@ describe('Finanças → Visão geral', () => {
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
   })
 
-  test('um bloco com erro mostra o aviso e deixa tentar de novo, sem derrubar os outros', async () => {
+  test('o mês escolhido vai junto para a lista', async () => {
+    renderizarApp('/financas?mes=2026-11')
+    const financas = await bloco('Finanças do mês')
+    expect(await within(financas).findByRole('link', { name: /Despesas do mês/ })).toHaveAttribute(
+      'href',
+      '/despesas?mes=2026-11',
+    )
+  })
+
+  test('com erro mostra o aviso e deixa tentar de novo', async () => {
     servidor.use(
       http.get(`${API_URL}/relatorios/financeiro`, () =>
         HttpResponse.json({ erro: { codigo: 'ERRO_INTERNO', mensagem: 'Falhou.' } }, { status: 500 }),
@@ -95,6 +108,43 @@ describe('Finanças → Visão geral', () => {
     const financas = await bloco('Finanças do mês')
     expect(await within(financas).findByText(/Não foi possível carregar/)).toBeInTheDocument()
     expect(within(financas).getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
-    expect(await within(await bloco('Contas a pagar')).findByText('Condomínio')).toBeInTheDocument()
+  })
+})
+
+describe('o detalhe nas telas de cada área', () => {
+  let esperado: RelatorioFinanceiro
+  beforeEach(async () => {
+    esperado = await api<RelatorioFinanceiro>('/relatorios/financeiro', {
+      query: { inicio: '2026-10-01', fim: '2026-10-31' },
+    })
+  })
+
+  test('Contas a pagar mostra as próximas contas pendentes', async () => {
+    renderizarApp('/pagamentos')
+    expect(await within(await bloco('Próximas contas a pagar')).findByText('Condomínio')).toBeInTheDocument()
+  })
+
+  test('Recebíveis mostra os próximos 30 dias e o previsto por origem', async () => {
+    renderizarApp('/recebiveis')
+    await bloco('A receber nos próximos 30 dias')
+    const porOrigem = await screen.findByRole('list', { name: 'Previsto no mês por origem' })
+    expect(within(porOrigem).getAllByRole('listitem')).toHaveLength(esperado.entradas.porOrigem.length)
+  })
+
+  test('Residências mostra quanto cada imóvel custa no mês', async () => {
+    renderizarApp('/imoveis')
+    const lista = await screen.findByRole('list', { name: 'Seus imóveis' })
+    for (const imovel of esperado.imoveis) {
+      const cartao = within(lista).getByRole('link', { name: new RegExp(imovel.nome) })
+      expect(cartao).toHaveAttribute('href', `/imoveis/${imovel.id}`)
+      expect((await within(cartao).findAllByText(reais(imovel.totalCentavos))).length).toBeGreaterThan(0)
+    }
+  })
+
+  test('Pessoais mostra o total do mês e as categorias', async () => {
+    renderizarApp('/despesas?imovel=pessoal')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Despesas pessoais' })).toBeInTheDocument()
+    const pessoais = await bloco('Despesas pessoais do mês')
+    expect((await within(pessoais).findAllByText(reais(esperado.pessoal.totalCentavos))).length).toBeGreaterThan(0)
   })
 })

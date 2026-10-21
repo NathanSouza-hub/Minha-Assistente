@@ -64,13 +64,17 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): blocos com carregando/erro/conteúdo em `Bloco.tsx`, cada
-  um com o atalho para a tela da área. Só lê das consultas que já existem (`useTarefasHoje` de hoje —
-  o mesmo cache da tela Hoje —, `useRelatorioFinanceiro` do mês, `usePagamentos` pendentes até +30
-  dias, `useEventos` padrão); o único que escreve é o ✓/✗ de `LinhaTarefa`. Os totais vêm de
+- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): só os
+  indicadores do mês (`BlocoFinancas`: despesas, recebíveis e saldo). Os totais vêm de
   `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
-  ("Contas que vencem em outubro", "Pela data do pagamento"). Imóvel e "pessoais" levam à Lista de
-  despesas filtrada (`?imovel=<id>` ou `?imovel=pessoal`, que vira `destino=pessoal`).
+  ("Contas que vencem em outubro", "Pela data do pagamento") e, quando a lista tem o mesmo critério,
+  o cartão leva a ela no mesmo mês (despesas → `/despesas?mes=&status=`, recebíveis →
+  `/recebiveis?mes=`); "Pago/Recebido no mês" e os saldos não levam a lugar nenhum. O detalhe fica na
+  tela de cada área, em blocos de `components/Bloco.tsx` (carregando/erro/conteúdo, link opcional):
+  `ProximasContas` (pendentes até +30 dias) no topo de Contas a pagar, `ProximosRecebiveis` e o
+  previsto por origem em Recebíveis, o valor do mês em cada imóvel de Residências (`?mes=`) e
+  `ResumoPessoais` (por categoria) na Lista de despesas com `?imovel=pessoal` (vira `destino=pessoal`
+  e o título "Despesas pessoais"). Não volte a pôr esses detalhes na Visão geral.
 - **Tarefas avulsas** (`/tarefas`, `/tarefas/nova`, `/tarefas/:id`; `paginas/tarefas/`, decisão 28): lista
   "A fazer" (Atrasadas, Hoje, Próximas) e "Feitas", com o ✓ grande em cada linha e "Nova tarefa para
   hoje" em uma linha; o formulário completo tem dia, hora, lembrete (só liga com hora; depois de
@@ -79,9 +83,9 @@ npm run lint                                  # oxlint
 - **Residências** (`/imoveis/:id`, `paginas/imoveis/DetalheImovel.tsx`, decisão 27): resumo do imóvel
   no período (Este mês / 6 meses / Este ano, em `?periodo=`), por categoria, mês a mês (barras
   horizontais com o valor escrito) e as contas do período (`ItemPagamento`), mais os dados do
-  imóvel (nome, endereço, identificação). Os números vêm de `GET /relatorios/imoveis/:id`. Os
-  cartões de residência do painel e o nome na lista de Imóveis levam para cá. Situação, barra de
-  pago e pago/pendente ficam em `components/ResumoValores.tsx` (painel e imóvel usam os mesmos).
+  imóvel (nome, endereço, identificação). Os números vêm de `GET /relatorios/imoveis/:id`. Cada
+  imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
+  pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
 - **Relatório** (`/relatorio`): "Balanço do período" (entradas, saídas, saldo realizado e projetado,
   recebíveis por origem e despesas pessoais, de `GET /relatorios/financeiro`) e, embaixo, os gastos
   por imóvel ou categoria (`/relatorios/gastos`). O mesmo período vale para os dois.

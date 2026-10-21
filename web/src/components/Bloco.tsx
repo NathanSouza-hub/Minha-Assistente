@@ -10,15 +10,15 @@ type Props = {
   titulo: string
   icone: Icon
   area: Area
-  /** "Ver tudo": a tela da área com o detalhe. */
-  link: { para: string; rotulo: string }
+  /** "Ver tudo": a tela da área com o detalhe (sem ele, o bloco já está na tela da área). */
+  link?: { para: string; rotulo: string }
   /** Situação da consulta que alimenta o bloco; os dados só são desenhados quando chegam. */
   consulta: { isPending: boolean; isError: boolean; refetch: () => unknown }
   className?: string
   children: () => ReactNode
 }
 
-/** Cartão do painel: selo e título da área, o atalho para a tela dela e carregando/erro/conteúdo. */
+/** Cartão de resumo (Visão geral e topo das telas de Finanças): selo e título da área, o atalho para a tela dela e carregando/erro/conteúdo. */
 export function Bloco({ titulo, icone: Icone, area, link, consulta, className, children }: Props) {
   const id = `bloco-${titulo.toLowerCase().replace(/\W+/g, '-')}`
   return (
@@ -33,13 +33,15 @@ export function Bloco({ titulo, icone: Icone, area, link, consulta, className, c
         <h2 id={id} className="flex-1 text-xl font-bold">
           {titulo}
         </h2>
-        <Link
-          to={link.para}
-          className="-mr-2 flex min-h-11 items-center gap-1 rounded-lg px-2 text-base font-semibold text-primary hover:bg-primary/8"
-        >
-          {link.rotulo}
-          <CaretRightIcon weight="bold" className="size-4" aria-hidden />
-        </Link>
+        {link && (
+          <Link
+            to={link.para}
+            className="-mr-2 flex min-h-11 items-center gap-1 rounded-lg px-2 text-base font-semibold text-primary hover:bg-primary/8"
+          >
+            {link.rotulo}
+            <CaretRightIcon weight="bold" className="size-4" aria-hidden />
+          </Link>
+        )}
       </header>
       {consulta.isPending ? (
         <div role="status" aria-label={`Carregando ${titulo.toLowerCase()}`} className="flex flex-col gap-3">

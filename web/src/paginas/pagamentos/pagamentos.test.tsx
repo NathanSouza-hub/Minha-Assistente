@@ -28,9 +28,18 @@ afterAll(() => servidor.close())
 // Linha da tabela da Lista de despesas.
 const item = async (descricao: string) =>
   (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('tr') as HTMLElement
-// Cartão de conta numa aba do Cadastro de despesas.
+// Cartão de conta numa aba do Cadastro de despesas (na lista da aba, não em "Próximas contas a pagar").
 const cartao = async (descricao: string) =>
-  (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('li') as HTMLElement
+  (
+    await within(await screen.findByRole('list', { name: /^Contas.* do mês$/ })).findByRole('link', {
+      name: new RegExp(`^${descricao}`),
+    })
+  ).closest('li') as HTMLElement
+/** Conta na lista da aba aberta (null se não está nela). */
+const naAba = (nome: RegExp) => {
+  const lista = screen.queryByRole('list', { name: /^Contas.* do mês$/ })
+  return lista && within(lista).queryByRole('link', { name: nome })
+}
 
 describe('lista de pagamentos', () => {
   test('mostra o mês atual com totais, vencidos em destaque e parcelas', async () => {
@@ -188,7 +197,7 @@ describe('abas de categoria', () => {
     await usuario.click(screen.getByRole('button', { name: 'Outros' }))
     expect(await cartao('Exame de sangue')).toBeInTheDocument()
     expect(await cartao('Geladeira nova')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('link', { name: /^Conta de luz/ })).not.toBeInTheDocument())
+    await waitFor(() => expect(naAba(/^Conta de luz/)).toBeNull())
     expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
   })
 
@@ -367,7 +376,7 @@ describe('contas residenciais', () => {
     expect(await cartao('Conta de luz')).toBeInTheDocument()
 
     await usuario.click(within(imoveis).getByRole('button', { name: 'Casa da Serra' }))
-    await waitFor(() => expect(screen.queryByRole('link', { name: /^Condomínio/ })).not.toBeInTheDocument())
+    await waitFor(() => expect(naAba(/^Condomínio/)).toBeNull())
     expect(await cartao('Conta de luz')).toBeInTheDocument()
 
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])

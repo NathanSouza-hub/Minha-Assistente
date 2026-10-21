@@ -5,6 +5,7 @@ import { EstadoVazio } from '@/components/EstadoVazio'
 import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useRelatorioFinanceiro } from '@/consultas/pagamentos'
 import { useRecebiveis } from '@/consultas/recebiveis'
 import { dataCurta, intervaloDoMes, mesDe, nomeDoMes } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
@@ -12,6 +13,7 @@ import type { Recebivel, StatusRecebivel } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { NavegadorMes } from '@/paginas/pagamentos/ResumoContas'
 import { ORIGENS, STATUS } from './formulario'
+import { ProximosRecebiveis } from './ProximosRecebiveis'
 
 type FiltroStatus = 'todos' | StatusRecebivel
 
@@ -48,6 +50,7 @@ export function Recebiveis() {
       }
     >
       <div className="flex flex-col gap-5">
+        <ProximosRecebiveis />
         <NavegadorMes mes={mes} aoMudar={(m) => mudar('mes', m)} />
         <Opcoes<FiltroStatus>
           rotulo="Mostrar"
@@ -63,6 +66,7 @@ export function Recebiveis() {
         />
 
         {lista.length > 0 && <Resumo lista={lista} />}
+        <PorOrigem mes={mes} />
 
         {consulta.isPending ? (
           <div className="flex flex-col gap-3" role="status" aria-label="Carregando recebíveis">
@@ -123,6 +127,21 @@ function Resumo({ lista }: { lista: Recebivel[] }) {
         </div>
       ))}
     </dl>
+  )
+}
+
+/** Previsto no mês por origem (aluguel, dividendos...), do relatório financeiro. */
+function PorOrigem({ mes }: { mes: string }) {
+  const porOrigem = useRelatorioFinanceiro(intervaloDoMes(mes)).data?.entradas.porOrigem ?? []
+  if (porOrigem.length === 0) return null
+  return (
+    <ul className="flex flex-wrap gap-2"aria-label="Previsto no mês por origem">
+      {porOrigem.map((o) => (
+        <li key={o.origem} className="rounded-full bg-area-fundo px-3 py-1 text-base font-semibold text-area">
+          {ORIGENS[o.origem]} {formatarCentavos(o.totalCentavos)}
+        </li>
+      ))}
+    </ul>
   )
 }
 

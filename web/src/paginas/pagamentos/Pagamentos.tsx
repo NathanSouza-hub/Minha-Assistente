@@ -18,6 +18,7 @@ import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
 import { type FiltroStatus, useFiltros } from './filtros'
 import { ItemPagamento } from './ItemPagamento'
+import { ProximasContas } from './ProximasContas'
 
 /** Valores de ?aba= das abas fixas (as outras abas são ids de categoria). */
 const ABA_EQUIPE = 'equipe'
@@ -200,6 +201,7 @@ function ContasDaCategoria({
       }
     >
       <div className="flex flex-col gap-5">
+        <ProximasContas />
         <Abas
           categorias={categorias}
           ativa={categoriaId}

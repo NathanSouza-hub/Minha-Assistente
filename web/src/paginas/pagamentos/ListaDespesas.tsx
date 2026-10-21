@@ -10,6 +10,7 @@ import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos
 import { intervaloDoMes, nomeDoMes } from '@/lib/datas'
 import { type FiltroStatus, IMOVEL_PESSOAL, useFiltros, VOLTAR_DESPESAS } from './filtros'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
+import { ResumoPessoais } from './ResumoPessoais'
 import { TabelaContas } from './TabelaContas'
 
 /** /despesas: tudo do mês numa tabela (contas, faturas dos cartões e equipe) para ver e pagar.
@@ -29,10 +30,12 @@ export function ListaDespesas() {
   const filtrosAbertos = Number(Boolean(categoriaId)) + Number(Boolean(imovelId))
   const temFiltro = status !== 'todos' || filtrosAbertos > 0
   const novo = `/pagamentos/novo?mes=${mes}&voltar=${VOLTAR_DESPESAS}`
+  // "Pessoais" no menu: a mesma lista, com o resumo por categoria em cima.
+  const pessoais = imovelId === IMOVEL_PESSOAL
 
   return (
     <Pagina
-      titulo="Lista de despesas"
+      titulo={pessoais ? 'Despesas pessoais' : 'Lista de despesas'}
       larga
       acoes={
         <Button asChild size="lg">
@@ -90,6 +93,8 @@ export function ListaDespesas() {
             )}
           </div>
         </details>
+
+        {pessoais && <ResumoPessoais mes={mes} />}
 
         {pagamentos.length > 0 && <ResumoContas pagamentos={pagamentos} />}
 
