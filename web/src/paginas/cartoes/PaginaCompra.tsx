@@ -7,13 +7,12 @@ import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
-import { Selecao } from '@/components/Selecao'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useCartoes, useCompraCartao, useExcluirCompra, useSalvarCompra } from '@/consultas/cartoes'
-import { useCategorias } from '@/consultas/pagamentos'
+import { CampoCategoria } from '@/paginas/categorias/CampoCategoria'
 import { nomeDoMes } from '@/lib/datas'
 import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
 import { primeiraCompetencia, valoresDasParcelas } from '@/lib/fatura'
@@ -64,7 +63,6 @@ export function PaginaCompra() {
 function FormularioCompra({ cartao, compra }: { cartao: Cartao; compra?: CompraCartao }) {
   const navegar = useNavigate()
   const [params] = useSearchParams()
-  const { data: categorias = [] } = useCategorias()
   const salvarCompra = useSalvarCompra()
   const excluir = useExcluirCompra()
   const titulo = compra ? 'Editar compra' : 'Nova compra'
@@ -80,13 +78,17 @@ function FormularioCompra({ cartao, compra }: { cartao: Cartao; compra?: CompraC
     handleSubmit,
     setError,
     setFocus,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<DadosCompra>({
     resolver: zodResolver(esquemaCompra),
     defaultValues: valoresIniciaisCompra(compra),
   })
 
-  const [valor, parcelas, dataCompra] = useWatch({ control, name: ['valor', 'parcelas', 'dataCompra'] })
+  const [valor, parcelas, dataCompra, categoriaId] = useWatch({
+    control,
+    name: ['valor', 'parcelas', 'dataCompra', 'categoriaId'],
+  })
   const total = paraCentavos(valor)
   const quantidade = Number(parcelas)
   const parcelasValidas = Number.isInteger(quantidade) && quantidade >= 1 && quantidade <= 48
@@ -167,14 +169,13 @@ function FormularioCompra({ cartao, compra }: { cartao: Cartao; compra?: CompraC
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Campo rotulo="Data da compra" type="date" erro={errors.dataCompra?.message} {...register('dataCompra')} />
-          <Selecao rotulo="Categoria (opcional)" {...register('categoriaId')}>
-            <option value="">Sem categoria</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </Selecao>
+          <CampoCategoria
+            rotulo="Categoria (opcional)"
+            registro={register('categoriaId')}
+            valor={categoriaId}
+            aoMudar={(id) => setValue('categoriaId', id, { shouldDirty: true })}
+            vazio={{ rotulo: 'Sem categoria', opcional: true }}
+          />
         </div>
 
         <div className="flex flex-col gap-2">

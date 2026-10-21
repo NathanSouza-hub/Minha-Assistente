@@ -192,7 +192,8 @@ describe('grupos de contas', () => {
     expect(await cartao('Conta de luz')).toBeInTheDocument()
     expect(grupo()).toHaveDisplayValue('Contas residenciais')
     // Sem "Todas"; consultas, exames e parcelamentos não são grupos (migration 22): ficam em "Outros".
-    expect(opcoesDe(grupo())).toEqual(['Contas residenciais', 'Outros', 'Salários equipe', 'Cartões'])
+    // Cartões está oculto por enquanto (decisão 33).
+    expect(opcoesDe(grupo())).toEqual(['Contas residenciais', 'Outros', 'Salários equipe'])
 
     await usuario.selectOptions(grupo(), 'Outros')
     expect(await cartao('Exame de sangue')).toBeInTheDocument()
@@ -317,6 +318,7 @@ describe('imóveis', () => {
   test('nome repetido aparece no campo', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/imoveis')
+    await usuario.click(await screen.findByRole('button', { name: 'Novo imóvel' }))
     await usuario.type(await screen.findByLabelText('Nome do imóvel'), 'Casa da Serra')
     await usuario.click(screen.getByRole('button', { name: 'Adicionar imóvel' }))
     expect(await screen.findByText('Você já tem um imóvel com esse nome.')).toBeInTheDocument()
@@ -334,8 +336,12 @@ describe('imóveis', () => {
   test('adiciona e renomeia', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/imoveis')
+    // O formulário fica atrás do "Novo imóvel" e fecha depois de adicionar.
+    expect(screen.queryByLabelText('Nome do imóvel')).not.toBeInTheDocument()
+    await usuario.click(await screen.findByRole('button', { name: 'Novo imóvel' }))
     await usuario.type(await screen.findByLabelText('Nome do imóvel'), 'Sítio')
     await usuario.click(screen.getByRole('button', { name: 'Adicionar imóvel' }))
+    await waitFor(() => expect(screen.queryByLabelText('Nome do imóvel')).not.toBeInTheDocument())
     await usuario.click(await screen.findByRole('button', { name: 'Renomear Sítio' }))
     const campo = screen.getByLabelText('Novo nome para Sítio')
     await usuario.clear(campo)
@@ -349,20 +355,53 @@ describe('relatório de gastos', () => {
   test('mostra totais do mês e separa por imóvel ou categoria', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/relatorio')
-    // O "Balanço do período" (recebíveis, contas e saldo) vem antes dos gastos por imóvel/categoria.
-    const balanco = await screen.findByRole('region', { name: 'Balanço do período' })
-    expect(within(balanco).getByText('Saldo realizado')).toBeInTheDocument()
-    expect(within(balanco).getByText('Saldo projetado')).toBeInTheDocument()
-    expect(within(balanco).getByText('Aluguel')).toBeInTheDocument()
+    // Aba Balanço (a primeira): entradas, saídas e saldo.
+    expect(await screen.findByRole('region', { name: 'Entradas (recebíveis)' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Saídas (contas)' })).toBeInTheDocument()
+    const saldo = screen.getByRole('region', { name: 'Saldo do período' })
+    expect(within(saldo).getByText('Saldo realizado')).toBeInTheDocument()
+    expect(within(saldo).getByText('Saldo projetado')).toBeInTheDocument()
+    expect(screen.queryByText('Sem imóvel')).not.toBeInTheDocument()
 
+    await usuario.click(screen.getByRole('tab', { name: 'Recebíveis e pessoais' }))
+    expect(within(await screen.findByRole('region', { name: 'Recebíveis por origem' })).getByText('Aluguel')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Despesas pessoais (sem imóvel)' })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('tab', { name: 'Por imóvel ou categoria' }))
     await screen.findByText('Sem imóvel')
-    const totais = screen.getAllByText('Previsto', { selector: 'dt' }).find((dt) => !balanco.contains(dt))!
+    const totais = screen.getAllByText('Previsto', { selector: 'dt' })[0]
     // Pendentes de outubro: 1.250 + 238,90 + 1.800 + 180 + 399,90 (parcela 2/3)
     expect(within(totais.closest('div')!).getByText('R$ 3.868,80')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('radio', { name: 'Categoria' }))
     expect(await screen.findByText('Contas residenciais')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Por categoria' })).toBeInTheDocument()
+  })
+})
+
+describe('PDF do relatório', () => {
+  test('"Gerar PDF" baixa o relatório do período com os números da tela', async () => {
+    const criarUrl = vi.fn((_arquivo: Blob) => 'blob:relatorio')
+    URL.createObjectURL = criarUrl
+    URL.revokeObjectURL = vi.fn()
+    const baixados: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      baixados.push(this.download)
+    })
+    const usuario = userEvent.setup()
+    renderizarApp('/relatorio')
+    const gerar = await screen.findByRole('button', { name: 'Gerar PDF' })
+    await waitFor(() => expect(gerar).toBeEnabled())
+    await usuario.click(gerar)
+
+    expect(await screen.findByText('PDF do relatório gerado.')).toBeInTheDocument()
+    expect(baixados).toEqual(['relatorio-2026-10-01-a-2026-10-31.pdf'])
+    const pdf = await criarUrl.mock.calls[0][0].text()
+    expect(pdf.startsWith('%PDF-')).toBe(true)
+    // O mesmo previsto da aba "Por imóvel ou categoria" (veja o teste acima).
+    expect(pdf).toContain('R$ 3.868,80')
+    // Acentos ficam na codificação das fontes do PDF; basta o começo.
+    expect(pdf).toContain('Gastos por im')
   })
 })
 

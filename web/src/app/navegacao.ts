@@ -43,6 +43,16 @@ export type Secao = {
   itens: ItemSecao[]
 }
 
+/**
+ * Cartões e Categorias estão ocultos do menu por enquanto (decisão 33): as rotas, as telas e os dados
+ * continuam, só não aparecem na navegação. Para reativar, troque para `true`.
+ * Sem a tela Categorias, a categoria nova se cria no próprio cadastro ("+ Nova categoria…").
+ */
+export const CARTOES_VISIVEIS = false
+export const CATEGORIAS_VISIVEIS = false
+
+const visiveis = (itens: (ItemSecao | false)[]) => itens.filter((i): i is ItemSecao => Boolean(i))
+
 export const SECOES: Secao[] = [
   // Só as atividades do dia (tela Hoje).
   { id: 'inicio', rota: '/', rotulo: 'Início', icone: SunIcon, area: 'hoje', itens: [] },
@@ -52,7 +62,7 @@ export const SECOES: Secao[] = [
     rotulo: 'Finanças',
     icone: WalletIcon,
     area: 'contas',
-    itens: [
+    itens: visiveis([
       { rota: '/financas', rotulo: 'Visão geral' },
       { rota: '/pagamentos', rotulo: 'Contas a pagar' },
       { rota: '/despesas', rotulo: 'Lista de despesas' },
@@ -60,10 +70,10 @@ export const SECOES: Secao[] = [
       { rota: '/imoveis', rotulo: 'Residências' },
       { rota: '/pagamentos?aba=equipe', rotulo: 'Equipe', prefixos: ['/equipe'] },
       { rota: '/recebiveis', rotulo: 'Recebíveis' },
-      { rota: '/pagamentos?aba=cartoes', rotulo: 'Cartões', prefixos: ['/cartoes'] },
+      CARTOES_VISIVEIS && { rota: '/pagamentos?aba=cartoes', rotulo: 'Cartões', prefixos: ['/cartoes'] },
       { rota: '/relatorio', rotulo: 'Relatório' },
-      { rota: '/categorias', rotulo: 'Categorias' },
-    ],
+      CATEGORIAS_VISIVEIS && { rota: '/categorias', rotulo: 'Categorias' },
+    ]),
   },
   {
     id: 'agenda',

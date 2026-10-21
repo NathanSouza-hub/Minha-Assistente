@@ -50,7 +50,10 @@ describe('Residências', () => {
     const categorias = screen.getByRole('region', { name: 'Por categoria' })
     for (const c of esperado.categorias) expect(within(categorias).getByText(c.nome)).toBeInTheDocument()
 
-    const contas = screen.getByRole('region', { name: 'Contas do período' })
+    // As contas e os dados ficam nas outras abas.
+    expect(screen.queryByRole('region', { name: 'Contas do período' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: /^Contas/ }))
+    const contas = await screen.findByRole('region', { name: 'Contas do período' })
     expect(await within(contas).findByText('Condomínio')).toBeInTheDocument()
     expect(within(contas).queryByText('Conta de luz')).not.toBeInTheDocument() // é da Casa da Serra
   })
@@ -66,6 +69,7 @@ describe('Residências', () => {
   test('edita endereço e identificação sem mexer no nome', async () => {
     const usuario = userEvent.setup()
     renderizarApp(`/imoveis/${cobertura().id}`)
+    await usuario.click(await screen.findByRole('tab', { name: 'Dados do imóvel' }))
     const endereco = await screen.findByLabelText('Endereço (opcional)')
     await usuario.clear(endereco)
     await usuario.type(endereco, 'Av. Beira-Mar, 900')

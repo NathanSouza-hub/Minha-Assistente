@@ -85,14 +85,14 @@ function FormNome({
   )
 }
 
-/** `valores`: as contas do imóvel no mês escolhido (do relatório financeiro; some enquanto carrega). */
-function LinhaImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresContas }) {
+/** Cartão do imóvel; `valores`: as contas dele no mês escolhido (do relatório financeiro; enquanto carrega, um esqueleto). */
+function CartaoImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresContas }) {
   const [renomeando, setRenomeando] = useState(false)
   const excluir = useExcluirImovel()
 
   if (renomeando) {
     return (
-      <li className="py-4">
+      <li className="rounded-2xl bg-folha p-4 shadow-folha">
         <FormNome
           imovel={imovel}
           rotulo={`Novo nome para ${imovel.nome}`}
@@ -105,44 +105,49 @@ function LinhaImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresCon
   }
 
   return (
-    <li className="flex flex-col gap-3 py-4">
-      {/* O imóvel abre o resumo dele (quanto custa, por categoria e mês a mês, e as contas). */}
-      <Link
-        to={`/imoveis/${imovel.id}`}
-        className="-mx-2 flex flex-col gap-3 rounded-lg px-2 py-1 hover:bg-suave/60"
-      >
-        <span className="flex items-center gap-3">
+    <li className="flex flex-col rounded-2xl bg-folha shadow-folha">
+      {/* O cartão abre o resumo do imóvel (quanto custa, por categoria e mês a mês, as contas e os dados). */}
+      <Link to={`/imoveis/${imovel.id}`} className="flex flex-1 flex-col gap-4 rounded-t-2xl p-4 hover:bg-suave/40">
+        <span className="flex items-start gap-3">
           <span className="selo-area size-11" aria-hidden>
             <BuildingsIcon className="size-6" />
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-lg font-semibold">{imovel.nome}</span>
+            <span className="text-lg leading-snug font-bold">{imovel.nome}</span>
             {(imovel.endereco || imovel.complemento) && (
               <span className="text-base text-muted-foreground">
                 {[imovel.endereco, imovel.complemento].filter(Boolean).join(' · ')}
               </span>
             )}
           </span>
-          {valores && (
-            <span className="shrink-0 text-lg font-bold tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
-          )}
         </span>
-        {valores && (
-          <>
+        {valores ? (
+          <span className="mt-auto flex flex-col gap-3">
+            <span className="flex items-baseline justify-between gap-3">
+              <span className="text-base text-muted-foreground">Contas do mês</span>
+              <span className="text-xl font-[750] tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
+            </span>
             <BarraPago v={valores} />
             <PagoPendente v={valores} />
             <SituacaoContas v={valores} />
-          </>
+          </span>
+        ) : (
+          <Skeleton className="mt-auto h-24" />
         )}
       </Link>
-      <div className="flex gap-2">
+      <div className="flex gap-2 border-t border-linha p-3">
         <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${imovel.nome}`}>
           <PencilSimpleIcon aria-hidden />
           Renomear
         </Button>
         <Confirmar
           gatilho={
-            <Button variant="destructive" aria-label={`Excluir ${imovel.nome}`} disabled={excluir.isPending}>
+            <Button
+              variant="ghost"
+              className="ml-auto text-destructive hover:bg-destructive/10"
+              aria-label={`Excluir ${imovel.nome}`}
+              disabled={excluir.isPending}
+            >
               <TrashIcon aria-hidden />
               Excluir
             </Button>
@@ -165,17 +170,36 @@ export function Imoveis() {
   const consulta = useImoveis()
   const imoveis = consulta.data ?? []
   const doMes = useRelatorioFinanceiro(intervaloDoMes(mes)).data?.imoveis ?? []
+  const [adicionando, setAdicionando] = useState(false)
+  // Sem nenhum imóvel o formulário já aparece aberto: é a única coisa a fazer na tela.
+  const formularioAberto = adicionando || (!consulta.isPending && imoveis.length === 0)
 
   return (
-    <Pagina titulo="Imóveis">
-      <div className="flex flex-col gap-8">
+    <Pagina
+      titulo="Imóveis"
+      larga
+      acoes={
+        <Button size="lg" onClick={() => setAdicionando(true)} disabled={formularioAberto}>
+          <PlusIcon weight="bold" aria-hidden />
+          Novo imóvel
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-6">
         <p className="max-w-prose text-lg text-muted-foreground">
           Separe as contas por imóvel para saber quanto cada um custa. Toque no imóvel para ver o resumo.
         </p>
 
-        <section className="rounded-2xl bg-folha p-4 shadow-folha">
-          <FormNome rotulo="Nome do imóvel" textoBotao="Adicionar imóvel" />
-        </section>
+        {formularioAberto && (
+          <section aria-label="Adicionar imóvel" className="rounded-2xl bg-folha p-4 shadow-folha sm:max-w-xl">
+            <FormNome
+              rotulo="Nome do imóvel"
+              textoBotao="Adicionar imóvel"
+              aoTerminar={() => setAdicionando(false)}
+              aoCancelar={imoveis.length > 0 ? () => setAdicionando(false) : undefined}
+            />
+          </section>
+        )}
 
         {imoveis.length > 0 && (
           <NavegadorMes
@@ -185,15 +209,18 @@ export function Imoveis() {
         )}
 
         {consulta.isPending ? (
-          <Skeleton className="h-40" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-56" />
+            <Skeleton className="h-56" />
+          </div>
         ) : imoveis.length === 0 ? (
           <EstadoVazio icone={BuildingsIcon} titulo="Nenhum imóvel cadastrado">
             Adicione o primeiro acima. Pagamentos sem imóvel aparecem como "Sem imóvel" no relatório.
           </EstadoVazio>
         ) : (
-          <ul className="flex flex-col divide-y divide-linha" aria-label="Seus imóveis">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Seus imóveis">
             {imoveis.map((imovel) => (
-              <LinhaImovel key={imovel.id} imovel={imovel} valores={doMes.find((i) => i.id === imovel.id)} />
+              <CartaoImovel key={imovel.id} imovel={imovel} valores={doMes.find((i) => i.id === imovel.id)} />
             ))}
           </ul>
         )}

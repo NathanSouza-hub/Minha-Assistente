@@ -398,6 +398,16 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     mesmo dia, o feito vale). As sugestões (Leitura de e-mails, WhatsApp, Enviar mensagens,
     Verificar pagamentos bancários) só abrem o formulário preenchido: **não há integração** com
     e-mail, WhatsApp ou banco (uma futura API de WhatsApp seria só para enviar lembretes).
+33. **Finanças em abas; Cartões e Categorias fora do menu** (só front, nenhuma rota ou tabela
+    mudou): Despesas pessoais (Despesas do mês / A pagar / Por categoria, sem o filtro de imóvel),
+    detalhe do imóvel (Resumo / Contas / Dados do imóvel), Equipe (Pagamentos do mês / Pessoas),
+    Recebíveis (Do mês / A receber / Recebidos / Resumo) e Relatório (Balanço / Recebíveis e pessoais /
+    Por imóvel ou categoria). A aba fica em `?vista=`. Cartões e Categorias estão **ocultos** da
+    navegação (`CARTOES_VISIVEIS`/`CATEGORIAS_VISIVEIS` no front): rotas, telas, dados, faturas e o
+    back-end continuam; categoria nova se cria no próprio cadastro ("+ Nova categoria…" na conta e na
+    compra do cartão). Recebíveis não usam categoria (têm a `origem`, fixa). "Gerar PDF" no Relatório
+    é feito no navegador (jsPDF, carregado só ao gerar) com os números já devolvidos por
+    `/relatorios/financeiro` e `/relatorios/gastos` — nada recalculado.
 
 ## Convenções de banco
 

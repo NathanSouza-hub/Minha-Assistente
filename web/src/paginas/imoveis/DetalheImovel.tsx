@@ -1,9 +1,18 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeftIcon, BuildingsIcon, PaperclipIcon, PlusIcon } from '@phosphor-icons/react'
+import {
+  ArrowLeftIcon,
+  BuildingsIcon,
+  ChartBarIcon,
+  IdentificationCardIcon,
+  ListBulletsIcon,
+  PaperclipIcon,
+  PlusIcon,
+} from '@phosphor-icons/react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
+import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -19,6 +28,7 @@ import type { Imovel, RelatorioImovel } from '@/lib/tipos'
 import { ItemPagamento } from '@/paginas/pagamentos/ItemPagamento'
 
 type Periodo = 'mes' | 'semestre' | 'ano'
+type AbaImovel = 'resumo' | 'contas' | 'dados'
 
 /** Período escolhido → datas (pelo vencimento das contas). */
 function datasDo(periodo: Periodo) {
@@ -43,6 +53,17 @@ export function DetalheImovel() {
   const imovel = useImovel(id)
   const resumo = useRelatorioImovel(id, datas)
   const contas = usePagamentos({ imovelId: id, ...datas })
+  // Trocar o período não sai da aba aberta (`?vista=`).
+  const mudarPeriodo = (v: Periodo) =>
+    setParams(
+      (antes) => {
+        const novo = new URLSearchParams(antes)
+        if (v === 'mes') novo.delete('periodo')
+        else novo.set('periodo', v)
+        return novo
+      },
+      { replace: true },
+    )
 
   if (imovel.isError) {
     return (
@@ -61,6 +82,7 @@ export function DetalheImovel() {
     <Pagina
       titulo={dados?.nome ?? 'Imóvel'}
       area="contas"
+      larga
       cabecalho={
         <div className="flex min-w-0 flex-col gap-2">
           <Link
@@ -83,49 +105,73 @@ export function DetalheImovel() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-5">
         <Opcoes<Periodo>
           rotulo="Período"
           rotuloOculto
           formato="segmentos"
           valor={periodo}
-          aoMudar={(v) => setParams(v === 'mes' ? {} : { periodo: v }, { replace: true })}
+          aoMudar={mudarPeriodo}
           opcoes={PERIODOS}
         />
 
-        {resumo.isPending ? (
-          <div role="status" aria-label="Carregando o resumo" className="flex flex-col gap-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-24" />
-          </div>
-        ) : resumo.isError ? (
-          <EstadoVazio
-            icone={BuildingsIcon}
-            titulo="Não foi possível carregar o resumo"
-            acao={<Button onClick={() => resumo.refetch()}>Tentar de novo</Button>}
-          />
-        ) : (
-          <Resumo r={resumo.data} />
-        )}
-
-        <section aria-labelledby="titulo-contas" className="flex flex-col gap-2">
-          <h2 id="titulo-contas" className="text-xl font-bold">
-            Contas do período
-          </h2>
-          {contas.isPending ? (
-            <Skeleton className="h-24" />
-          ) : (contas.data ?? []).length === 0 ? (
-            <p className="text-muted-foreground">Nenhuma conta deste imóvel no período.</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-linha">
-              {[...contas.data!].reverse().map((p) => (
-                <ItemPagamento key={p.id} pagamento={p} />
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {dados && <DadosImovel key={dados.id} imovel={dados} />}
+        <Abas<AbaImovel>
+          rotulo={`Partes de ${dados?.nome ?? 'imóvel'}`}
+          abas={[
+            {
+              valor: 'resumo',
+              rotulo: 'Resumo',
+              icone: ChartBarIcon,
+              conteudo: resumo.isPending ? (
+                <div role="status" aria-label="Carregando o resumo" className="flex flex-col gap-3">
+                  <Skeleton className="h-32" />
+                  <Skeleton className="h-24" />
+                </div>
+              ) : resumo.isError ? (
+                <EstadoVazio
+                  icone={BuildingsIcon}
+                  titulo="Não foi possível carregar o resumo"
+                  acao={<Button onClick={() => resumo.refetch()}>Tentar de novo</Button>}
+                />
+              ) : (
+                <Resumo r={resumo.data} />
+              ),
+            },
+            {
+              valor: 'contas',
+              rotulo: 'Contas',
+              icone: ListBulletsIcon,
+              contador: contas.data?.length,
+              conteudo: (
+                <section
+                  aria-labelledby="titulo-contas"
+                  className="flex flex-col gap-2 rounded-2xl bg-folha p-4 shadow-folha"
+                >
+                  <h2 id="titulo-contas" className="text-xl font-bold">
+                    Contas do período
+                  </h2>
+                  {contas.isPending ? (
+                    <Skeleton className="h-24" />
+                  ) : (contas.data ?? []).length === 0 ? (
+                    <p className="text-muted-foreground">Nenhuma conta deste imóvel no período.</p>
+                  ) : (
+                    <ul className="flex flex-col divide-y divide-linha">
+                      {[...contas.data!].reverse().map((p) => (
+                        <ItemPagamento key={p.id} pagamento={p} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ),
+            },
+            {
+              valor: 'dados',
+              rotulo: 'Dados do imóvel',
+              icone: IdentificationCardIcon,
+              conteudo: dados ? <DadosImovel key={dados.id} imovel={dados} /> : <Skeleton className="h-64" />,
+            },
+          ]}
+        />
       </div>
     </Pagina>
   )
@@ -137,7 +183,7 @@ function Resumo({ r }: { r: RelatorioImovel }) {
   const maiorCategoria = Math.max(...r.categorias.map((c) => c.totalCentavos), 1)
   const maiorMes = Math.max(...r.meses.map((m) => m.totalCentavos), 1)
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       <section aria-label="Resumo do período" className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
         <p className="flex items-baseline justify-between gap-3">
           <span className="text-muted-foreground">Total do período</span>
@@ -159,58 +205,67 @@ function Resumo({ r }: { r: RelatorioImovel }) {
         </div>
       </section>
 
-      {r.categorias.length > 0 && (
-        <section aria-labelledby="titulo-categorias" className="flex flex-col gap-3">
-          <h2 id="titulo-categorias" className="text-xl font-bold">
-            Por categoria
-          </h2>
-          <ul className="flex flex-col gap-3">
-            {r.categorias.map((c) => (
-              <li key={c.id ?? c.nome} className="flex flex-col gap-1">
-                <span className="flex justify-between gap-3">
-                  <span>{c.nome}</span>
-                  <span className="font-semibold tabular-nums">{formatarCentavos(c.totalCentavos)}</span>
-                </span>
-                <div className="h-2 rounded-full bg-suave" aria-hidden>
-                  <div
-                    className="h-full rounded-full bg-area"
-                    style={{ width: `${Math.round((c.totalCentavos / maiorCategoria) * 100)}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {r.meses.length > 1 && (
-        <section aria-labelledby="titulo-evolucao" className="flex flex-col gap-3">
-          <h2 id="titulo-evolucao" className="text-xl font-bold">
-            Mês a mês
-          </h2>
-          {/* Barras horizontais: cabem no celular e cada linha diz o valor por escrito. */}
-          <ul className="flex flex-col gap-2.5">
-            {r.meses.map((m) => (
-              <li key={m.mes} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
-                <span className="text-base text-muted-foreground first-letter:uppercase">{nomeCurtoDoMes(m.mes)}</span>
-                <div className="h-3 overflow-hidden rounded-full bg-suave" aria-hidden>
-                  <div
-                    className="flex h-full rounded-full bg-area/35"
-                    style={{ width: `${Math.round((m.totalCentavos / maiorMes) * 100)}%` }}
-                  >
+      {/* Por categoria e mês a mês lado a lado no computador. */}
+      <div className="grid items-start gap-5 md:grid-cols-2">
+        {r.categorias.length > 0 && (
+          <section
+            aria-labelledby="titulo-categorias"
+            className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha"
+          >
+            <h2 id="titulo-categorias" className="text-xl font-bold">
+              Por categoria
+            </h2>
+            <ul className="flex flex-col gap-3">
+              {r.categorias.map((c) => (
+                <li key={c.id ?? c.nome} className="flex flex-col gap-1">
+                  <span className="flex justify-between gap-3">
+                    <span>{c.nome}</span>
+                    <span className="font-semibold tabular-nums">{formatarCentavos(c.totalCentavos)}</span>
+                  </span>
+                  <div className="h-2 rounded-full bg-suave" aria-hidden>
                     <div
                       className="h-full rounded-full bg-area"
-                      style={{ width: m.totalCentavos ? `${Math.round((m.pagoCentavos / m.totalCentavos) * 100)}%` : 0 }}
+                      style={{ width: `${Math.round((c.totalCentavos / maiorCategoria) * 100)}%` }}
                     />
                   </div>
-                </div>
-                <span className="text-base font-semibold tabular-nums">{formatarCentavos(m.totalCentavos)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-sm text-muted-foreground">Parte escura da barra: já pago.</p>
-        </section>
-      )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+  
+        {r.meses.length > 1 && (
+          <section
+            aria-labelledby="titulo-evolucao"
+            className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha"
+          >
+            <h2 id="titulo-evolucao" className="text-xl font-bold">
+              Mês a mês
+            </h2>
+            {/* Barras horizontais: cabem no celular e cada linha diz o valor por escrito. */}
+            <ul className="flex flex-col gap-2.5">
+              {r.meses.map((m) => (
+                <li key={m.mes} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
+                  <span className="text-base text-muted-foreground first-letter:uppercase">{nomeCurtoDoMes(m.mes)}</span>
+                  <div className="h-3 overflow-hidden rounded-full bg-suave" aria-hidden>
+                    <div
+                      className="flex h-full rounded-full bg-area/35"
+                      style={{ width: `${Math.round((m.totalCentavos / maiorMes) * 100)}%` }}
+                    >
+                      <div
+                        className="h-full rounded-full bg-area"
+                        style={{ width: m.totalCentavos ? `${Math.round((m.pagoCentavos / m.totalCentavos) * 100)}%` : 0 }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-base font-semibold tabular-nums">{formatarCentavos(m.totalCentavos)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-muted-foreground">Parte escura da barra: já pago.</p>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
@@ -253,7 +308,10 @@ function DadosImovel({ imovel }: { imovel: Imovel }) {
   }
 
   return (
-    <section aria-labelledby="titulo-dados-imovel" className="flex flex-col gap-4">
+    <section
+      aria-labelledby="titulo-dados-imovel"
+      className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha md:max-w-2xl md:p-5"
+    >
       <h2 id="titulo-dados-imovel" className="text-xl font-bold">
         Dados do imóvel
       </h2>

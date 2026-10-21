@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { handlers, resetarBancoMock } from '@/mocks/handlers'
@@ -82,10 +83,9 @@ describe('Finanças → Visão geral', () => {
       'Residências',
       'Equipe',
       'Recebíveis',
-      'Cartões',
       'Relatório',
-      'Categorias',
     ])
+    // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33).
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -125,7 +125,7 @@ describe('o detalhe nas telas de cada área', () => {
   })
 
   test('Recebíveis mostra os próximos 30 dias e o previsto por origem', async () => {
-    renderizarApp('/recebiveis')
+    renderizarApp('/recebiveis?vista=resumo')
     await bloco('A receber nos próximos 30 dias')
     const porOrigem = await screen.findByRole('list', { name: 'Previsto no mês por origem' })
     expect(within(porOrigem).getAllByRole('listitem')).toHaveLength(esperado.entradas.porOrigem.length)
@@ -141,8 +141,23 @@ describe('o detalhe nas telas de cada área', () => {
     }
   })
 
-  test('Pessoais mostra o total do mês e as categorias', async () => {
+  test('Despesas pessoais: sem filtro de imóvel, com abas Despesas do mês, A pagar e Por categoria', async () => {
+    const usuario = userEvent.setup()
     renderizarApp('/despesas?imovel=pessoal')
+    const todas = await screen.findByRole('table', { name: 'Despesas pessoais do mês' })
+    // A tela já é das pessoais: o filtro de imóvel não aparece (a categoria continua).
+    expect(screen.queryByLabelText('Imóvel')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Categoria')).toBeInTheDocument()
+    const linhasDe = (tabela: HTMLElement) => within(tabela).getAllByRole('row').length - 1
+
+    await usuario.click(screen.getByRole('tab', { name: /^A pagar/ }))
+    const aPagar = await screen.findByRole('table', { name: 'Despesas pessoais a pagar' })
+    expect(linhasDe(aPagar)).toBeLessThan(linhasDe(todas))
+    expect(within(aPagar).queryByRole('button', { name: /^Desfazer/ })).not.toBeInTheDocument()
+  })
+
+  test('Pessoais mostra o total do mês e as categorias', async () => {
+    renderizarApp('/despesas?imovel=pessoal&vista=categorias')
     expect(await screen.findByRole('heading', { level: 1, name: 'Despesas pessoais' })).toBeInTheDocument()
     const pessoais = await bloco('Despesas pessoais do mês')
     expect((await within(pessoais).findAllByText(reais(esperado.pessoal.totalCentavos))).length).toBeGreaterThan(0)

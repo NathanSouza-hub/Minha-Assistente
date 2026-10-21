@@ -11,9 +11,10 @@ import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos
 import { chaveCategoria } from '@/lib/compras'
 import { intervaloDoMes, nomeDoMes } from '@/lib/datas'
 import type { CategoriaPagamento, Imovel } from '@/lib/tipos'
+import { CARTOES_VISIVEIS } from '@/app/navegacao'
 import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
-import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
+import { AbaEquipe, BotaoAdicionarPessoa } from '@/paginas/equipe/AbaEquipe'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
 import { type FiltroStatus, useFiltros } from './filtros'
 import { ProximasContas } from './ProximasContas'
@@ -53,7 +54,12 @@ function PainelFiltros({
   mudar: Filtros['mudar']
 }) {
   const [criando, setCriando] = useState(false)
-  const grupos = [...categorias, { id: ABA_EQUIPE, nome: 'Salários equipe' }, { id: ABA_CARTOES, nome: 'Cartões' }]
+  // Cartões está oculto por enquanto (decisão 33): só aparece se a tela já estiver nele (link antigo).
+  const grupos = [
+    ...categorias,
+    { id: ABA_EQUIPE, nome: 'Salários equipe' },
+    ...(CARTOES_VISIVEIS || grupo === ABA_CARTOES ? [{ id: ABA_CARTOES, nome: 'Cartões' }] : []),
+  ]
   const escolhido = [grupos.find((g) => g.id === grupo)?.nome, imoveis.find((i) => i.id === imovelId)?.nome]
     .filter(Boolean)
     .join(' · ')
@@ -115,11 +121,12 @@ export function Pagamentos() {
   const { data: categorias = [] } = useCategorias()
 
   if (filtros.aba === ABA_EQUIPE || filtros.aba === ABA_CARTOES) {
+    const equipe = filtros.aba === ABA_EQUIPE
     return (
-      <Pagina titulo="Cadastro de despesas">
+      <Pagina titulo="Cadastro de despesas" larga={equipe} acoes={equipe ? <BotaoAdicionarPessoa /> : undefined}>
         <div className="flex flex-col gap-5">
           <PainelFiltros categorias={categorias} grupo={filtros.aba} mudar={filtros.mudar} />
-          {filtros.aba === ABA_EQUIPE ? (
+          {equipe ? (
             <AbaEquipe mes={filtros.mes} aoMudarMes={(mes) => filtros.mudar({ mes })} />
           ) : (
             <AbaCartoes />

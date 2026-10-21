@@ -17,7 +17,8 @@ import { aplicarErroApi } from '@/lib/formulario'
 import type { FormaPagamento, MembroEquipe } from '@/lib/tipos'
 import { FORMAS, esquemaMembro, paraCorpo, valoresIniciais, type DadosMembro } from './formulario'
 
-const LISTA = '/pagamentos?aba=equipe'
+// Volta para a aba "Pessoas" da Equipe (a de pagamentos é a padrão).
+const LISTA = '/pagamentos?aba=equipe&vista=pessoas'
 
 /** /equipe/novo e /equipe/:id (a pessoa vem da lista da equipe). */
 export function PaginaMembro() {

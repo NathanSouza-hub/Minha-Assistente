@@ -42,8 +42,16 @@ describe('Recebíveis', () => {
     expect(within(itens[2]).getByText(/Atrasado/)).toBeInTheDocument()
     expect(within(itens[0]).getByText(/Recebido em 01\/10\/2026/)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('radio', { name: 'Recebidos' }))
-    await vi.waitFor(async () => expect(await titulos()).toEqual(['Dividendos Itaúsa']))
+    await userEvent.click(screen.getByRole('tab', { name: 'Recebidos' }))
+    const recebidos = await screen.findByRole('list', { name: 'Recebíveis recebidos' })
+    expect(within(recebidos).getAllByRole('link')).toHaveLength(1)
+    expect(within(recebidos).getByText('Dividendos Itaúsa')).toBeInTheDocument()
+
+    // "A receber" inclui o recebido em parte (aluguel) e os que nada entrou.
+    await userEvent.click(screen.getByRole('tab', { name: /^A receber/ }))
+    const aReceber = await screen.findByRole('list', { name: 'Recebíveis a receber' })
+    expect(within(aReceber).getAllByRole('link')).toHaveLength(3)
+    expect(within(aReceber).getByText('Aluguel da sala comercial')).toBeInTheDocument()
   })
 
   test('cadastra, recebe uma parte, recebe o resto e desfaz', async () => {

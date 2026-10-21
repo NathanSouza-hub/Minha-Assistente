@@ -74,23 +74,36 @@ npm run lint                                  # oxlint
   `ProximasContas` (pendentes até +30 dias) no topo de Contas a pagar, `ProximosRecebiveis` e o
   previsto por origem em Recebíveis, o valor do mês em cada imóvel de Residências (`?mes=`) e
   `ResumoPessoais` (por categoria) na Lista de despesas com `?imovel=pessoal` (vira `destino=pessoal`
-  e o título "Despesas pessoais"). Não volte a pôr esses detalhes na Visão geral.
+  e o título "Despesas pessoais", em abas Despesas do mês / A pagar / Por categoria e sem o filtro de
+  imóvel). Não volte a pôr esses detalhes na Visão geral.
+- **Abas internas** (decisão 33): `components/Abas.tsx` (Tabs do Radix, aba em `?vista=`, a primeira
+  é a padrão e não vai para a URL; `contador` opcional). Usadas em Despesas pessoais, detalhe do
+  imóvel, Equipe, Recebíveis e Relatório. O conteúdo de aba fechada não é montado: nos testes,
+  clique na aba (`getByRole('tab')`) ou abra com `?vista=`.
+- **Ocultos do menu** (decisão 33): `CARTOES_VISIVEIS` e `CATEGORIAS_VISIVEIS` em `app/navegacao.ts`
+  tiram Cartões e Categorias do menu e do "Grupo de contas"; rotas, telas e dados continuam (para
+  reativar, `true`). A categoria nova se cria no cadastro com `paginas/categorias/CampoCategoria.tsx`
+  ("+ Nova categoria…", usado na conta e na compra do cartão).
 - **Tarefas avulsas** (`/tarefas`, `/tarefas/nova`, `/tarefas/:id`; `paginas/tarefas/`, decisão 28): lista
   "A fazer" (Atrasadas, Hoje, Próximas) e "Feitas", com o ✓ grande em cada linha e "Nova tarefa para
   hoje" em uma linha; o formulário completo tem dia, hora, lembrete (só liga com hora; depois de
   salvar chama `convidar()`) e detalhes. Na tela Hoje é a categoria `tarefa` (`LinhaTarefa`); o mock
   dela fica em `mocks/tarefas.ts` (`tarefasAvulsasDoDia`, usado por `mocks/hoje.ts`).
-- **Residências** (`/imoveis/:id`, `paginas/imoveis/DetalheImovel.tsx`, decisão 27): resumo do imóvel
-  no período (Este mês / 6 meses / Este ano, em `?periodo=`), por categoria, mês a mês (barras
-  horizontais com o valor escrito) e as contas do período (`ItemPagamento`), mais os dados do
-  imóvel (nome, endereço, identificação). Os números vêm de `GET /relatorios/imoveis/:id`. Cada
+- **Residências** (`/imoveis/:id`, `paginas/imoveis/DetalheImovel.tsx`, decisão 27): período (Este mês /
+  6 meses / Este ano, em `?periodo=`) e as abas Resumo (total, por categoria e mês a mês lado a lado),
+  Contas (`ItemPagamento`) e Dados do imóvel (nome, endereço, identificação). A lista `/imoveis`
+  mostra um cartão por imóvel (valor do mês, situação, Renomear/Excluir) e o "Novo imóvel" no cabeçalho. Os números vêm de `GET /relatorios/imoveis/:id`. Cada
   imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
-- **Relatório** (`/relatorio`): "Balanço do período" (entradas, saídas, saldo realizado e projetado,
-  recebíveis por origem e despesas pessoais, de `GET /relatorios/financeiro`) e, embaixo, os gastos
-  por imóvel ou categoria (`/relatorios/gastos`). O mesmo período vale para os dois.
+- **Relatório** (`/relatorio`): o período em cima e as abas Balanço (entradas, saídas e saldo),
+  Recebíveis e pessoais (de `GET /relatorios/financeiro`) e Por imóvel ou categoria
+  (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa `lib/relatorioPdf.ts` (jsPDF +
+  autotable, importados só ao gerar) com os dados já carregados do período — nunca recalcule; o
+  botão espera os dados do período escolhido (`isPlaceholderData`).
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
-  valores a receber do mês (pela data prevista). Status, saldo e atrasado vêm da API, derivados do
+  valores a receber do mês (pela data prevista): previsto/recebido/a receber em cima e as abas Do mês,
+  A receber (status ≠ recebido, inclui parcial), Recebidos e Resumo (por origem e próximos 30 dias);
+  "Novo recebível" no cabeçalho. Status, saldo e atrasado vêm da API, derivados do
   histórico de recebimentos — não recalcule. No detalhe: situação, "Registrar recebimento" (o valor
   já vem com o que falta; abaixo do saldo aparece "Foi o valor final", que manda `encerrar`),
   histórico com "Desfazer" e comprovantes (`ListaArquivos`). Toda mutação invalida `recebiveis` e os
@@ -151,7 +164,7 @@ npm run lint                                  # oxlint
   primeira categoria — não há "Todas"); o imóvel é `?imovel=`. A conta nova vem com a categoria do
   grupo (e o imóvel, nas contas residenciais) e volta para ele. `paginas/categorias/FormCategoria.tsx`
   não é um `<form>` (também aparece dentro do formulário de conta): envia pelo botão ou Enter.
-  Categorias também se gerenciam em Mais → Categorias (renomear, subir/descer, excluir).
+  A tela `/categorias` (renomear, subir/descer, excluir) existe, mas está fora do menu (decisão 33).
 - **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
   de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
   `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem
@@ -159,8 +172,9 @@ npm run lint                                  # oxlint
   cartões, pagamentos, relatório e painel (`consultas/cartoes.ts`). As regras de competência e
   parcelas estão em `src/lib/fatura.ts` (cópia de `src/lib/fatura.js` do back-end, usada pelo mock
   e pelo resumo "10× de" do formulário).
-- **Salários equipe** (aba `?aba=equipe` de Contas, `paginas/equipe/`): pagamentos da equipe no mês
-  (filtrados de `/pagamentos` por `membroId`) e a lista de pessoas (`/equipe/novo`, `/equipe/:id`, com
+- **Salários equipe** (aba `?aba=equipe` de Contas, `paginas/equipe/`): abas Pagamentos do mês
+  (filtrados de `/pagamentos` por `membroId`) e Pessoas (cartões; "Adicionar pessoa" no cabeçalho; o
+  formulário da pessoa volta para `&vista=pessoas`) (`/equipe/novo`, `/equipe/:id`, com
   os dias de pagamento num `useFieldArray`). As contas são criadas pelo back-end; a conta da equipe
   pode ter `valorCentavos: null` ("A definir"): some com `?? 0`, o item mostra "Pagar…" pedindo o
   valor (`usePagarPagamento` aceita `valorCentavos`) e `/pagamentos/:id` abre

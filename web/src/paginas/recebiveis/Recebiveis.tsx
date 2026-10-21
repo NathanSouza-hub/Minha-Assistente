@@ -1,108 +1,177 @@
-import { CheckCircleIcon, HandCoinsIcon, PlusIcon, RepeatIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import type { ReactNode } from 'react'
+import {
+  ChartBarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  HandCoinsIcon,
+  ListBulletsIcon,
+  PlusIcon,
+  RepeatIcon,
+  WarningCircleIcon,
+} from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
+import { Abas } from '@/components/Abas'
+import { Bloco, Vazio } from '@/components/Bloco'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
-import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRelatorioFinanceiro } from '@/consultas/pagamentos'
 import { useRecebiveis } from '@/consultas/recebiveis'
 import { dataCurta, intervaloDoMes, mesDe, nomeDoMes } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
-import type { Recebivel, StatusRecebivel } from '@/lib/tipos'
+import type { Recebivel } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { NavegadorMes } from '@/paginas/pagamentos/ResumoContas'
 import { ORIGENS, STATUS } from './formulario'
 import { ProximosRecebiveis } from './ProximosRecebiveis'
 
-type FiltroStatus = 'todos' | StatusRecebivel
+type AbaRecebiveis = 'mes' | 'a-receber' | 'recebidos' | 'resumo'
 
-/** /recebiveis: valores a receber do mês (pela data prevista), com o que já entrou e o que falta. */
+/**
+ * /recebiveis: valores a receber do mês (pela data prevista). Os três números do mês ficam em cima;
+ * embaixo, abas com a lista do mês, o que falta receber (inclui os recebidos em parte), o que já
+ * entrou e o resumo (por origem e os próximos 30 dias). Status e saldo vêm da API.
+ */
 export function Recebiveis() {
   const [params, setParams] = useSearchParams()
   const mes = /^\d{4}-\d{2}$/.test(params.get('mes') ?? '') ? params.get('mes')! : mesDe()
-  const status = (params.get('status') as FiltroStatus | null) ?? 'todos'
-  const mudar = (chave: string, valor: string) =>
+  const mudarMes = (m: string) =>
     setParams(
       (atual) => {
         const novo = new URLSearchParams(atual)
-        if (valor && valor !== 'todos') novo.set(chave, valor)
-        else novo.delete(chave)
+        novo.set('mes', m)
         return novo
       },
       { replace: true },
     )
 
-  const consulta = useRecebiveis({ ...intervaloDoMes(mes), status: status === 'todos' ? undefined : status })
+  // Uma busca do mês; as abas filtram pelo status que veio da API.
+  const consulta = useRecebiveis(intervaloDoMes(mes))
   const lista = consulta.data ?? []
+  const aReceber = lista.filter((r) => r.status !== 'recebido')
+  const recebidos = lista.filter((r) => r.status === 'recebido')
   const novo = `/recebiveis/novo?mes=${mes}`
+  const listar = (itens: Recebivel[], rotulo: string, vazio: ReactNode) => (
+    <ListaRecebiveis consulta={consulta} itens={itens} rotulo={rotulo} vazio={vazio} />
+  )
 
   return (
     <Pagina
       titulo="Recebíveis"
+      larga
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
             <PlusIcon weight="bold" aria-hidden />
-            Novo
+            Novo recebível
           </Link>
         </Button>
       }
     >
       <div className="flex flex-col gap-5">
-        <ProximosRecebiveis />
-        <NavegadorMes mes={mes} aoMudar={(m) => mudar('mes', m)} />
-        <Opcoes<FiltroStatus>
-          rotulo="Mostrar"
-          rotuloOculto
-          formato="segmentos"
-          valor={status}
-          aoMudar={(v) => mudar('status', v)}
-          opcoes={[
-            { valor: 'todos', rotulo: 'Todos' },
-            { valor: 'pendente', rotulo: 'A receber' },
-            { valor: 'recebido', rotulo: 'Recebidos' },
+        <NavegadorMes mes={mes} aoMudar={mudarMes} />
+        {lista.length > 0 && <Resumo lista={lista} />}
+
+        <Abas<AbaRecebiveis>
+          rotulo="Partes de Recebíveis"
+          abas={[
+            {
+              valor: 'mes',
+              rotulo: 'Do mês',
+              icone: ListBulletsIcon,
+              conteudo: listar(
+                lista,
+                'Recebíveis do mês',
+                <EstadoVazio
+                  icone={HandCoinsIcon}
+                  titulo={`Nenhum recebível em ${nomeDoMes(mes).toLowerCase()}`}
+                  acao={
+                    <Button asChild>
+                      <Link to={novo}>Cadastrar recebível</Link>
+                    </Button>
+                  }
+                >
+                  Aluguéis, dividendos, rendimentos e honorários que você espera receber.
+                </EstadoVazio>,
+              ),
+            },
+            {
+              valor: 'a-receber',
+              rotulo: 'A receber',
+              icone: ClockIcon,
+              contador: aReceber.length,
+              conteudo: listar(
+                aReceber,
+                'Recebíveis a receber',
+                <EstadoVazio icone={HandCoinsIcon} titulo={`Nada a receber em ${nomeDoMes(mes).toLowerCase()}`} />,
+              ),
+            },
+            {
+              valor: 'recebidos',
+              rotulo: 'Recebidos',
+              icone: CheckCircleIcon,
+              conteudo: listar(
+                recebidos,
+                'Recebíveis recebidos',
+                <EstadoVazio icone={HandCoinsIcon} titulo={`Nada recebido em ${nomeDoMes(mes).toLowerCase()}`} />,
+              ),
+            },
+            {
+              valor: 'resumo',
+              rotulo: 'Resumo',
+              icone: ChartBarIcon,
+              conteudo: (
+                <div className="grid items-start gap-5 md:grid-cols-2">
+                  <PorOrigem mes={mes} />
+                  <ProximosRecebiveis />
+                </div>
+              ),
+            },
           ]}
         />
-
-        {lista.length > 0 && <Resumo lista={lista} />}
-        <PorOrigem mes={mes} />
-
-        {consulta.isPending ? (
-          <div className="flex flex-col gap-3" role="status" aria-label="Carregando recebíveis">
-            {[1, 2, 3].map((n) => (
-              <Skeleton key={n} className="h-16" />
-            ))}
-          </div>
-        ) : consulta.isError ? (
-          <EstadoVazio
-            icone={HandCoinsIcon}
-            titulo="Não foi possível carregar os recebíveis"
-            acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
-          >
-            Verifique a internet e tente de novo.
-          </EstadoVazio>
-        ) : lista.length === 0 ? (
-          <EstadoVazio
-            icone={HandCoinsIcon}
-            titulo={`Nenhum recebível em ${nomeDoMes(mes).toLowerCase()}`}
-            acao={
-              <Button asChild>
-                <Link to={novo}>Cadastrar recebível</Link>
-              </Button>
-            }
-          >
-            Aluguéis, dividendos, rendimentos e honorários que você espera receber.
-          </EstadoVazio>
-        ) : (
-          <ul className="flex flex-col divide-y divide-linha" aria-label="Recebíveis do mês">
-            {lista.map((r) => (
-              <Linha key={r.id} recebivel={r} />
-            ))}
-          </ul>
-        )}
       </div>
     </Pagina>
+  )
+}
+
+/** Carregando, erro, vazio ou a lista de recebíveis. */
+function ListaRecebiveis({
+  consulta,
+  itens,
+  rotulo,
+  vazio,
+}: {
+  consulta: { isPending: boolean; isError: boolean; refetch: () => unknown }
+  itens: Recebivel[]
+  rotulo: string
+  vazio: ReactNode
+}) {
+  if (consulta.isPending)
+    return (
+      <div className="flex flex-col gap-3" role="status" aria-label="Carregando recebíveis">
+        {[1, 2, 3].map((n) => (
+          <Skeleton key={n} className="h-16" />
+        ))}
+      </div>
+    )
+  if (consulta.isError)
+    return (
+      <EstadoVazio
+        icone={HandCoinsIcon}
+        titulo="Não foi possível carregar os recebíveis"
+        acao={<Button onClick={() => consulta.refetch()}>Tentar de novo</Button>}
+      >
+        Verifique a internet e tente de novo.
+      </EstadoVazio>
+    )
+  if (itens.length === 0) return vazio
+  return (
+    <ul className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha" aria-label={rotulo}>
+      {itens.map((r) => (
+        <Linha key={r.id} recebivel={r} />
+      ))}
+    </ul>
   )
 }
 
@@ -130,18 +199,32 @@ function Resumo({ lista }: { lista: Recebivel[] }) {
   )
 }
 
-/** Previsto no mês por origem (aluguel, dividendos...), do relatório financeiro. */
+/** Previsto no mês por origem (aluguel, dividendos...), com o recebido e o que falta, do relatório financeiro. */
 function PorOrigem({ mes }: { mes: string }) {
-  const porOrigem = useRelatorioFinanceiro(intervaloDoMes(mes)).data?.entradas.porOrigem ?? []
-  if (porOrigem.length === 0) return null
+  const consulta = useRelatorioFinanceiro(intervaloDoMes(mes))
   return (
-    <ul className="flex flex-wrap gap-2"aria-label="Previsto no mês por origem">
-      {porOrigem.map((o) => (
-        <li key={o.origem} className="rounded-full bg-area-fundo px-3 py-1 text-base font-semibold text-area">
-          {ORIGENS[o.origem]} {formatarCentavos(o.totalCentavos)}
-        </li>
-      ))}
-    </ul>
+    <Bloco titulo="Previsto por origem" icone={ChartBarIcon} area="recebiveis" consulta={consulta}>
+      {() => {
+        const porOrigem = consulta.data!.entradas.porOrigem
+        if (porOrigem.length === 0) return <Vazio>Nenhum recebível previsto neste mês.</Vazio>
+        return (
+          <ul className="flex flex-col divide-y divide-linha" aria-label="Previsto no mês por origem">
+            {porOrigem.map((o) => (
+              <li key={o.origem} className="flex flex-col gap-0.5 py-2.5">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="font-bold">{ORIGENS[o.origem]}</span>
+                  <span className="font-bold tabular-nums">{formatarCentavos(o.totalCentavos)}</span>
+                </span>
+                <span className="text-base text-muted-foreground">
+                  Recebido <span className="font-semibold text-ok">{formatarCentavos(o.recebidoCentavos)}</span> · a
+                  receber {formatarCentavos(o.pendenteCentavos)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      }}
+    </Bloco>
   )
 }
 

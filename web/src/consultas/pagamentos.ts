@@ -100,19 +100,25 @@ export const useBaixarComprovante = (pagamentoId: string) =>
       ),
   })
 
-export const useRelatorioGastos = (periodo: { inicio: string; fim: string; agruparPor: AgruparGastosPor }) =>
+/** `ativo: false` não busca (ex.: datas escolhidas fora de ordem no Relatório). */
+export const useRelatorioGastos = (
+  periodo: { inicio: string; fim: string; agruparPor: AgruparGastosPor },
+  ativo = true,
+) =>
   useQuery({
     queryKey: [...chaves.relatorio, 'gastos', periodo],
     queryFn: () => api<RelatorioGastos>('/relatorios/gastos', { query: periodo }),
     placeholderData: (anterior) => anterior,
+    enabled: ativo,
   })
 
 /** Visão financeira do período (painel, imóveis): contas do período por situação, realizado, imóveis e pessoais. */
-export const useRelatorioFinanceiro = (periodo: { inicio: string; fim: string }) =>
+export const useRelatorioFinanceiro = (periodo: { inicio: string; fim: string }, ativo = true) =>
   useQuery({
     queryKey: [...chaves.relatorio, 'financeiro', periodo],
     queryFn: () => api<RelatorioFinanceiro>('/relatorios/financeiro', { query: periodo }),
     placeholderData: (anterior) => anterior,
+    enabled: ativo,
   })
 
 /** Tudo que depende de pagamentos (listas, itens, relatório e, pela fatura, os cartões). */

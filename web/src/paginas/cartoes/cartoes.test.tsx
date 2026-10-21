@@ -60,8 +60,8 @@ async function lancarCompra(
 describe('aba Cartões', () => {
   test('sem cartão mostra o vazio e cadastra o primeiro', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
-    await usuario.selectOptions(await screen.findByLabelText('Grupo de contas'), 'Cartões')
+    // Cartões está fora do menu e do "Grupo de contas" (decisão 33), mas a tela continua pelo endereço.
+    renderizarApp('/pagamentos?aba=cartoes')
     expect(await screen.findByText('Nenhum cartão cadastrado')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('link', { name: 'Adicionar cartão' }))
@@ -82,6 +82,21 @@ describe('aba Cartões', () => {
     expect(await screen.findByText('Aberta')).toBeInTheDocument()
     expect(screen.getByText('Nenhuma compra nesta fatura.')).toBeInTheDocument()
     expect(banco.cartoes[0]).toMatchObject({ nome: 'Itaú', cor: 'verde', limiteCentavos: 500000 })
+  })
+
+  test('a compra cria a categoria ali mesmo, sem a tela Categorias', async () => {
+    const usuario = userEvent.setup()
+    cartaoDaMaria()
+    renderizarApp('/pagamentos?aba=cartoes')
+    await lancarCompra(usuario, { descricao: 'Remédios', valor: '120,00' })
+    await usuario.selectOptions(screen.getByLabelText('Categoria (opcional)'), '+ Nova categoria…')
+    await usuario.type(screen.getByLabelText('Nome da nova categoria'), 'Farmácia{Enter}')
+    await waitFor(() => expect(screen.getByLabelText('Categoria (opcional)')).toHaveDisplayValue('Farmácia'))
+    await usuario.click(screen.getByRole('button', { name: 'Lançar compra' }))
+
+    const compras = await screen.findByRole('list', { name: 'Compras da fatura' })
+    expect(within(compras).getByText(/Farmácia/)).toBeInTheDocument()
+    expect(banco.categorias.some((c) => c.nome === 'Farmácia')).toBe(true)
   })
 
   test('compra parcelada mostra o resumo e cai uma parcela em cada fatura, com selo', async () => {

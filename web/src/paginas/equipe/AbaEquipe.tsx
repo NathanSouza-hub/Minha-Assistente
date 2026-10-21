@@ -1,5 +1,6 @@
-import { CaretRightIcon, PlusIcon, UsersIcon } from '@phosphor-icons/react'
+import { CaretRightIcon, PlusIcon, ReceiptIcon, UsersIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
+import { Abas } from '@/components/Abas'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -24,68 +25,66 @@ function descreverDias(dias: MembroEquipe['dias']) {
   return `dias ${numeros.slice(0, -1).join(', ')} e ${numeros.at(-1)}`
 }
 
-function ListaEquipe() {
-  const { data: equipe, isPending } = useEquipe()
-
+/** Botão do cabeçalho da Equipe (fica no `acoes` da página). */
+export function BotaoAdicionarPessoa() {
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="titulo-equipe">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="titulo-equipe" className="text-xl font-bold">
-          Equipe
-        </h2>
-        <Button asChild variant="outline">
-          <Link to="/equipe/novo">
-            <PlusIcon weight="bold" aria-hidden />
-            Adicionar pessoa
-          </Link>
-        </Button>
-      </div>
-      {isPending ? (
-        <Skeleton className="h-20" role="status" aria-label="Carregando equipe" />
-      ) : !equipe?.length ? (
-        <EstadoVazio icone={UsersIcon} titulo="Ninguém na equipe ainda">
-          Cadastre quem recebe salário, plantão ou honorário. O app cria as contas nos dias de pagamento.
-        </EstadoVazio>
-      ) : (
-        <ul className="flex flex-col divide-y divide-linha" aria-label="Pessoas da equipe">
-          {equipe.map((m) => (
-            <li key={m.id}>
-              <Link
-                to={`/equipe/${m.id}`}
-                className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-suave/70"
-              >
-                {/* Inicial do nome no selo da área, como um crachá. */}
-                <span
-                  aria-hidden
-                  className={cn('selo-area size-11 text-lg font-bold', !m.ativo && 'bg-suave text-muted-foreground')}
-                >
-                  {m.nome.trim().charAt(0).toUpperCase()}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="flex flex-wrap items-center gap-x-2 text-lg leading-snug font-bold">
-                    <span className={cn(!m.ativo && 'text-muted-foreground')}>{m.nome}</span>
-                    {!m.ativo && (
-                      <span className="rounded-full bg-suave px-2.5 text-base font-semibold text-muted-foreground">
-                        Inativa
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-base text-muted-foreground">
-                    {[m.funcao, textoForma[m.formaPagamento], descreverDias(m.dias)].filter(Boolean).join(' · ')}
-                  </span>
-                </span>
-                <CaretRightIcon weight="bold" className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <Button asChild size="lg">
+      <Link to="/equipe/novo">
+        <PlusIcon weight="bold" aria-hidden />
+        Adicionar pessoa
+      </Link>
+    </Button>
   )
 }
 
-/** Aba "Salários equipe" de Contas: os pagamentos da equipe no mês e o cadastro das pessoas. */
-export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: string) => void }) {
+/** As pessoas em cartões: crachá com a inicial, função, forma e dias de pagamento. */
+function ListaEquipe() {
+  const { data: equipe, isPending } = useEquipe()
+
+  if (isPending) return <Skeleton className="h-20" role="status" aria-label="Carregando equipe" />
+  if (!equipe?.length)
+    return (
+      <EstadoVazio icone={UsersIcon} titulo="Ninguém na equipe ainda">
+        Cadastre quem recebe salário, plantão ou honorário. O app cria as contas nos dias de pagamento.
+      </EstadoVazio>
+    )
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Pessoas da equipe">
+      {equipe.map((m) => (
+        <li key={m.id}>
+          <Link
+            to={`/equipe/${m.id}`}
+            className="flex h-full items-center gap-4 rounded-2xl bg-folha p-4 shadow-folha hover:bg-suave/40"
+          >
+            <span
+              aria-hidden
+              className={cn('selo-area size-12 text-lg font-bold', !m.ativo && 'bg-suave text-muted-foreground')}
+            >
+              {m.nome.trim().charAt(0).toUpperCase()}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-x-2 text-lg leading-snug font-bold">
+                <span className={cn(!m.ativo && 'text-muted-foreground')}>{m.nome}</span>
+                {!m.ativo && (
+                  <span className="rounded-full bg-suave px-2.5 text-base font-semibold text-muted-foreground">
+                    Inativa
+                  </span>
+                )}
+              </span>
+              <span className="text-base text-muted-foreground">
+                {[m.funcao, textoForma[m.formaPagamento], descreverDias(m.dias)].filter(Boolean).join(' · ')}
+              </span>
+            </span>
+            <CaretRightIcon weight="bold" className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Os pagamentos da equipe no mês, com o resumo (a pagar, vencidas, pago) em cima. */
+function PagamentosDoMes({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: string) => void }) {
   // A API não filtra por pessoa: busca o mês e fica com as contas da equipe.
   const consulta = usePagamentos(intervaloDoMes(mes))
   const pagamentos = (consulta.data ?? []).filter((p) => p.membroId)
@@ -102,14 +101,35 @@ export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: 
           Nenhum pagamento da equipe em {nomeDoMes(mes).toLowerCase()}.
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-linha" aria-label="Pagamentos da equipe do mês">
+        <ul
+          className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha"
+          aria-label="Pagamentos da equipe do mês"
+        >
           {pagamentos.map((p) => (
             <ItemPagamento key={p.id} pagamento={p} />
           ))}
         </ul>
       )}
-
-      <ListaEquipe />
     </div>
+  )
+}
+
+/** Grupo "Salários equipe" do Cadastro de despesas: os pagamentos do mês e, em outra aba, as pessoas. */
+export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: string) => void }) {
+  // Busca já aqui: conta as pessoas na aba e deixa a equipe em cache para a conta aberta (chave PIX).
+  const { data: equipe } = useEquipe()
+  return (
+    <Abas<'pagamentos' | 'pessoas'>
+      rotulo="Partes da Equipe"
+      abas={[
+        {
+          valor: 'pagamentos',
+          rotulo: 'Pagamentos do mês',
+          icone: ReceiptIcon,
+          conteudo: <PagamentosDoMes mes={mes} aoMudarMes={aoMudarMes} />,
+        },
+        { valor: 'pessoas', rotulo: 'Pessoas', icone: UsersIcon, contador: equipe?.length, conteudo: <ListaEquipe /> },
+      ]}
+    />
   )
 }

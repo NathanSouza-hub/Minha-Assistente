@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeftIcon, TrashIcon } from '@phosphor-icons/react'
@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  useCategorias,
   useCriarPagamento,
   useEditarPagamento,
   useExcluirPagamento,
@@ -32,7 +31,7 @@ import { useConvidarNotificacoes } from '@/consultas/notificacoes'
 import type { PagamentoDetalhe } from '@/lib/tipos'
 import { TAMANHO_MAXIMO_MB } from '@/lib/arquivos'
 import { ListaArquivos, type TextosArquivos } from '@/components/ListaArquivos'
-import { FormCategoria } from '@/paginas/categorias/FormCategoria'
+import { CampoCategoria } from '@/paginas/categorias/CampoCategoria'
 import { FormularioContaEquipe } from '@/paginas/equipe/FormularioContaEquipe'
 import {
   camposDaApi,
@@ -46,9 +45,6 @@ import { enderecoDespesas, VOLTAR_DESPESAS } from './filtros'
 
 /** Mesmo limite do back-end (src/modules/pagamentos/comprovantes.js). */
 const MAXIMO_COMPROVANTES = 5
-
-// Opção do <select> de categoria que abre o campo para digitar uma nova.
-const NOVA_CATEGORIA = '__nova__'
 
 /** /pagamentos/novo e /pagamentos/:id */
 export function PaginaPagamento() {
@@ -108,8 +104,6 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
   // Aberto da sub-aba de um imóvel (Contas residenciais): já vem com ele.
   const imovel = params.get('imovel') ?? ''
 
-  const { data: categorias = [] } = useCategorias()
-  const [criandoCategoria, setCriandoCategoria] = useState(false)
   const { data: imoveis = [] } = useImoveis()
   const criar = useCriarPagamento()
   const editar = useEditarPagamento()
@@ -235,42 +229,12 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            <div className="flex flex-col gap-3">
-              <Selecao
-                rotulo="Categoria"
-                erro={errors.categoriaId?.message}
-                {...campoCategoria}
-                value={categoriaId}
-                onChange={(e) => {
-                  if (e.target.value !== NOVA_CATEGORIA) return campoCategoria.onChange(e)
-                  setValue('categoriaId', '')
-                  setCriandoCategoria(true)
-                }}
-              >
-                <option value="" disabled>
-                  Escolha a categoria
-                </option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-                <option value={NOVA_CATEGORIA}>+ Nova categoria…</option>
-              </Selecao>
-              {criandoCategoria && (
-                <div className="rounded-2xl bg-folha p-4 shadow-folha">
-                  <FormCategoria
-                    rotulo="Nome da nova categoria"
-                    autoFocus
-                    aoSalvar={(nova) => {
-                      setValue('categoriaId', nova.id, { shouldValidate: true })
-                      setCriandoCategoria(false)
-                    }}
-                    aoCancelar={() => setCriandoCategoria(false)}
-                  />
-                </div>
-              )}
-            </div>
+            <CampoCategoria
+              registro={campoCategoria}
+              valor={categoriaId}
+              aoMudar={(id) => setValue('categoriaId', id, { shouldValidate: Boolean(id), shouldDirty: true })}
+              erro={errors.categoriaId?.message}
+            />
             <Selecao
               rotulo="Destino"
               dica={
