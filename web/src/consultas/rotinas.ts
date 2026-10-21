@@ -3,13 +3,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { invalidarPainel } from './hoje'
 import { agora, paraDataHoraISO } from '@/lib/datas'
-import type { Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
+import type { ItemHistoricoRotina, Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
 
 export const chavesRotina = {
   todos: ['rotinas'] as const,
   lista: ['rotinas', 'lista'] as const,
   doDia: (data: string) => ['rotinas', 'dia', data] as const,
+  historico: (id: string) => ['rotinas', 'historico', id] as const,
 }
+
+/** Últimos 60 dias em que o compromisso foi marcado (feito ou não feito). */
+export const useHistoricoRotina = (id: string) =>
+  useQuery({
+    queryKey: chavesRotina.historico(id),
+    queryFn: () => api<ItemHistoricoRotina[]>(`/rotinas/${id}/historico`),
+  })
 
 export const useRotinas = () =>
   useQuery({ queryKey: chavesRotina.lista, queryFn: () => api<Rotina[]>('/rotinas') })

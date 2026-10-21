@@ -45,7 +45,7 @@ GET/POST /recebiveis (inicio, fim, status, origem) | GET/PUT/DELETE /recebiveis/
 POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebimentoId
 POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
 GET/POST /eventos (inicio, fim, tipo) | GET/PUT/DELETE /eventos/:id
-GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir
+GET/POST /rotinas | PUT/DELETE /rotinas/:id | GET /rotinas/hoje | POST /rotinas/:id/concluir | GET /rotinas/:id/historico
 GET/POST /tarefas (inicio, fim, situacao) | GET/PUT/DELETE /tarefas/:id | PATCH /tarefas/:id/concluir  (decisão 28)
 GET/POST /medicamentos | GET/PUT/DELETE /medicamentos/:id | GET /medicamentos/hoje
 POST /medicamentos/registros
@@ -390,6 +390,14 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     Consulta, exame e fisioterapia ganham `profissional` e `especialidade` (nulos nos outros tipos);
     presencial usa `local` (endereço) e online o `link`. Continuam sendo eventos da Agenda, mostrados
     também nas telas de Saúde (sem segundo cadastro).
+32. **Compromissos** (migration 30): continuam sendo dois cadastros — `rotina` (repete nos dias da
+    semana) e `tarefa` (uma vez, com dia) —, que no app são o mesmo "Novo lembrete" ("Quantas
+    vezes? Só uma vez / Repete" troca de formulário levando o texto). A rotina ganha `observacoes`.
+    `GET /rotinas/:id/historico?inicio&fim` (padrão: 60 dias até hoje) lista os dias marcados:
+    `feito` (de `rotina_conclusao`) e `nao_feito` (o ✗ da tela Hoje, em `tarefa_registro`; no
+    mesmo dia, o feito vale). As sugestões (Leitura de e-mails, WhatsApp, Enviar mensagens,
+    Verificar pagamentos bancários) só abrem o formulário preenchido: **não há integração** com
+    e-mail, WhatsApp ou banco (uma futura API de WhatsApp seria só para enviar lembretes).
 
 ## Convenções de banco
 
@@ -419,7 +427,7 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 | membro_equipe_dispensa | membro_id, vencimento | pk (membro_id, vencimento) |
 | pagamento | descricao, categoria_id? (nulo na fatura e na equipe), cartao_id?, competencia?, membro_id?, valor_centavos? (nulo só na equipe pendente), imovel_id?, valor_centavos, vencimento, status, data_pagamento?, recorrencia, recorrencia_origem_id?, parcelamento_grupo_id?, parcela_atual?, parcela_total?, observacoes | status=pago ⇔ data_pagamento; parcelas tudo-ou-nada e 1≤atual≤total; não parcelado+recorrente; idx vencimento, (status,vencimento), data_pagamento, categoria_id, imovel_id, parcelamento_grupo_id |
 | evento | titulo, tipo, tipo_descricao?, modalidade?, inicio, fim?, local, profissional?, especialidade?, link, observacoes, recorrencia, recorrencia_fim?, lembretes_minutos_antes int[] | fim>inicio; lembretes >0, até 5, sem repetição; idx inicio, (tipo,inicio), parcial recorrentes |
-| rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete | |
+| rotina | titulo, hora?, dias_semana smallint[], ativo, ordem, lembrete, observacoes? | |
 | rotina_conclusao | rotina_id, data, concluida_em | unique (rotina_id, data) |
 | medicamento | nome, dose, observacoes, ativo, data_inicio?, data_fim?, intervalo_horas? | fim >= início; intervalo 1–24 |
 | medicamento_horario | medicamento_id, periodo, hora?, dia_semana? | semanal ⇒ dia_semana |

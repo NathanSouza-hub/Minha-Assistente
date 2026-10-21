@@ -468,6 +468,7 @@ function semearRotina() {
     ativo: true,
     ordem: 0,
     lembrete: false,
+    observacoes: null,
     criadoEm: agora,
     atualizadoEm: agora,
     ...extra,

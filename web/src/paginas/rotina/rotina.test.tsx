@@ -112,6 +112,7 @@ describe('cadastro de tarefa', () => {
       diasSemana: [1, 2, 3, 4, 5, 6],
       lembrete: true,
       ativo: true,
+      observacoes: null,
     })
     // É terça: a nova tarefa já aparece no dia
     expect(await screen.findByRole('checkbox', { name: /Caminhar/ })).toBeInTheDocument()
@@ -179,5 +180,34 @@ describe('sugestões', () => {
     const depois = screen.getByRole('region', { name: 'Sugestões para adicionar' })
     expect(within(depois).queryByRole('link', { name: 'Leitura de e-mails' })).not.toBeInTheDocument()
     expect(within(depois).getAllByRole('link')).toHaveLength(3)
+  })
+})
+
+describe('lembrete que repete: observações, histórico e "Quantas vezes?"', () => {
+  test('editar mostra o histórico e guarda as observações', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/rotina?visao=todas')
+    await usuario.click(await screen.findByRole('link', { name: /Ler e-mails/ }))
+    const historico = await screen.findByRole('region', { name: 'Histórico' })
+    expect(await within(historico).findByText('13/10/2026')).toBeInTheDocument()
+    expect(within(historico).getByText('Feito às 08:40')).toBeInTheDocument()
+
+    await usuario.type(screen.getByLabelText('Observações (opcional)'), 'Caixa do trabalho')
+    await usuario.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    expect(await screen.findByText('Compromisso salvo.')).toBeInTheDocument()
+    await usuario.click(await screen.findByRole('link', { name: /Ler e-mails/ }))
+    expect(await screen.findByLabelText('Observações (opcional)')).toHaveValue('Caixa do trabalho')
+  })
+
+  test('"Só uma vez" leva ao lembrete do dia com o texto digitado, e "Repete" volta', async () => {
+    const usuario = userEvent.setup()
+    const { roteador } = renderizarApp('/rotina/nova')
+    await usuario.type(await screen.findByLabelText('Compromisso'), 'Ligar para o banco')
+    await usuario.click(screen.getByRole('radio', { name: 'Só uma vez' }))
+    expect(await screen.findByLabelText('Tarefa')).toHaveValue('Ligar para o banco')
+    expect(roteador.state.location.pathname).toBe('/tarefas/nova')
+
+    await usuario.click(screen.getByRole('radio', { name: 'Repete' }))
+    expect(await screen.findByLabelText('Compromisso')).toHaveValue('Ligar para o banco')
   })
 })

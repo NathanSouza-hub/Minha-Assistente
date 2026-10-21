@@ -2,18 +2,21 @@ import { useEffect, useId } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeftIcon, CheckIcon, TrashIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon, CheckCircleIcon, CheckIcon, TrashIcon, XCircleIcon } from '@phosphor-icons/react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
+import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
-import { useExcluirRotina, useRotinas, useSalvarRotina } from '@/consultas/rotinas'
+import { Textarea } from '@/components/ui/textarea'
+import { useExcluirRotina, useHistoricoRotina, useRotinas, useSalvarRotina } from '@/consultas/rotinas'
 import { useConvidarNotificacoes } from '@/consultas/notificacoes'
+import { dataCurta, deDataHoraISO } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Rotina, RotinaCorpo } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -26,6 +29,7 @@ const esquema = z
     diasSemana: z.array(z.number()).min(1, 'Escolha pelo menos um dia.'),
     lembrete: z.boolean(),
     ativo: z.boolean(),
+    observacoes: z.string().max(2000, 'Use no máximo 2000 caracteres.'),
   })
   .superRefine((v, ctx) => {
     if (v.lembrete && !v.hora) {
@@ -36,8 +40,15 @@ type Dados = z.infer<typeof esquema>
 
 const iniciais = (r?: Rotina, tituloSugerido = ''): Dados =>
   r
-    ? { titulo: r.titulo, hora: r.hora ?? '', diasSemana: r.diasSemana, lembrete: r.lembrete, ativo: r.ativo }
-    : { titulo: tituloSugerido, hora: '', diasSemana: TODOS, lembrete: false, ativo: true }
+    ? {
+        titulo: r.titulo,
+        hora: r.hora ?? '',
+        diasSemana: r.diasSemana,
+        lembrete: r.lembrete,
+        ativo: r.ativo,
+        observacoes: r.observacoes ?? '',
+      }
+    : { titulo: tituloSugerido, hora: '', diasSemana: TODOS, lembrete: false, ativo: true, observacoes: '' }
 
 const paraCorpo = (d: Dados): RotinaCorpo => ({
   titulo: d.titulo.trim(),
@@ -45,6 +56,7 @@ const paraCorpo = (d: Dados): RotinaCorpo => ({
   diasSemana: [...d.diasSemana].sort(),
   lembrete: Boolean(d.hora) && d.lembrete,
   ativo: d.ativo,
+  observacoes: d.observacoes.trim() || null,
 })
 
 /** /rotina/nova e /rotina/:id (a lista já traz tudo; o back-end não tem GET /rotinas/:id). */
@@ -87,11 +99,13 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
     handleSubmit,
     setError,
     setFocus,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<Dados>({
     resolver: zodResolver(esquema),
     defaultValues: iniciais(rotina, params.get('titulo') ?? ''),
   })
+  const idObs = useId()
   const hora = useWatch({ control, name: 'hora' })
 
   useEffect(() => {
@@ -130,6 +144,12 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
       }
     >
       <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
+        {!editando && (
+          <QuantasVezes
+            valor="repete"
+            aoTrocar={() => navegar(`/tarefas/nova?titulo=${encodeURIComponent(getValues('titulo'))}`)}
+          />
+        )}
         <Campo
           rotulo="Compromisso"
           placeholder="Ex.: Leitura de e-mails"
@@ -171,6 +191,15 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             </div>
           )}
         />
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={idObs}>Observações (opcional)</Label>
+          <Textarea
+            id={idObs}
+            placeholder="Ex.: olhar primeiro a caixa do trabalho"
+            {...register('observacoes')}
+          />
+        </div>
 
         {editando && (
           <Controller
@@ -227,7 +256,61 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
           )}
         </div>
       </form>
+      {rotina && <Historico id={rotina.id} />}
     </Pagina>
+  )
+}
+
+/**
+ * "Só uma vez" (lembrete do dia, /tarefas/nova) ou "Repete" (/rotina/nova): os dois cadastros são
+ * o mesmo "Novo lembrete" para quem usa; trocar leva o texto já digitado.
+ */
+export function QuantasVezes({ valor, aoTrocar }: { valor: 'uma' | 'repete'; aoTrocar: () => void }) {
+  return (
+    <Opcoes<'uma' | 'repete'>
+      rotulo="Quantas vezes?"
+      formato="segmentos"
+      valor={valor}
+      aoMudar={(v) => v !== valor && aoTrocar()}
+      opcoes={[
+        { valor: 'uma', rotulo: 'Só uma vez' },
+        { valor: 'repete', rotulo: 'Repete' },
+      ]}
+    />
+  )
+}
+
+/** Dias em que o compromisso foi marcado nos últimos 60 dias. */
+function Historico({ id }: { id: string }) {
+  const consulta = useHistoricoRotina(id)
+  const itens = consulta.data ?? []
+  return (
+    <section aria-labelledby="historico" className="mt-10 flex flex-col gap-3">
+      <h2 id="historico" className="text-xl font-bold">
+        Histórico
+      </h2>
+      {consulta.isPending ? (
+        <Skeleton className="h-16" />
+      ) : itens.length === 0 ? (
+        <p className="text-base text-muted-foreground">Nenhum dia marcado nos últimos 60 dias.</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-linha">
+          {itens.map((h) => (
+            <li key={h.data} className="flex items-center gap-2 py-2.5 text-base">
+              {h.situacao === 'feito' ? (
+                <CheckCircleIcon className="size-6 shrink-0 text-ok" weight="fill" aria-hidden />
+              ) : (
+                <XCircleIcon className="size-6 shrink-0 text-atraso" weight="fill" aria-hidden />
+              )}
+              <span className="font-semibold tabular-nums">{dataCurta(h.data)}</span>
+              <span className="text-muted-foreground">
+                {h.situacao === 'feito' ? `Feito às ${deDataHoraISO(h.em).toFormat('HH:mm')}` : 'Não feito'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

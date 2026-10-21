@@ -15,6 +15,7 @@ import { dataCurta, deDataHoraISO, diaCurto, hojeISO } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Tarefa } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { sugestoesFaltando } from '@/paginas/rotina/sugestoes'
 
 type Visao = 'afazer' | 'feitas'
 
@@ -76,6 +77,7 @@ export function Tarefas() {
         ) : (
           <AFazer lista={lista} />
         )}
+        {visao === 'afazer' && consulta.isSuccess && <Sugestoes pendentes={lista} />}
       </div>
     </Pagina>
   )
@@ -208,5 +210,30 @@ function AdicionarRapido() {
         {isSubmitting ? 'Anotando…' : 'Anotar'}
       </Button>
     </form>
+  )
+}
+
+/** Os lembretes comuns (e-mails, WhatsApp...) que não estão na lista: abrem o formulário preenchido. */
+function Sugestoes({ pendentes }: { pendentes: Tarefa[] }) {
+  const faltando = sugestoesFaltando(pendentes)
+  if (faltando.length === 0) return null
+  return (
+    <section aria-labelledby="sugestoes-tarefas" className="flex flex-col gap-3">
+      <h2 id="sugestoes-tarefas" className="text-lg font-semibold">
+        Sugestões para adicionar
+      </h2>
+      <ul className="flex flex-wrap gap-2">
+        {faltando.map((s) => (
+          <li key={s}>
+            <Button asChild variant="outline" className="border-dashed">
+              <Link to={`/tarefas/nova?titulo=${encodeURIComponent(s)}`}>
+                <PlusIcon weight="bold" aria-hidden />
+                {s}
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

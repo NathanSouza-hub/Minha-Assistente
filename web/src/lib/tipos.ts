@@ -386,11 +386,17 @@ export type Rotina = {
   ativo: boolean
   ordem: number
   lembrete: boolean
+  observacoes: string | null
   criadoEm: string
   atualizadoEm: string
 }
 
-export type RotinaCorpo = Pick<Rotina, 'titulo' | 'hora' | 'diasSemana' | 'ativo' | 'lembrete'> & { ordem?: number }
+export type RotinaCorpo = Pick<Rotina, 'titulo' | 'hora' | 'diasSemana' | 'ativo' | 'lembrete' | 'observacoes'> & {
+  ordem?: number
+}
+
+/** Item de GET /rotinas/:id/historico ("nao_feito" é o ✗ da tela Hoje). */
+export type ItemHistoricoRotina = { data: string; situacao: 'feito' | 'nao_feito'; em: string }
 
 /** Item de GET /rotinas/hoje: uma tarefa do dia com o status. */
 export type TarefaDoDia = {

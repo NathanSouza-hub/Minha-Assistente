@@ -125,3 +125,44 @@ test('editar cancela lembretes pendentes; isolamento e exclusão', async () => {
   await request(app).delete(`/rotinas/${tarefa.id}`).set(ana.auth).expect(404);
   await request(app).get('/rotinas/hoje').expect(401);
 });
+
+test('observações e histórico (feito, não feito na tela Hoje e isolamento)', async () => {
+  const sessao = await criarSessao(app);
+  const { body: rotina } = await criar(sessao, { titulo: 'Ler e-mails', hora: '09:00', observacoes: '  Caixa do trabalho ' });
+  assert.equal(rotina.observacoes, 'Caixa do trabalho');
+
+  await concluir(sessao, rotina.id, { data: DOMINGO });
+  await request(app)
+    .patch(`/hoje/compromisso:${rotina.id}:${SEGUNDA}T09:00`)
+    .set(sessao.auth)
+    .send({ status: 'nao_feito' })
+    .expect(200);
+
+  const { body: historico } = await request(app)
+    .get(`/rotinas/${rotina.id}/historico`)
+    .query({ inicio: '2026-10-01', fim: '2026-10-31' })
+    .set(sessao.auth)
+    .expect(200);
+  assert.deepEqual(
+    historico.map((h) => [h.data, h.situacao]),
+    [
+      [SEGUNDA, 'nao_feito'],
+      [DOMINGO, 'feito'],
+    ],
+  );
+  assert.match(historico[0].em, /-03:00$/);
+
+  // Feito depois do ✗ no mesmo dia: vale o feito.
+  await concluir(sessao, rotina.id, { data: SEGUNDA });
+  const depois = (
+    await request(app).get(`/rotinas/${rotina.id}/historico`).query({ inicio: SEGUNDA, fim: SEGUNDA }).set(sessao.auth)
+  ).body;
+  assert.deepEqual(depois.map((h) => h.situacao), ['feito']);
+
+  await request(app).get(`/rotinas/${rotina.id}/historico`).set(bia.auth).expect(404);
+  await request(app)
+    .get(`/rotinas/${rotina.id}/historico`)
+    .query({ inicio: '2026-10-31', fim: '2026-10-01' })
+    .set(sessao.auth)
+    .expect(400);
+});

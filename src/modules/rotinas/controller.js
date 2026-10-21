@@ -25,4 +25,8 @@ async function concluir(req, res) {
   res.json(await service.concluir(req.usuario.id, req.validado.params.id, req.validado.body));
 }
 
-module.exports = { listar, criar, atualizar, remover, doDia, concluir };
+async function historico(req, res) {
+  res.json(await service.historico(req.usuario.id, req.validado.params.id, req.validado.query));
+}
+
+module.exports = { listar, criar, atualizar, remover, doDia, concluir, historico };

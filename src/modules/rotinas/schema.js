@@ -1,5 +1,5 @@
 const { z } = require('../../lib/zod');
-const { data, hora, instante } = require('../../lib/esquemas');
+const { data, hora, instante, textoOpcional, periodoValido, MENSAGEM_PERIODO } = require('../../lib/esquemas');
 
 const TODOS_OS_DIAS = [0, 1, 2, 3, 4, 5, 6];
 
@@ -17,6 +17,7 @@ const corpo = z
     ativo: z.boolean().default(true),
     ordem: z.number().int().min(0).max(32767).default(0),
     lembrete: z.boolean().default(false).describe('Avisar no horário (exige hora)'),
+    observacoes: textoOpcional(2000),
   })
   .refine((v) => !v.lembrete || v.hora, {
     message: 'Para receber lembrete, informe a hora.',
@@ -39,6 +40,7 @@ const rotina = z.object({
   ativo: z.boolean(),
   ordem: z.number().int(),
   lembrete: z.boolean(),
+  observacoes: z.string().nullable(),
   criadoEm: instante,
   atualizadoEm: instante,
 });
@@ -53,4 +55,17 @@ const itemDoDia = z.object({
   concluidaEm: instante.nullable(),
 });
 
-module.exports = { corpo, filtroDia, conclusao, rotina, itemDoDia };
+const filtroHistorico = z
+  .object({
+    inicio: data.optional().describe('Primeiro dia (padrão: 60 dias atrás)'),
+    fim: data.optional().describe('Último dia, inclusive (padrão: hoje)'),
+  })
+  .refine(periodoValido, MENSAGEM_PERIODO);
+
+const itemHistorico = z.object({
+  data: z.iso.date(),
+  situacao: z.enum(['feito', 'nao_feito']).describe('"nao_feito" é o ✗ da tela Hoje'),
+  em: instante.describe('Quando foi marcado'),
+});
+
+module.exports = { corpo, filtroDia, conclusao, filtroHistorico, rotina, itemDoDia, itemHistorico };

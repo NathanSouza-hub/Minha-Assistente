@@ -14,6 +14,11 @@ function rotasRotinas() {
   rotas.put('/:id', validar({ params: paramsId, body: esquemas.corpo }), controller.atualizar);
   rotas.delete('/:id', validar({ params: paramsId }), controller.remover);
   rotas.post('/:id/concluir', validar({ params: paramsId, body: esquemas.conclusao }), controller.concluir);
+  rotas.get(
+    '/:id/historico',
+    validar({ params: paramsId, query: esquemas.filtroHistorico }),
+    controller.historico,
+  );
   return rotas;
 }
 

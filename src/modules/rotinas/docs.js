@@ -74,5 +74,17 @@ module.exports = {
         },
       },
     },
+    '/rotinas/{id}/historico': {
+      get: {
+        tags: TAG,
+        summary: 'Histórico: dias em que a tarefa foi marcada como feita ou não feita',
+        description: 'Padrão: últimos 60 dias até hoje. Do dia mais recente para o mais antigo.',
+        parameters: [paramId, ...parametrosQuery(esquemas.filtroHistorico)],
+        responses: {
+          200: respostaJson('Histórico', z.array(esquemas.itemHistorico)),
+          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH, ...NAO_ENCONTRADO }),
+        },
+      },
+    },
   },
 };

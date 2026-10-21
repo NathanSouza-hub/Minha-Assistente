@@ -82,4 +82,12 @@ describe('Tarefas avulsas', () => {
       expect(banco.tarefas.find((t) => t.titulo === 'Enviar mensagens')!.concluidaEm).not.toBeNull(),
     )
   })
+
+  test('sugestões (e-mails, WhatsApp...) abrem o formulário já preenchido', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/tarefas')
+    const sugestoes = await screen.findByRole('region', { name: 'Sugestões para adicionar' })
+    await usuario.click(within(sugestoes).getByRole('link', { name: 'Verificar pagamentos bancários' }))
+    expect(await screen.findByLabelText('Tarefa')).toHaveValue('Verificar pagamentos bancários')
+  })
 })

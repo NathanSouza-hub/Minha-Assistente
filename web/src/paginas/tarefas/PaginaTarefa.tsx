@@ -18,6 +18,7 @@ import { useConcluirTarefa, useExcluirTarefa, useSalvarTarefa, useTarefa } from 
 import { dataCurta, deDataHoraISO, hojeISO } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Tarefa } from '@/lib/tipos'
+import { QuantasVezes } from '@/paginas/rotina/PaginaRotina'
 
 // Mesmas regras de src/modules/tarefas/schema.js.
 const esquema = z
@@ -73,6 +74,7 @@ function Formulario({ tarefa }: { tarefa?: Tarefa }) {
     handleSubmit,
     setError,
     setFocus,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<Dados>({
     resolver: zodResolver(esquema),
@@ -157,6 +159,12 @@ function Formulario({ tarefa }: { tarefa?: Tarefa }) {
         )}
 
         <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
+          {!editando && (
+            <QuantasVezes
+              valor="uma"
+              aoTrocar={() => navegar(`/rotina/nova?titulo=${encodeURIComponent(getValues('titulo'))}`)}
+            />
+          )}
           <Campo
             rotulo="Tarefa"
             placeholder="Ex.: Ligar para o contador"

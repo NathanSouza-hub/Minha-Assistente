@@ -2,7 +2,7 @@
 import { http, HttpResponse } from 'msw'
 import { API_URL } from '@/lib/api'
 import { deDataISO, hojeISO } from '@/lib/datas'
-import type { Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
+import type { ItemHistoricoRotina, Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
 import { agoraISO, banco, type RotinaMock } from './banco'
 import { autenticado, erro, naoEncontrado } from './util'
 
@@ -53,6 +53,7 @@ const gravaveis = (c: RotinaCorpo) => ({
   diasSemana: [...new Set(c.diasSemana ?? [0, 1, 2, 3, 4, 5, 6])],
   ativo: c.ativo ?? true,
   lembrete: Boolean(c.lembrete),
+  observacoes: c.observacoes?.trim() || null,
   ...(c.ordem !== undefined && { ordem: c.ordem }),
 })
 
@@ -93,6 +94,34 @@ export const handlersRotinas = [
         banco.conclusoesRotina.push({ rotinaId: r.id, data, concluidaEm: agoraISO() })
       if (!concluida && indice >= 0) banco.conclusoesRotina.splice(indice, 1)
       return HttpResponse.json(tarefa(r, data))
+    }),
+  ),
+
+  // Histórico: conclusões + o ✗ da tela Hoje (o feito vale mais), do mais recente — como o back-end.
+  http.get(
+    `${API_URL}/rotinas/:id/historico`,
+    autenticado(({ request, params }, u) => {
+      const r = doUsuario(u.id, String(params.id))
+      if (!r) return naoEncontrado('Tarefa', { feminino: true })
+      const busca = new URL(request.url).searchParams
+      const fim = busca.get('fim') ?? hojeISO()
+      const inicio = busca.get('inicio') ?? deDataISO(fim).minus({ days: 60 }).toISODate()!
+      const dentro = (d: string) => d >= inicio && d <= fim
+      const feitos: ItemHistoricoRotina[] = banco.conclusoesRotina
+        .filter((c) => c.rotinaId === r.id && dentro(c.data))
+        .map((c) => ({ data: c.data, situacao: 'feito', em: c.concluidaEm }))
+      const naoFeitos: ItemHistoricoRotina[] = banco.registrosTarefa
+        .filter(
+          (t) =>
+            t.usuarioId === u.id &&
+            t.categoria === 'compromisso' &&
+            t.itemId === r.id &&
+            t.status === 'nao_feito' &&
+            dentro(t.dataOcorrencia) &&
+            !feitos.some((f) => f.data === t.dataOcorrencia),
+        )
+        .map((t) => ({ data: t.dataOcorrencia, situacao: 'nao_feito', em: agoraISO() }))
+      return HttpResponse.json([...feitos, ...naoFeitos].sort((a, b) => b.data.localeCompare(a.data)))
     }),
   ),
 

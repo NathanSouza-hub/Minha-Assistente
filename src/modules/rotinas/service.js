@@ -3,7 +3,19 @@ const db = require('../../config/db');
 const { hoje } = require('../../lib/tempo');
 const { naoEncontrado, requisicaoInvalida } = require('../../lib/erros');
 
-const COLUNAS = ['id', 'titulo', 'hora', 'diasSemana', 'ativo', 'ordem', 'lembrete', 'criadoEm', 'atualizadoEm'];
+const COLUNAS = [
+  'id',
+  'titulo',
+  'hora',
+  'diasSemana',
+  'ativo',
+  'ordem',
+  'lembrete',
+  'observacoes',
+  'criadoEm',
+  'atualizadoEm',
+];
+const DIAS_HISTORICO = 60;
 const ORDEM = 'ordem, hora NULLS LAST, titulo';
 
 // 0 = domingo ... 6 = sábado (Luxon usa 1 = segunda ... 7 = domingo).
@@ -16,6 +28,7 @@ const camposGravaveis = (d) => ({
   ativo: d.ativo,
   ordem: d.ordem,
   lembrete: d.lembrete,
+  observacoes: d.observacoes,
 });
 
 const cancelarLembretesPendentes = (conexao, id) =>
@@ -95,4 +108,28 @@ async function concluir(usuarioId, id, { data = hoje(), concluida }) {
   return formatarItem(data, await itens(usuarioId, data).where('t.id', id).first());
 }
 
-module.exports = { listar, criar, atualizar, remover, doDia, concluir };
+/** Dias em que o compromisso foi marcado (feito ou, na tela Hoje, não feito), do mais recente. */
+async function historico(usuarioId, id, filtros = {}) {
+  const rotina = await db('rotina').where({ id, usuarioId }).first('id');
+  if (!rotina) throw naoEncontrado('Tarefa', { feminino: true });
+  const fim = filtros.fim ?? hoje();
+  const inicio = filtros.inicio ?? DateTime.fromISO(fim).minus({ days: DIAS_HISTORICO }).toISODate();
+
+  const [feitos, naoFeitos] = await Promise.all([
+    db('rotinaConclusao').where({ rotinaId: id }).whereBetween('data', [inicio, fim]).select('data', 'concluidaEm'),
+    db('tarefaRegistro')
+      .where({ usuarioId, categoria: 'compromisso', itemId: id, status: 'nao_feito' })
+      .whereBetween('dataOcorrencia', [inicio, fim])
+      .select('dataOcorrencia', 'atualizadoEm'),
+  ]);
+  const diasFeitos = new Set(feitos.map((f) => f.data));
+  return [
+    ...feitos.map((f) => ({ data: f.data, situacao: 'feito', em: f.concluidaEm })),
+    // O "feito" vale mais que um ✗ antigo do mesmo dia.
+    ...naoFeitos
+      .filter((n) => !diasFeitos.has(n.dataOcorrencia))
+      .map((n) => ({ data: n.dataOcorrencia, situacao: 'nao_feito', em: n.atualizadoEm })),
+  ].sort((a, b) => b.data.localeCompare(a.data));
+}
+
+module.exports = { listar, criar, atualizar, remover, doDia, concluir, historico };

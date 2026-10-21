@@ -56,6 +56,9 @@ npm run lint                                  # oxlint
   "Outro tipo" mostra "Descreva o compromisso" (obrigatório no front, na API e no banco) e
   `nomeDoTipo()` exibe essa descrição no lugar do tipo. "Viagem" no campo navega para
   `/viagens/nova`. Videoconferência mostra o link sem escolher modalidade.
+- **Compromissos = "Novo lembrete"** (decisão 32): `QuantasVezes` (em `paginas/rotina/PaginaRotina.tsx`) troca
+  entre `/tarefas/nova` (só uma vez) e `/rotina/nova` (repete) levando o título; a edição da rotina
+  mostra o histórico (`useHistoricoRotina`) e tem observações. As sugestões aparecem nas duas listas.
 - **Rotina/Compromissos**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista
   (`useRotinas`). As sugestões (`paginas/rotina/sugestoes.ts`) abrem `/rotina/nova?titulo=...`.
 - **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
