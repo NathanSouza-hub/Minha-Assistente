@@ -28,7 +28,7 @@ export function Tarefas() {
 
   return (
     <Pagina
-      titulo="Tarefas"
+      titulo="Lembretes de uma vez"
       acoes={
         <Button asChild size="lg">
           <Link to="/tarefas/nova">

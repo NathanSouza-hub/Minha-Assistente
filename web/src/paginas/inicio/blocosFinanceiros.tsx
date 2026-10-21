@@ -26,9 +26,9 @@ const despesasDoMes = (mes: string, extra = '') => `/despesas?mes=${mes}${extra}
 /** Um número do painel: rótulo, valor e uma linha explicando de onde ele vem. */
 function Indicador({ rotulo, valor, nota, cor }: { rotulo: string; valor: number; nota: string; cor?: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-xl bg-suave/70 px-4 py-3">
+    <div className="flex min-w-0 flex-col gap-0.5 rounded-xl bg-suave/70 px-3 py-2.5 sm:px-4 sm:py-3">
       <dt className="text-base font-semibold text-muted-foreground">{rotulo}</dt>
-      <dd className={cn('text-2xl leading-tight font-[750] tabular-nums', cor)}>{formatarCentavos(valor)}</dd>
+      <dd className={cn('text-lg leading-tight font-[750] tabular-nums sm:text-2xl', cor)}>{formatarCentavos(valor)}</dd>
       <dd className="text-sm text-muted-foreground">{nota}</dd>
     </div>
   )
@@ -54,7 +54,7 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
         return (
           <div className="flex flex-col gap-4">
             <h3 className="text-base font-bold text-muted-foreground">Despesas</h3>
-            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
+            <dl className="-mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Indicador rotulo="Despesas do mês" valor={s.totalCentavos} nota={`Contas que vencem em ${nomeMes}`} />
               <Indicador rotulo="Já pago" valor={s.pagoCentavos} nota="Dessas contas" cor="text-ok" />
               <Indicador
@@ -66,7 +66,7 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
               <Indicador rotulo="Pago no mês" valor={s.pagoNoPeriodoCentavos} nota="Pela data do pagamento" />
             </dl>
             <h3 className="text-base font-bold text-muted-foreground">Recebíveis</h3>
-            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
+            <dl className="-mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
               <Indicador rotulo="Previsto a receber" valor={e.totalCentavos} nota={`Previstos para ${nomeMes}`} />
               <Indicador rotulo="Já recebido" valor={e.recebidoCentavos} nota="Desses recebíveis" cor="text-ok" />
               <Indicador
@@ -78,7 +78,7 @@ export function BlocoFinancas({ consulta, mes }: { consulta: Financeiro; mes: st
               <Indicador rotulo="Recebido no mês" valor={e.recebidoNoPeriodoCentavos} nota="Pela data do recebimento" />
             </dl>
             <h3 className="text-base font-bold text-muted-foreground">Saldo do mês</h3>
-            <dl className="-mt-2 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
+            <dl className="-mt-2 grid grid-cols-2 gap-2">
               <Indicador
                 rotulo="Saldo realizado"
                 valor={saldo.realizadoCentavos}

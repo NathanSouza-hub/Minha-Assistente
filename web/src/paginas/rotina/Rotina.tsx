@@ -34,7 +34,7 @@ export function Rotina() {
 
   return (
     <Pagina
-      titulo="Compromissos"
+      titulo="Lembretes que repetem"
       acoes={
         <Button asChild size="lg">
           <Link to="/rotina/nova">

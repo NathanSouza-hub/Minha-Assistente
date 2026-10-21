@@ -100,7 +100,7 @@ export const SECOES: Secao[] = [
     area: 'compromissos',
     itens: [
       { rota: '/rotina', rotulo: 'Lembretes que repetem' },
-      { rota: '/tarefas', rotulo: 'Lembretes do dia' },
+      { rota: '/tarefas', rotulo: 'Lembretes de uma vez' },
       { rota: '/compras', rotulo: 'Lista de compras' },
     ],
   },
