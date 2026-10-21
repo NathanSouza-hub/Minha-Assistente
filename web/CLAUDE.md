@@ -143,15 +143,15 @@ npm run lint                                  # oxlint
   linha mostra só descrição, valor, vencimento e pagar (o resto a partir de `lg`). As contas abertas
   dela levam `?voltar=despesas` (`filtros.ts`) e o formulário volta para ela. Pagar e desfazer ficam em
   `marcarComoPago.ts` (também usado por `ItemPagamento`, no painel e na equipe).
-- **Cadastro de despesas** (`/pagamentos`, no "Mais" do celular): cada categoria do usuário é uma aba
-  (`?aba=<id>`, filtra por `categoriaId`; sem aba ou aba apagada abre na primeira categoria — não há
-  "Todas"), mais "Salários equipe" e "Cartões". "+ Nova" (aba) e
-  "+ Nova categoria…" (formulário de conta) usam `paginas/categorias/FormCategoria.tsx`, que não é um
-  `<form>` (aparece dentro do formulário de conta): envia pelo botão ou Enter. A conta nova aberta
-  numa aba vem com a categoria dela e volta para a aba (sem aba, para a aba da categoria da conta).
-  Categorias também se gerenciam em Mais → Categorias (renomear, subir/descer, excluir). Na aba cujo
-  nome contém "residen" (Contas residenciais), os imóveis viram sub-abas (`?imovel=`) e a conta nova
-  já vem com o imóvel; nas outras, o imóvel é um filtro recolhido.
+- **Cadastro de despesas** (`/pagamentos`, "Contas a pagar" no menu): mesmo molde da Lista de
+  despesas — mês, Todos/A pagar/Pagos, o painel recolhido "Grupo de contas e imóvel" (`PainelFiltros`,
+  com os selects e "Nova categoria"; recolhido mostra o que está escolhido), `ResumoContas`, a
+  `TabelaContas` com `voltar=""` (a conta aberta volta para o grupo) e, no fim, `ProximasContas`.
+  O grupo é `?aba=` (categoria do usuário, `equipe` ou `cartoes`; sem aba ou aba apagada abre na
+  primeira categoria — não há "Todas"); o imóvel é `?imovel=`. A conta nova vem com a categoria do
+  grupo (e o imóvel, nas contas residenciais) e volta para ele. `paginas/categorias/FormCategoria.tsx`
+  não é um `<form>` (também aparece dentro do formulário de conta): envia pelo botão ou Enter.
+  Categorias também se gerenciam em Mais → Categorias (renomear, subir/descer, excluir).
 - **Cartões** (aba `?aba=cartoes&cartao=<id>&mes=AAAA-MM` de Contas, `paginas/cartoes/`): carrossel
   de cartões e a fatura do mês (sem `mes`, a fatura atual do cartão). A fatura é uma conta em
   `/pagamentos` mantida pelo back-end: na lista ela leva para a aba Cartões, não tem "Desfazer" nem

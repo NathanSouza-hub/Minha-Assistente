@@ -61,7 +61,7 @@ describe('aba Cartões', () => {
   test('sem cartão mostra o vazio e cadastra o primeiro', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await usuario.click(await screen.findByRole('button', { name: 'Cartões' }))
+    await usuario.selectOptions(await screen.findByLabelText('Grupo de contas'), 'Cartões')
     expect(await screen.findByText('Nenhum cartão cadastrado')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('link', { name: 'Adicionar cartão' }))

@@ -32,14 +32,22 @@ const fixoDe = (p: Pagamento) =>
 const grupoDe = (p: Pagamento) => p.categoriaNome ?? p.cartaoNome ?? (p.membroId ? 'Salários equipe' : '')
 
 /** A fatura do cartão abre na aba Cartões, no mês dela; as outras contas, na tela da conta (que volta
- * para a Lista de despesas). */
-const enderecoDe = (p: Pagamento, ancora = '') =>
+ * para a Lista de despesas, ou para a aba do Cadastro de despesas quando `voltar` é vazio). */
+const enderecoDe = (p: Pagamento, voltar: string, ancora = '') =>
   p.cartaoId
     ? `/pagamentos?aba=cartoes&cartao=${p.cartaoId}&mes=${p.competencia!.slice(0, 7)}`
-    : `/pagamentos/${p.id}?voltar=${VOLTAR_DESPESAS}${ancora}`
+    : `/pagamentos/${p.id}${voltar ? `?voltar=${voltar}` : ''}${ancora}`
 
 /** Contas do mês em tabela: contas comuns, faturas dos cartões e pagamentos da equipe. */
-export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; rotulo: string }) {
+export function TabelaContas({
+  pagamentos,
+  rotulo,
+  voltar = VOLTAR_DESPESAS,
+}: {
+  pagamentos: Pagamento[]
+  rotulo: string
+  voltar?: string
+}) {
   return (
     <div className="overflow-x-auto rounded-2xl bg-folha shadow-folha">
       <table className="w-full border-collapse text-left" aria-label={rotulo}>
@@ -73,7 +81,7 @@ export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; 
         </thead>
         <tbody>
           {pagamentos.map((p) => (
-            <LinhaConta key={p.id} pagamento={p} />
+            <LinhaConta key={p.id} pagamento={p} voltar={voltar} />
           ))}
         </tbody>
       </table>
@@ -81,7 +89,7 @@ export function TabelaContas({ pagamentos, rotulo }: { pagamentos: Pagamento[]; 
   )
 }
 
-function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
+function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: string }) {
   const { marcar, marcando } = useMarcarComoPago()
   const { desfazer, desfazendo } = useDesfazerPagamento()
   const excluir = useExcluirPagamento()
@@ -105,7 +113,7 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
   return (
     <tr className="border-t border-linha align-middle">
       <td className="px-2.5 py-2">
-        <Link to={enderecoDe(p)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-suave/70">
+        <Link to={enderecoDe(p, voltar)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-suave/70">
           <span className="flex items-center gap-1.5 leading-snug font-bold">
             {p.descricao}
             {p.totalComprovantes > 0 && (
@@ -178,13 +186,13 @@ function LinhaConta({ pagamento: p }: { pagamento: Pagamento }) {
           )}
           {pedirComprovante && (
             <Button asChild variant="ghost" size="icon" title="Anexar comprovante">
-              <Link to={enderecoDe(p, '#comprovantes')} aria-label={`Anexar comprovante de ${p.descricao}`}>
+              <Link to={enderecoDe(p, voltar, '#comprovantes')} aria-label={`Anexar comprovante de ${p.descricao}`}>
                 <PaperclipIcon className="size-6" aria-hidden />
               </Link>
             </Button>
           )}
           <Button asChild variant="ghost" size="icon" className="hidden lg:inline-flex" title="Editar">
-            <Link to={enderecoDe(p)} aria-label={`Editar ${p.descricao}`}>
+            <Link to={enderecoDe(p, voltar)} aria-label={`Editar ${p.descricao}`}>
               <PencilSimpleIcon className="size-5" aria-hidden />
             </Link>
           </Button>

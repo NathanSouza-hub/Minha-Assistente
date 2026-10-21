@@ -10,83 +10,103 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCategorias, useImoveis, usePagamentos } from '@/consultas/pagamentos'
 import { chaveCategoria } from '@/lib/compras'
 import { intervaloDoMes, nomeDoMes } from '@/lib/datas'
-import type { CategoriaPagamento } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
+import type { CategoriaPagamento, Imovel } from '@/lib/tipos'
 import { AbaCartoes } from '@/paginas/cartoes/AbaCartoes'
 import { FormCategoria } from '@/paginas/categorias/FormCategoria'
 import { AbaEquipe } from '@/paginas/equipe/AbaEquipe'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
 import { type FiltroStatus, useFiltros } from './filtros'
-import { ItemPagamento } from './ItemPagamento'
 import { ProximasContas } from './ProximasContas'
+import { TabelaContas } from './TabelaContas'
 
-/** Valores de ?aba= das abas fixas (as outras abas são ids de categoria). */
+/** Valores de ?aba= dos grupos fixos (os outros grupos são ids de categoria). */
 const ABA_EQUIPE = 'equipe'
 const ABA_CARTOES = 'cartoes'
 
 /** "Contas residenciais" (ou "residências"...): a categoria das contas de casa, pelo nome. */
 const ehResidencial = (nome: string) => chaveCategoria(nome).includes('residen')
 
-/** Uma aba por categoria, "Salários equipe", "Cartões" e o botão de criar categoria. Rola para o lado no celular.
- * Ver tudo junto é na Lista de despesas (ListaDespesas.tsx). */
-function Abas({
+type Filtros = ReturnType<typeof useFiltros>
+
+/** Trocar de grupo: Cartões abre na fatura atual (não no mês da lista) e o imóvel vale só para o grupo
+ * em que foi escolhido. */
+const mudarGrupo = (mudar: Filtros['mudar'], grupo: string) =>
+  mudar(grupo === ABA_CARTOES ? { aba: grupo, mes: '', imovel: '', cartao: '' } : { aba: grupo, imovel: '' })
+
+/**
+ * "Grupo de contas e imóvel" recolhido, no modelo do filtro da Lista de despesas: o grupo (uma
+ * categoria do usuário, "Salários equipe" ou "Cartões"; não há "Todos" — ver tudo junto é na Lista de
+ * despesas), o imóvel e "Nova categoria". Recolhido, mostra o que está escolhido.
+ */
+function PainelFiltros({
   categorias,
-  ativa,
-  aoMudar,
+  grupo,
+  imoveis = [],
+  imovelId = '',
+  mudar,
 }: {
   categorias: CategoriaPagamento[]
-  ativa: string
-  aoMudar: (aba: string) => void
+  grupo: string
+  /** Só no grupo de categoria (equipe e cartões não têm imóvel). */
+  imoveis?: Imovel[]
+  imovelId?: string
+  mudar: Filtros['mudar']
 }) {
   const [criando, setCriando] = useState(false)
-  const abas = [
-    ...categorias,
-    { id: ABA_EQUIPE, nome: 'Salários equipe' },
-    { id: ABA_CARTOES, nome: 'Cartões' },
-  ]
+  const grupos = [...categorias, { id: ABA_EQUIPE, nome: 'Salários equipe' }, { id: ABA_CARTOES, nome: 'Cartões' }]
+  const escolhido = [grupos.find((g) => g.id === grupo)?.nome, imoveis.find((i) => i.id === imovelId)?.nome]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="-mx-4 overflow-x-auto px-4 pb-1 md:-mx-8 md:px-8">
-        <div role="group" aria-label="Categorias" className="flex w-max gap-2">
-          {abas.map((aba) => (
-            <button
-              key={aba.id}
-              type="button"
-              aria-pressed={ativa === aba.id}
-              onClick={() => aoMudar(aba.id)}
-              className={cn(
-                'min-h-11 rounded-full px-4 font-semibold whitespace-nowrap',
-                ativa === aba.id ? 'bg-area text-folha' : 'bg-suave hover:bg-linha',
-              )}
-            >
-              {aba.nome}
-            </button>
-          ))}
-          <button
-            type="button"
-            aria-expanded={criando}
-            onClick={() => setCriando((v) => !v)}
-            className="flex min-h-11 items-center gap-1 rounded-full border-2 border-dashed border-input px-4 font-semibold whitespace-nowrap text-area hover:bg-suave"
-          >
-            <PlusIcon className="size-5" weight="bold" aria-hidden />
-            Nova
-          </button>
+    <details className="group rounded-2xl bg-folha shadow-folha" open={criando || Boolean(imovelId) || undefined}>
+      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-2 font-semibold [&::-webkit-details-marker]:hidden">
+        <SlidersHorizontalIcon className="size-5 shrink-0 text-area" weight="bold" aria-hidden />
+        <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-3">
+          Grupo de contas e imóvel
+          {escolhido && <span className="truncate text-base font-normal text-muted-foreground">{escolhido}</span>}
+        </span>
+        {imovelId && <span className="rounded-full bg-area px-2 text-sm text-folha">1</span>}
+        <CaretRightIcon className="ml-auto size-5 shrink-0 transition-transform group-open:rotate-90" weight="bold" aria-hidden />
+      </summary>
+      <div className="flex flex-col gap-4 border-t border-linha p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Selecao rotulo="Grupo de contas" value={grupo} onChange={(e) => mudarGrupo(mudar, e.target.value)}>
+            {grupo === '' && <option value="">Escolha</option>}
+            {grupos.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.nome}
+              </option>
+            ))}
+          </Selecao>
+          {imoveis.length > 0 && (
+            <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
+              <option value="">Todos</option>
+              {imoveis.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nome}
+                </option>
+              ))}
+            </Selecao>
+          )}
         </div>
-      </div>
-      {criando && (
-        <div className="rounded-2xl bg-folha p-4 shadow-folha">
+        {criando ? (
           <FormCategoria
             autoFocus
             aoSalvar={(nova) => {
               setCriando(false)
-              aoMudar(nova.id)
+              mudarGrupo(mudar, nova.id)
             }}
             aoCancelar={() => setCriando(false)}
           />
-        </div>
-      )}
-    </div>
+        ) : (
+          <Button variant="outline" className="self-start" onClick={() => setCriando(true)}>
+            <PlusIcon weight="bold" aria-hidden />
+            Nova categoria
+          </Button>
+        )}
+      </div>
+    </details>
   )
 }
 
@@ -94,26 +114,16 @@ export function Pagamentos() {
   const filtros = useFiltros()
   const { data: categorias = [] } = useCategorias()
 
-  if (filtros.aba === ABA_EQUIPE) {
+  if (filtros.aba === ABA_EQUIPE || filtros.aba === ABA_CARTOES) {
     return (
       <Pagina titulo="Cadastro de despesas">
         <div className="flex flex-col gap-5">
-          <Abas
-            categorias={categorias}
-            ativa={ABA_EQUIPE}
-            aoMudar={(nova) => filtros.mudar(nova === ABA_CARTOES ? { aba: nova, mes: '' } : { aba: nova })}
-          />
-          <AbaEquipe mes={filtros.mes} aoMudarMes={(mes) => filtros.mudar({ mes })} />
-        </div>
-      </Pagina>
-    )
-  }
-  if (filtros.aba === ABA_CARTOES) {
-    return (
-      <Pagina titulo="Cadastro de despesas">
-        <div className="flex flex-col gap-5">
-          <Abas categorias={categorias} ativa={ABA_CARTOES} aoMudar={(nova) => filtros.mudar({ aba: nova, mes: '', cartao: '' })} />
-          <AbaCartoes />
+          <PainelFiltros categorias={categorias} grupo={filtros.aba} mudar={filtros.mudar} />
+          {filtros.aba === ABA_EQUIPE ? (
+            <AbaEquipe mes={filtros.mes} aoMudarMes={(mes) => filtros.mudar({ mes })} />
+          ) : (
+            <AbaCartoes />
+          )}
         </div>
       </Pagina>
     )
@@ -121,18 +131,18 @@ export function Pagamentos() {
   return <ListaDeContas filtros={filtros} />
 }
 
-function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) {
+function ListaDeContas({ filtros }: { filtros: Filtros }) {
   const { data: categorias, isPending, isError, refetch } = useCategorias()
   if (isPending) {
     return (
-      <Pagina titulo="Cadastro de despesas">
+      <Pagina titulo="Cadastro de despesas" larga>
         <Skeleton className="h-36" role="status" aria-label="Carregando categorias" />
       </Pagina>
     )
   }
   if (isError) {
     return (
-      <Pagina titulo="Cadastro de despesas">
+      <Pagina titulo="Cadastro de despesas" larga>
         <EstadoVazio
           icone={WalletIcon}
           titulo="Não foi possível carregar as categorias"
@@ -147,11 +157,11 @@ function ListaDeContas({ filtros }: { filtros: ReturnType<typeof useFiltros> }) 
   const categoriaAtiva = categorias.find((c) => c.id === filtros.aba) ?? categorias[0]
   if (!categoriaAtiva) {
     return (
-      <Pagina titulo="Cadastro de despesas">
+      <Pagina titulo="Cadastro de despesas" larga>
         <div className="flex flex-col gap-5">
-          <Abas categorias={categorias} ativa="" aoMudar={(nova) => filtros.mudar({ aba: nova })} />
+          <PainelFiltros categorias={categorias} grupo="" mudar={filtros.mudar} />
           <EstadoVazio icone={WalletIcon} titulo="Nenhuma categoria">
-            Crie uma categoria em "+ Nova" para cadastrar as contas.
+            Crie uma categoria em "Nova categoria" para cadastrar as contas.
           </EstadoVazio>
         </div>
       </Pagina>
@@ -165,7 +175,7 @@ function ContasDaCategoria({
   categorias,
   categoriaAtiva,
 }: {
-  filtros: ReturnType<typeof useFiltros>
+  filtros: Filtros
   categorias: CategoriaPagamento[]
   categoriaAtiva: CategoriaPagamento
 }) {
@@ -178,19 +188,19 @@ function ContasDaCategoria({
     imovelId: imovelId || undefined,
   })
   const pagamentos = consulta.data ?? []
-  // Na aba de contas residenciais os imóveis viram sub-abas (no resto, um filtro recolhido).
-  const imoveisEmAbas = ehResidencial(categoriaAtiva.nome) && imoveis.length > 0
   const imovelAtivo = imoveis.find((i) => i.id === imovelId)
 
-  const temFiltro = status !== 'todos' || (Boolean(imovelId) && !imoveisEmAbas)
+  const temFiltro = status !== 'todos' || Boolean(imovelId)
+  // Nas contas residenciais, a conta nova já vem com o imóvel escolhido.
   const novo = `/pagamentos/novo?mes=${mes}&aba=${categoriaId}${
-    imoveisEmAbas && imovelAtivo ? `&imovel=${imovelAtivo.id}` : ''
+    ehResidencial(categoriaAtiva.nome) && imovelAtivo ? `&imovel=${imovelAtivo.id}` : ''
   }`
-  const ondeEstou = ` de ${categoriaAtiva.nome.toLowerCase()}${imoveisEmAbas && imovelAtivo ? ` (${imovelAtivo.nome})` : ''}`
+  const ondeEstou = ` de ${categoriaAtiva.nome.toLowerCase()}${imovelAtivo ? ` (${imovelAtivo.nome})` : ''}`
 
   return (
     <Pagina
       titulo="Cadastro de despesas"
+      larga
       acoes={
         <Button asChild size="lg">
           <Link to={novo}>
@@ -201,37 +211,7 @@ function ContasDaCategoria({
       }
     >
       <div className="flex flex-col gap-5">
-        <ProximasContas />
-        <Abas
-          categorias={categorias}
-          ativa={categoriaId}
-          // A aba Cartões abre na fatura atual, não no mês que estava na lista. O imóvel escolhido
-          // vale só para a aba em que foi escolhido.
-          aoMudar={(nova) => mudar(nova === ABA_CARTOES ? { aba: nova, mes: '', imovel: '' } : { aba: nova, imovel: '' })}
-        />
-
-        {imoveisEmAbas && (
-          <div className="-mx-4 overflow-x-auto px-4 pb-1 md:-mx-8 md:px-8">
-            <div role="group" aria-label="Imóveis" className="flex w-max gap-2">
-              {[{ id: '', nome: 'Todos os imóveis' }, ...imoveis].map((i) => (
-                <button
-                  key={i.id}
-                  type="button"
-                  aria-pressed={imovelId === i.id}
-                  onClick={() => mudar({ imovel: i.id })}
-                  className={cn(
-                    'min-h-11 rounded-lg border-2 px-3 font-semibold whitespace-nowrap',
-                    imovelId === i.id ? 'border-area bg-area-fundo text-area' : 'border-transparent bg-suave hover:bg-linha',
-                  )}
-                >
-                  {i.nome}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <NavegadorMes mes={mes} aoMudar={(novo) => mudar({ mes: novo })} />
+        <NavegadorMes mes={mes} aoMudar={(novoMes) => mudar({ mes: novoMes })} />
 
         <Opcoes<FiltroStatus>
           rotulo="Mostrar"
@@ -246,26 +226,13 @@ function ContasDaCategoria({
           ]}
         />
 
-        {imoveis.length > 0 && !imoveisEmAbas && (
-          <details className="group rounded-2xl bg-folha shadow-folha" open={Boolean(imovelId) || undefined}>
-            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
-              <SlidersHorizontalIcon className="size-5 text-area" weight="bold" aria-hidden />
-              Imóvel
-              {imovelId && <span className="rounded-full bg-area px-2 text-sm text-folha">1</span>}
-              <CaretRightIcon className="ml-auto size-5 transition-transform group-open:rotate-90" weight="bold" aria-hidden />
-            </summary>
-            <div className="border-t border-linha p-4">
-              <Selecao rotulo="Imóvel" value={imovelId} onChange={(e) => mudar({ imovel: e.target.value })}>
-                <option value="">Todos</option>
-                {imoveis.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nome}
-                  </option>
-                ))}
-              </Selecao>
-            </div>
-          </details>
-        )}
+        <PainelFiltros
+          categorias={categorias}
+          grupo={categoriaId}
+          imoveis={imoveis}
+          imovelId={imovelId}
+          mudar={mudar}
+        />
 
         {pagamentos.length > 0 && <ResumoContas pagamentos={pagamentos} />}
 
@@ -306,12 +273,11 @@ function ContasDaCategoria({
             />
           )
         ) : (
-          <ul className="flex flex-col divide-y divide-linha" aria-label={`Contas${ondeEstou} do mês`}>
-            {pagamentos.map((p) => (
-              <ItemPagamento key={p.id} pagamento={p} />
-            ))}
-          </ul>
+          // Sem `voltar`: a conta aberta daqui volta para este grupo ao salvar ou excluir.
+          <TabelaContas pagamentos={pagamentos} rotulo={`Contas${ondeEstou} do mês`} voltar="" />
         )}
+
+        <ProximasContas />
       </div>
     </Pagina>
   )

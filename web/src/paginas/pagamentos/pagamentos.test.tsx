@@ -28,18 +28,21 @@ afterAll(() => servidor.close())
 // Linha da tabela da Lista de despesas.
 const item = async (descricao: string) =>
   (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('tr') as HTMLElement
-// Cartão de conta numa aba do Cadastro de despesas (na lista da aba, não em "Próximas contas a pagar").
+// Linha da tabela do grupo aberto no Cadastro de despesas (não a de "Próximas contas a pagar").
 const cartao = async (descricao: string) =>
   (
-    await within(await screen.findByRole('list', { name: /^Contas.* do mês$/ })).findByRole('link', {
+    await within(await screen.findByRole('table', { name: /^Contas.* do mês$/ })).findByRole('link', {
       name: new RegExp(`^${descricao}`),
     })
-  ).closest('li') as HTMLElement
-/** Conta na lista da aba aberta (null se não está nela). */
+  ).closest('tr') as HTMLElement
+/** Conta na tabela do grupo aberto (null se não está nela). */
 const naAba = (nome: RegExp) => {
-  const lista = screen.queryByRole('list', { name: /^Contas.* do mês$/ })
-  return lista && within(lista).queryByRole('link', { name: nome })
+  const tabela = screen.queryByRole('table', { name: /^Contas.* do mês$/ })
+  return tabela && within(tabela).queryByRole('link', { name: nome })
 }
+/** O select "Grupo de contas" do painel de filtros. */
+const grupo = () => screen.getByLabelText('Grupo de contas') as HTMLSelectElement
+const opcoesDe = (select: HTMLElement) => within(select).getAllByRole('option').map((o) => o.textContent)
 
 describe('lista de pagamentos', () => {
   test('mostra o mês atual com totais, vencidos em destaque e parcelas', async () => {
@@ -181,48 +184,46 @@ describe('navegação', () => {
   })
 })
 
-describe('abas de categoria', () => {
-  test('cada categoria é uma aba que filtra a lista e fica na URL; sem aba abre na primeira', async () => {
+describe('grupos de contas', () => {
+  test('cada categoria é um grupo que filtra a lista e fica na URL; sem grupo abre na primeira', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/pagamentos')
+    const { roteador } = renderizarApp('/pagamentos')
     expect(await screen.findByRole('heading', { name: 'Cadastro de despesas' })).toBeInTheDocument()
     expect(await cartao('Conta de luz')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Contas residenciais', pressed: true })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Todas' })).not.toBeInTheDocument()
-    // Consultas, exames e parcelamentos não são abas (migration 22): ficam em "Outros".
-    for (const nome of ['Consultas', 'Exames', 'Parcelamentos']) {
-      expect(screen.queryByRole('button', { name: nome })).not.toBeInTheDocument()
-    }
+    expect(grupo()).toHaveDisplayValue('Contas residenciais')
+    // Sem "Todas"; consultas, exames e parcelamentos não são grupos (migration 22): ficam em "Outros".
+    expect(opcoesDe(grupo())).toEqual(['Contas residenciais', 'Outros', 'Salários equipe', 'Cartões'])
 
-    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
+    await usuario.selectOptions(grupo(), 'Outros')
     expect(await cartao('Exame de sangue')).toBeInTheDocument()
     expect(await cartao('Geladeira nova')).toBeInTheDocument()
     await waitFor(() => expect(naAba(/^Conta de luz/)).toBeNull())
-    expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
+    expect(grupo()).toHaveDisplayValue('Outros')
+    expect(roteador.state.location.search).toContain('aba=')
   })
 
-  test('"+ Nova" cria a categoria digitada, que vira aba e já fica aberta', async () => {
+  test('"Nova categoria" cria a categoria digitada, que já fica aberta', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
     await cartao('Conta de luz')
 
-    await usuario.click(screen.getByRole('button', { name: 'Nova' }))
+    await usuario.click(screen.getByRole('button', { name: 'Nova categoria' }))
     await usuario.type(screen.getByLabelText('Nome da categoria'), 'outros{Enter}')
     expect(await screen.findByText('Você já tem uma categoria com esse nome.')).toBeInTheDocument()
 
     await usuario.clear(screen.getByLabelText('Nome da categoria'))
     await usuario.type(screen.getByLabelText('Nome da categoria'), 'Plano de saúde')
     await usuario.click(screen.getByRole('button', { name: 'Criar categoria' }))
-    expect(await screen.findByRole('button', { name: 'Plano de saúde', pressed: true })).toBeInTheDocument()
+    await waitFor(() => expect(grupo()).toHaveDisplayValue('Plano de saúde'))
     expect(screen.queryByLabelText('Nome da categoria')).not.toBeInTheDocument()
     expect(await screen.findByText('Nenhuma conta de plano de saúde em outubro de 2026')).toBeInTheDocument()
   })
 
-  test('conta nova aberta numa aba já vem com a categoria e volta para a aba', async () => {
+  test('conta nova aberta num grupo já vem com a categoria e volta para o grupo', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
     await cartao('Conta de luz')
-    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
+    await usuario.selectOptions(grupo(), 'Outros')
     await cartao('Exame de sangue')
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
 
@@ -232,7 +233,16 @@ describe('abas de categoria', () => {
     await usuario.click(screen.getByRole('button', { name: 'Criar pagamento' }))
 
     expect(await cartao('Raio X')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Outros', pressed: true })).toBeInTheDocument()
+    expect(grupo()).toHaveDisplayValue('Outros')
+  })
+
+  test('conta aberta pela tabela volta para o grupo ao salvar', async () => {
+    const usuario = userEvent.setup()
+    const { roteador } = renderizarApp('/pagamentos')
+    await usuario.click(within(await cartao('Conta de luz')).getByRole('link', { name: 'Editar Conta de luz' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Salvar alterações' }))
+    expect(await cartao('Conta de luz')).toBeInTheDocument()
+    expect(roteador.state.location.pathname).toBe('/pagamentos')
   })
 })
 
@@ -357,27 +367,18 @@ describe('relatório de gastos', () => {
 })
 
 describe('contas residenciais', () => {
-  test('os imóveis viram sub-abas e a conta nova já vem com o imóvel escolhido', async () => {
+  test('o imóvel filtra o grupo e a conta nova já vem com o imóvel escolhido', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
     await cartao('Conta de luz')
-    // Fora da aba residencial, nada de sub-abas de imóvel
-    await usuario.click(screen.getByRole('button', { name: 'Outros' }))
-    await cartao('Exame de sangue')
-    expect(screen.queryByRole('group', { name: 'Imóveis' })).not.toBeInTheDocument()
+    const imovel = screen.getByLabelText('Imóvel')
+    expect(opcoesDe(imovel)).toEqual(['Todos', 'Apartamento cobertura', 'Casa da Serra'])
 
-    await usuario.click(screen.getByRole('button', { name: 'Contas residenciais' }))
-    const imoveis = await screen.findByRole('group', { name: 'Imóveis' })
-    expect(within(imoveis).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Todos os imóveis',
-      'Apartamento cobertura',
-      'Casa da Serra',
-    ])
-    expect(await cartao('Conta de luz')).toBeInTheDocument()
-
-    await usuario.click(within(imoveis).getByRole('button', { name: 'Casa da Serra' }))
+    await usuario.selectOptions(imovel, 'Casa da Serra')
     await waitFor(() => expect(naAba(/^Condomínio/)).toBeNull())
     expect(await cartao('Conta de luz')).toBeInTheDocument()
+    // Recolhido, o painel mostra o que está escolhido.
+    expect(screen.getByText('Contas residenciais · Casa da Serra')).toBeInTheDocument()
 
     await usuario.click(screen.getAllByRole('link', { name: /Nova/ })[0])
     expect(await screen.findByLabelText('Destino')).toHaveDisplayValue('Casa da Serra')

@@ -33,7 +33,7 @@ describe('aba Salários equipe', () => {
   test('mostra os pagamentos da equipe no mês e as pessoas cadastradas', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/pagamentos')
-    await usuario.click(await screen.findByRole('button', { name: 'Salários equipe' }))
+    await usuario.selectOptions(await screen.findByLabelText('Grupo de contas'), 'Salários equipe')
 
     const joana = await itemDe('Joana')
     expect(within(joana).getByText('R$ 1.800,00')).toBeInTheDocument()
