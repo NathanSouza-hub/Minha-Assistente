@@ -181,7 +181,6 @@ export function Imoveis() {
   return (
     <Pagina
       titulo="Imóveis"
-      larga
       acoes={
         <Button variant="secondary" onClick={() => setAdicionando(true)} disabled={formularioAberto}>
           <PlusIcon weight="bold" aria-hidden />
@@ -213,13 +212,13 @@ export function Imoveis() {
         )}
 
         {consulta.isPending ? (
-          <Skeleton className="h-40 max-w-3xl rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
         ) : imoveis.length === 0 ? (
           <EstadoVazio icone={BuildingsIcon} titulo="Nenhum imóvel cadastrado">
             Adicione o primeiro acima. Pagamentos sem imóvel aparecem como "Sem imóvel" no relatório.
           </EstadoVazio>
         ) : (
-          <ul className="superficie flex max-w-3xl flex-col divide-y divide-linha overflow-hidden" aria-label="Seus imóveis">
+          <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label="Seus imóveis">
             {imoveis.map((imovel) => (
               <CartaoImovel key={imovel.id} imovel={imovel} valores={doMes.find((i) => i.id === imovel.id)} />
             ))}

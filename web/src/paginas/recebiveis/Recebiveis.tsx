@@ -51,7 +51,6 @@ export function Recebiveis() {
   return (
     <Pagina
       titulo="Recebíveis"
-      larga
       acoes={
         <Button asChild variant="secondary">
           <Link to={novo}>
