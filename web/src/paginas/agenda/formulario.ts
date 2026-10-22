@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { combinarDataHora, hojeISO, separarDataHora, somarDias } from '@/lib/datas'
 import type { Evento, EventoCorpo, ModalidadeEvento, RecorrenciaEvento, TipoEvento } from '@/lib/tipos'
 import { deMinutos, MAXIMO_LEMBRETES, paraMinutos, VESPERA, type Lembrete } from './lembretes'
+import { perfilDoTipo, tituloPadrao } from './perfis'
 import { TIPOS_SAUDE } from './textos'
 
 const HORA = /^\d{2}:\d{2}$/
@@ -11,7 +12,8 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/
 
 export const esquemaEvento = z
   .object({
-    titulo: z.string().trim().min(1, 'Informe o título.').max(200, 'Título longo demais.'),
+    // Obrigatório ou não conforme o perfil do tipo (perfis.ts): vê o superRefine.
+    titulo: z.string().trim().max(200, 'Título longo demais.'),
     tipo: z.string().min(1, 'Escolha o tipo.'),
     tipoDescricao: z.string().max(100, 'Use no máximo 100 caracteres.'),
     modalidade: z.string(),
@@ -36,6 +38,8 @@ export const esquemaEvento = z
       .max(MAXIMO_LEMBRETES, 'No máximo 5 lembretes.'),
   })
   .superRefine((v, ctx) => {
+    const { titulo } = perfilDoTipo(v.tipo)
+    if (titulo.obrigatorio && !v.titulo) ctx.addIssue({ code: 'custom', path: ['titulo'], message: titulo.mensagem })
     // Mesma regra do back-end (e do banco): "Outro tipo" exige dizer o que é.
     if (v.tipo === 'outro' && !v.tipoDescricao.trim()) {
       ctx.addIssue({ code: 'custom', path: ['tipoDescricao'], message: 'Descreva o compromisso.' })
@@ -110,7 +114,8 @@ export function paraCorpo(d: DadosEvento): EventoCorpo {
   const diaDoFim = terminaNoDiaSeguinte(d) ? somarDias(d.data, 1) : d.data
   const recorrente = d.recorrencia !== 'nenhuma'
   return {
-    titulo: d.titulo.trim(),
+    // Consulta e fisioterapia em branco ganham um título montado (ex.: "Consulta de Cardiologia").
+    titulo: d.titulo.trim() || tituloPadrao(d),
     tipo: d.tipo as TipoEvento,
     tipoDescricao: d.tipo === 'outro' ? d.tipoDescricao.trim() : null,
     modalidade: (d.modalidade || null) as ModalidadeEvento | null,

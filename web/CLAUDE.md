@@ -36,8 +36,11 @@ npm run lint                                  # oxlint
 - **Agenda**: `inicio`/`fim` sempre com fuso (`combinarDataHora`/`separarDataHora` de
   `src/lib/datas.ts`). A listagem devolve cada ocorrência de série separada (mesmo `id`); para
   editar, abra `GET /eventos/:id` (a série) — o PUT precisa do início da série, não da ocorrência.
-  A visão Dia busca a semana inteira (a faixa de dias marca os que têm agendamento) e filtra com
-  `eventosDoDia` (`porDia.ts`, fim exclusivo como na API). Cada item tem a fita na cor da área do
+  A tela (decisão 34) tem as abas Mês (calendário de 6 semanas, segunda a domingo, com pontos na cor
+  de cada agendamento e das viagens de `useViagens`; o dia escolhido fica em `?data=` e aparece ao lado
+  ou embaixo), Semana e Próximos (`?visao=`). O mês busca as 6 semanas e filtra cada dia com
+  `eventosDoDia` (`porDia.ts`, fim exclusivo como na API). Cadastro só pelo "+ Novo"
+  (`NovoNaAgenda.tsx`, 7 opções; Viagens vai para `/viagens/nova`). Cada item tem a fita na cor da área do
   tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda).
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
@@ -52,16 +55,19 @@ npm run lint                                  # oxlint
 - **Vocabulário de quem usa o app**: itens da Agenda são "agendamentos" ("Novo agendamento",
   "Agendar") e a Rotina aparece como **"Compromissos"** (rota `/rotina`, API `/rotinas`, código
   continua `rotina`). Não use "compromisso" para evento da agenda.
-- **Tipos de agendamento** (decisão 30): o campo "Tipo" usa `TIPOS_DO_FORMULARIO` (`textos.ts`);
-  "Outro tipo" mostra "Descreva o compromisso" (obrigatório no front, na API e no banco) e
-  `nomeDoTipo()` exibe essa descrição no lugar do tipo. "Viagem" no campo navega para
-  `/viagens/nova`. Videoconferência mostra o link sem escolher modalidade.
+- **Formulário por tipo** (decisões 30 e 34): `paginas/agenda/perfis.ts` dá a cada opção do "+" (pelo
+  `?tipo=` ou pelo tipo salvo) o título da tela, os rótulos e os campos (ex.: rádio = "Nome do programa"
+  e "Emissora" em `local`; exame = "Tipo de exame" e "Orientações"). Só "Compromissos e eventos" tem o
+  campo "Tipo" (`TIPOS_DE_COMPROMISSO`). Na consulta e na fisioterapia o título é opcional e, em branco,
+  vira `tituloPadrao()` ("Consulta de Cardiologia com Dra. Lima"). "Outro tipo" mostra "Descreva o
+  compromisso" (obrigatório no front, na API e no banco) e `nomeDoTipo()` exibe essa descrição no lugar
+  do tipo. Videoconferência mostra o link sem escolher modalidade.
 - **Compromissos = "Novo lembrete"** (decisão 32): `QuantasVezes` (em `paginas/rotina/PaginaRotina.tsx`) troca
   entre `/tarefas/nova` (só uma vez) e `/rotina/nova` (repete) levando o título; a edição da rotina
   mostra o histórico (`useHistoricoRotina`) e tem observações. As sugestões aparecem nas duas listas.
 - **Rotina/Compromissos**: não existe `GET /rotinas/:id`; a tela de edição pega a tarefa da lista
   (`useRotinas`). As sugestões (`paginas/rotina/sugestoes.ts`) abrem `/rotina/nova?titulo=...`.
-- **Áreas por tipo**: Programa de rádio (`/radio`), Atividade física e Fisioterapia são a agenda só
+- **Áreas por tipo**: Programa de rádio (`/radio`, fora do menu desde a decisão 34), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
 - **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): só os
@@ -176,8 +182,8 @@ npm run lint                                  # oxlint
   parcelas estão em `src/lib/fatura.ts` (cópia de `src/lib/fatura.js` do back-end, usada pelo mock
   e pelo resumo "10× de" do formulário).
 - **Salários equipe** (aba `?aba=equipe` de Contas, `paginas/equipe/`): abas Pagamentos do mês
-  (filtrados de `/pagamentos` por `membroId`) e Pessoas (cartões; "Adicionar pessoa" no cabeçalho; o
-  formulário da pessoa volta para `&vista=pessoas`) (`/equipe/novo`, `/equipe/:id`, com
+  (filtrados de `/pagamentos` por `membroId`) e Integrantes (cartões; "Adicionar pessoa" no cabeçalho; o
+  formulário da pessoa volta para `&vista=integrantes`) (`/equipe/novo`, `/equipe/:id`, com
   os dias de pagamento num `useFieldArray`). As contas são criadas pelo back-end; a conta da equipe
   pode ter `valorCentavos: null` ("A definir"): some com `?? 0`, o item mostra "Pagar…" pedindo o
   valor (`usePagarPagamento` aceita `valorCentavos`) e `/pagamentos/:id` abre
@@ -195,7 +201,7 @@ npm run lint                                  # oxlint
 ## Estrutura
 
 - **Navegação** (`src/app/navegacao.ts`, `SECOES`): 6 áreas — Início (`/`, só as atividades do dia),
-  Finanças (`/financas` e as telas de dinheiro), Agenda (agendamentos, viagens, rádio), Saúde
+  Finanças (`/financas` e as telas de dinheiro), Agenda (só "Agendamentos"; viagens e rádio pelo "+ Novo" e no calendário, decisão 34), Saúde
   (remédios, consultas, exames, fisioterapia, atividade física), Compromissos (lembretes que repetem,
   lembretes do dia, compras) e Configurações. Cada seção tem `itens` (o menu interno; `rota` pode ter
   query, ex. `/pagamentos?aba=equipe`). `secaoDaTela()` diz a seção e o item da tela aberta: a barra

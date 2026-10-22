@@ -27,17 +27,8 @@ import {
   type DadosEvento,
 } from './formulario'
 import { ATALHOS, MAXIMO_LEMBRETES, rotuloDoLembrete, type Lembrete } from './lembretes'
-import {
-  AREAS_DO_TIPO,
-  MODALIDADES,
-  MODALIDADES_DO_TIPO,
-  ONLINE,
-  RECORRENCIAS,
-  TIPO_VIAGEM,
-  TIPOS,
-  TIPOS_DO_FORMULARIO,
-  TIPOS_SAUDE,
-} from './textos'
+import { perfilDoTipo, TIPOS_DE_COMPROMISSO } from './perfis'
+import { AREAS_DO_TIPO, MODALIDADES, MODALIDADES_DO_TIPO, ONLINE, RECORRENCIAS, TIPOS } from './textos'
 
 /** /agenda/novo e /agenda/:id */
 export function PaginaEvento() {
@@ -81,6 +72,9 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   // Aberto de uma área de tipo (ex.: Programa de rádio): salvar e "voltar" levam para ela.
   const area = AREAS_DO_TIPO.find((a) => a.rota === params.get('voltar'))
   const voltarPara = (dia: string) => area?.rota ?? voltarParaAgenda(dia)
+  // O perfil (perguntas e nomes dos campos) vem do tipo salvo ou do `?tipo=` da opção do "+";
+  // no compromisso a pessoa ainda troca o tipo, mas o formulário continua o mesmo.
+  const perfil = perfilDoTipo(evento?.tipo ?? tipoPadrao)
   const salvar = useSalvarEvento()
   const convidar = useConvidarNotificacoes()
   const excluir = useExcluirEvento()
@@ -105,9 +99,10 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   })
   // Videoconferência é sempre online: o campo do link aparece mesmo sem escolher a modalidade.
   const online = ONLINE.includes(modalidade as never) || tipo === 'videoconferencia'
-  const campoTipo = register('tipo')
   // O tipo antigo "video" só aparece ao editar um agendamento que já é dele.
-  const tiposDoCampo = evento?.tipo && !TIPOS_DO_FORMULARIO.includes(evento.tipo) ? [...TIPOS_DO_FORMULARIO, evento.tipo] : TIPOS_DO_FORMULARIO
+  const tiposDoCampo =
+    evento?.tipo && !TIPOS_DE_COMPROMISSO.includes(evento.tipo) ? [...TIPOS_DE_COMPROMISSO, evento.tipo] : TIPOS_DE_COMPROMISSO
+  const comEspecialidade = perfil.especialidade || Boolean(evento?.especialidade)
   const recorrente = recorrencia !== 'nenhuma'
   // Só as modalidades do tipo; a que já estava salva continua aparecendo para não sumir na edição.
   const modalidades = useMemo(() => {
@@ -117,8 +112,9 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   }, [tipo, evento])
 
   useEffect(() => {
-    if (!editando) setFocus('titulo')
-  }, [editando, setFocus])
+    // O primeiro campo do perfil (na consulta e na fisioterapia o título é o último e opcional).
+    if (!editando) setFocus(perfil.titulo.obrigatorio ? 'titulo' : perfil.especialidade ? 'especialidade' : 'profissional')
+  }, [editando, setFocus, perfil])
 
   // Trocou o tipo: a modalidade escolhida pode não valer mais para ele.
   useEffect(() => {
@@ -149,7 +145,15 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
   }
 
   const idObs = useId()
-  const titulo = editando ? 'Editar agendamento' : 'Novo agendamento'
+  const titulo = editando ? perfil.editar : perfil.novo
+  const campoTitulo = (
+    <Campo
+      rotulo={perfil.titulo.rotulo}
+      placeholder={perfil.titulo.exemplo}
+      erro={errors.titulo?.message}
+      {...register('titulo')}
+    />
+  )
 
   return (
     <Pagina
@@ -179,68 +183,61 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
           </p>
         )}
 
-        <Campo
-          rotulo="O que é?"
-          placeholder="Ex.: Consulta com cardiologista"
-          erro={errors.titulo?.message}
-          {...register('titulo')}
-        />
+        {perfil.titulo.obrigatorio && campoTitulo}
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <Selecao
-            rotulo="Tipo"
-            erro={errors.tipo?.message}
-            {...campoTipo}
-            onChange={(e) => {
-              // "Viagem" tem cadastro próprio (com ida, volta, hospedagem e anexos).
-              if (e.target.value === TIPO_VIAGEM) return navegar('/viagens/nova')
-              void campoTipo.onChange(e)
-            }}
-          >
-            <option value="" disabled>
-              Escolha o tipo
-            </option>
-            {tiposDoCampo.map((valor) => (
-              <option key={valor} value={valor}>
-                {TIPOS[valor]}
-              </option>
-            ))}
-            {!editando && <option value={TIPO_VIAGEM}>Viagem</option>}
-          </Selecao>
-          {tipo === 'outro' && (
-            <Campo
-              rotulo="Descreva o compromisso"
-              placeholder="Ex.: Aula de canto"
-              erro={errors.tipoDescricao?.message}
-              {...register('tipoDescricao')}
-            />
-          )}
-          {modalidades.length > 0 && (
-            <Selecao rotulo="Como vai ser? (opcional)" {...register('modalidade')}>
-              <option value="">Não informar</option>
-              {modalidades.map((valor) => (
-                <option key={valor} value={valor}>
-                  {MODALIDADES[valor]}
-                </option>
-              ))}
-            </Selecao>
-          )}
-        </div>
-
-        {TIPOS_SAUDE.includes(tipo as TipoEvento) && (
+        {(perfil.profissional || comEspecialidade) && (
           <div className="grid gap-6 sm:grid-cols-2">
-            <Campo
-              rotulo="Profissional (opcional)"
-              placeholder="Ex.: Dra. Ana Lima"
-              erro={errors.profissional?.message}
-              {...register('profissional')}
-            />
-            <Campo
-              rotulo="Especialidade (opcional)"
-              placeholder="Ex.: Cardiologia"
-              erro={errors.especialidade?.message}
-              {...register('especialidade')}
-            />
+            {comEspecialidade && (
+              <Campo
+                rotulo="Especialidade (opcional)"
+                placeholder="Ex.: Cardiologia"
+                erro={errors.especialidade?.message}
+                {...register('especialidade')}
+              />
+            )}
+            {perfil.profissional && (
+              <Campo
+                rotulo={perfil.id === 'exame' ? 'Médico que pediu (opcional)' : 'Profissional (opcional)'}
+                placeholder="Ex.: Dra. Ana Lima"
+                erro={errors.profissional?.message}
+                {...register('profissional')}
+              />
+            )}
+          </div>
+        )}
+
+        {(perfil.id === 'compromisso' || modalidades.length > 0) && (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {perfil.id === 'compromisso' && (
+              <Selecao rotulo="Tipo" erro={errors.tipo?.message} {...register('tipo')}>
+                <option value="" disabled>
+                  Escolha o tipo
+                </option>
+                {tiposDoCampo.map((valor) => (
+                  <option key={valor} value={valor}>
+                    {TIPOS[valor]}
+                  </option>
+                ))}
+              </Selecao>
+            )}
+            {tipo === 'outro' && (
+              <Campo
+                rotulo="Descreva o compromisso"
+                placeholder="Ex.: Aula de canto"
+                erro={errors.tipoDescricao?.message}
+                {...register('tipoDescricao')}
+              />
+            )}
+            {modalidades.length > 0 && (
+              <Selecao rotulo="Como vai ser? (opcional)" {...register('modalidade')}>
+                <option value="">Não informar</option>
+                {modalidades.map((valor) => (
+                  <option key={valor} value={valor}>
+                    {MODALIDADES[valor]}
+                  </option>
+                ))}
+              </Selecao>
+            )}
           </div>
         )}
 
@@ -278,15 +275,15 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
           />
         ) : (
           <Campo
-            rotulo={TIPOS_SAUDE.includes(tipo as TipoEvento) ? 'Endereço (opcional)' : 'Local (opcional)'}
-            placeholder="Ex.: Clínica Movimento, sala 4"
+            rotulo={perfil.local.rotulo}
+            placeholder={perfil.local.exemplo}
             erro={errors.local?.message}
             {...register('local')}
           />
         )}
 
         <div className="grid gap-6 sm:grid-cols-2">
-          <Selecao rotulo="Repete?" {...register('recorrencia')}>
+          <Selecao rotulo={perfil.recorrencia} {...register('recorrencia')}>
             <option value="nenhuma">Não se repete</option>
             {Object.entries(RECORRENCIAS).map(([valor, rotulo]) => (
               <option key={valor} value={valor}>
@@ -315,9 +312,12 @@ function FormularioEvento({ evento }: { evento?: Evento }) {
         />
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={idObs}>Observações (opcional)</Label>
-          <Textarea id={idObs} placeholder="Ex.: levar exames anteriores" {...register('observacoes')} />
+          <Label htmlFor={idObs}>{perfil.observacoes.rotulo}</Label>
+          <Textarea id={idObs} placeholder={perfil.observacoes.exemplo} {...register('observacoes')} />
         </div>
+
+        {/* Consulta e fisioterapia: o nome na agenda é opcional e fica por último. */}
+        {!perfil.titulo.obrigatorio && campoTitulo}
 
         {errors.root && (
           <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 font-semibold text-destructive">

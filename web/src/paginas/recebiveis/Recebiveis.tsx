@@ -175,17 +175,19 @@ function ListaRecebiveis({
   )
 }
 
-/** Previsto, já recebido e o que falta, das linhas da lista (os valores vêm da API). */
+/** Previsto, já recebido, o que falta e o atrasado, das linhas da lista (os valores vêm da API). */
 function Resumo({ lista }: { lista: Recebivel[] }) {
   const soma = (f: (r: Recebivel) => number) => lista.reduce((s, r) => s + f(r), 0)
   const itens = [
     { rotulo: 'Previsto', valor: soma((r) => r.valorPrevistoCentavos), cor: '' },
     { rotulo: 'Recebido', valor: soma((r) => r.recebidoCentavos), cor: 'text-ok' },
     { rotulo: 'A receber', valor: soma((r) => r.saldoCentavos), cor: 'text-alerta' },
+    // O que falta dos que já passaram da data prevista (o `atrasado` vem da API).
+    { rotulo: 'Atrasado', valor: soma((r) => (r.atrasado ? r.saldoCentavos : 0)), cor: 'text-atraso' },
   ]
   return (
-    // No celular estreito, uma linha por número (rótulo à esquerda); a partir de 520px, três cartões.
-    <dl className="grid gap-2 min-[520px]:grid-cols-3">
+    // No celular estreito, uma linha por número (rótulo à esquerda); a partir de 520px, cartões lado a lado.
+    <dl className="grid gap-2 min-[520px]:grid-cols-2 lg:grid-cols-4">
       {itens.map((i) => (
         <div
           key={i.rotulo}
