@@ -22,7 +22,7 @@ export function Viagens() {
     <Pagina
       titulo="Viagens"
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to="/viagens/nova">
             <PlusIcon weight="bold" aria-hidden />
             Nova

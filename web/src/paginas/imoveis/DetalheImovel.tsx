@@ -97,7 +97,7 @@ export function DetalheImovel() {
         </div>
       }
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to={`/pagamentos/novo?mes=${mesDe()}&imovel=${id}`}>
             <PlusIcon weight="bold" aria-hidden />
             Conta
@@ -187,7 +187,7 @@ function Resumo({ r }: { r: RelatorioImovel }) {
       <section aria-label="Resumo do período" className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
         <p className="flex items-baseline justify-between gap-3">
           <span className="text-muted-foreground">Total do período</span>
-          <span className="text-2xl font-[750] tabular-nums">{formatarCentavos(r.totalCentavos)}</span>
+          <span className="text-2xl font-bold tabular-nums">{formatarCentavos(r.totalCentavos)}</span>
         </p>
         <BarraPago v={r} />
         <PagoPendente v={r} />

@@ -28,7 +28,7 @@ function descreverDias(dias: MembroEquipe['dias']) {
 /** Botão do cabeçalho da Equipe (fica no `acoes` da página). */
 export function BotaoAdicionarPessoa() {
   return (
-    <Button asChild size="lg">
+    <Button asChild variant="secondary">
       <Link to="/equipe/novo">
         <PlusIcon weight="bold" aria-hidden />
         Adicionar pessoa

@@ -32,7 +32,7 @@ function Indicador({
         {rotulo}
         {para && <CaretRightIcon weight="bold" className="size-4 shrink-0 text-primary" aria-hidden />}
       </dt>
-      <dd className={cn('text-lg leading-tight font-[750] tabular-nums sm:text-2xl', cor)}>{formatarCentavos(valor)}</dd>
+      <dd className={cn('text-lg leading-tight font-bold tabular-nums sm:text-2xl', cor)}>{formatarCentavos(valor)}</dd>
       <dd className="text-sm text-muted-foreground">{nota}</dd>
     </>
   )

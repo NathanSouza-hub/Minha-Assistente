@@ -30,7 +30,7 @@ export function Tarefas() {
     <Pagina
       titulo="Lembretes de uma vez"
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to="/tarefas/nova">
             <PlusIcon weight="bold" aria-hidden />
             Nova

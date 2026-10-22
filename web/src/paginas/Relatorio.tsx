@@ -70,7 +70,7 @@ export function Relatorio() {
       titulo="Relatório de gastos"
       larga
       acoes={
-        <Button size="lg" onClick={gerarPdf} disabled={!prontos || gerando}>
+        <Button variant="secondary" onClick={gerarPdf} disabled={!prontos || gerando}>
           <FilePdfIcon weight="bold" aria-hidden />
           {gerando ? 'Gerando…' : 'Gerar PDF'}
         </Button>

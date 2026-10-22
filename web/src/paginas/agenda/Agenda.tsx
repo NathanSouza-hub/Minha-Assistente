@@ -66,7 +66,7 @@ export function Agenda() {
     <Pagina
       titulo="Agenda"
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to={`/agenda/novo${visao === 'dia' && data !== hojeISO() ? `?data=${data}` : ''}`}>
             <PlusIcon weight="bold" aria-hidden />
             Novo

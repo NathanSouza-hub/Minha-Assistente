@@ -8,6 +8,7 @@ type Props = {
   titulo: string
   /** Substitui o título visível (o título da aba continua sendo `titulo`). */
   cabecalho?: ReactNode
+  /** Ação de criar ("+ Nova", `variant="secondary"`), sempre no canto direito do cabeçalho. */
   acoes?: ReactNode
   /** Tela de tabela (Contas): usa mais da largura do computador. */
   larga?: boolean
@@ -17,13 +18,15 @@ type Props = {
 }
 
 /**
- * Moldura de toda tela: cabeçalho na "capa" azul (por trás da barra de status do celular),
- * a fita fina na cor da área e o conteúdo direto no fundo azul-claríssimo. Dentro do cabeçalho as cores
- * se invertem (`.capa`), então links `text-primary` e botões padrão continuam legíveis.
+ * Moldura de toda tela: cabeçalho leve direto no fundo (rótulo da área pequeno na cor dela, título
+ * grande em grafite e a ação de criar à direita), as abas da área no celular e o conteúdo.
  */
 export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Props) {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const areaDaTela = area ?? areaDaRota(pathname)
+  const { secao } = secaoDaTela(pathname, search)
+  // O rótulo da área só aparece quando diz algo além do título.
+  const rotulo = secao && secao.id !== 'inicio' && secao.rotulo !== titulo ? secao.rotulo : null
 
   useEffect(() => {
     document.title = `${titulo} · Minha Assistente`
@@ -33,49 +36,51 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
 
   return (
     <div className={`area-${areaDaTela}`}>
-      <header className="capa pt-[env(safe-area-inset-top)]">
+      <header className="pt-[env(safe-area-inset-top)]">
         <div
           className={cn(
-            'mx-auto flex w-full items-end justify-between gap-4 px-4 pt-5 pb-6 md:px-8 md:pt-9 md:pb-8',
+            'mx-auto flex w-full items-end justify-between gap-3 px-4 pt-5 pb-1 md:px-8 md:pt-9',
             largura,
           )}
         >
           {cabecalho ?? (
-            <h1 className="min-w-0 text-[1.625rem] leading-tight font-[750] tracking-[-0.01em] hyphens-auto min-[400px]:text-[1.75rem]">
-              {titulo}
-            </h1>
+            <div className="min-w-0">
+              {rotulo && <p className="text-[0.88rem] font-semibold text-area">{rotulo}</p>}
+              <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] hyphens-auto min-[400px]:text-[1.65rem]">
+                {titulo}
+              </h1>
+            </div>
           )}
-          {/* O botão fica sempre ao lado do título (mais justo no celular); se faltar espaço, o título quebra. */}
-          {acoes && <div className="shrink-0 *:data-[slot=button]:px-4 md:*:data-[slot=button]:px-6">{acoes}</div>}
+          {/* A ação fica sempre ao lado do título; se faltar espaço, o título quebra. */}
+          {acoes && <div className="shrink-0">{acoes}</div>}
         </div>
       </header>
-      <div aria-hidden className="h-1.5 bg-area-fundo" />
-      <MenuDaSecao />
-      <div className={cn('mx-auto w-full px-4 pt-6 pb-8 md:px-8 md:pt-8', largura)}>{children}</div>
+      <MenuDaSecao larga={larga} />
+      <div className={cn('mx-auto w-full px-4 pt-5 pb-8 md:px-8 md:pt-7', largura)}>{children}</div>
     </div>
   )
 }
 
 /**
- * Celular: as telas da área (ex.: Finanças → Visão geral, Contas a pagar...) numa fileira que rola
- * para o lado, só nas telas de lista (num formulário, o "voltar" do cabeçalho basta). No computador
- * a barra lateral já mostra essas telas.
+ * Celular: as telas da área (ex.: Finanças → Visão geral, Contas a pagar...) em abas de texto que
+ * rolam para o lado, só nas telas de lista (num formulário, o "voltar" basta). No computador a barra
+ * lateral já mostra essas telas.
  */
-function MenuDaSecao() {
+function MenuDaSecao({ larga }: { larga?: boolean }) {
   const { pathname, search } = useLocation()
   const { secao, item: atual, exato } = secaoDaTela(pathname, search)
   if (!secao || !exato || secao.itens.length < 2) return null
   return (
-    <nav aria-label={`Telas de ${secao.rotulo}`} className="border-b border-linha bg-folha md:hidden">
-      <ul className="flex gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]">
+    <nav aria-label={`Telas de ${secao.rotulo}`} className="mt-2 border-b border-linha md:hidden">
+      <ul className={cn('mx-auto flex gap-6 overflow-x-auto px-4 [scrollbar-width:none]', larga ? 'max-w-6xl' : 'max-w-3xl')}>
         {secao.itens.map((item) => (
           <li key={item.rota} className="shrink-0">
             <Link
               to={item.rota}
               aria-current={item === atual ? 'page' : undefined}
               className={cn(
-                'flex min-h-11 items-center rounded-full px-4 text-base font-semibold whitespace-nowrap text-muted-foreground hover:bg-suave',
-                item === atual && 'bg-primary text-primary-foreground hover:bg-primary',
+                'flex min-h-11 items-center text-base font-medium whitespace-nowrap text-muted-foreground hover:text-foreground',
+                item === atual && 'font-bold text-foreground shadow-[inset_0_-3px_0_var(--azul)]',
               )}
             >
               {item.rotulo}

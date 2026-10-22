@@ -27,7 +27,7 @@ export function AgendaDoTipo({ tipo, rota, titulo }: { tipo: TipoEvento; rota: s
     <Pagina
       titulo={titulo ?? TIPOS[tipo]}
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to={novo}>
             <PlusIcon weight="bold" aria-hidden />
             Novo

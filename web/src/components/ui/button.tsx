@@ -8,15 +8,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Principal: azul sólido (dentro da `.capa` vira branco com texto azul).
-        default: "bg-primary text-primary-foreground shadow-folha hover:bg-[color-mix(in_oklch,var(--primary),black_14%)]",
-        // De apoio: contorno azul sobre o fundo.
+        // Principal: azul sólido.
+        default: "bg-primary text-primary-foreground hover:bg-[color-mix(in_oklch,var(--primary),black_14%)]",
+        // De apoio: contorno cinza e texto grafite (não compete com o principal).
         outline:
-          "border-primary/45 bg-transparent text-primary hover:bg-primary/8 aria-expanded:bg-primary/8",
+          "border-[1.5px] border-contorno bg-folha text-foreground hover:bg-suave aria-expanded:bg-suave",
+        // Secundário: azul claro com texto azul ("+ Nova" no cabeçalho).
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_6%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         // Confirmação (ex.: "Pagar", "Recebi"): verde.
-        confirmar: "bg-ok text-folha shadow-folha hover:bg-[color-mix(in_oklch,var(--ok),black_14%)]",
+        confirmar: "bg-ok text-folha hover:bg-[color-mix(in_oklch,var(--ok),black_14%)]",
         ghost:
           "hover:bg-foreground/6 hover:text-foreground aria-expanded:bg-foreground/6 aria-expanded:text-foreground",
         destructive:

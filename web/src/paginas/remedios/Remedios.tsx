@@ -49,7 +49,7 @@ export function Remedios() {
     <Pagina
       titulo="Remédios"
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to="/remedios/novo">
             <PlusIcon weight="bold" aria-hidden />
             Novo

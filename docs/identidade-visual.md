@@ -1,64 +1,82 @@
 # Identidade visual
 
-Guia do visual do front (`web/`). Mudança de direção se combina aqui primeiro. A identidade azul
-substituiu a "agenda de couro" (petróleo, creme e terracota) em 2026-10-20.
+Guia do visual do front (`web/`). Mudança de direção se combina aqui primeiro. Esta versão
+(2026-10-21) substituiu a identidade azul de capa cheia (2026-10-20), que por sua vez tinha
+substituído a "agenda de couro" (petróleo, creme e terracota).
 
 ## A ideia
 
-**Secretária digital organizada**: azul moderno e confiante, com superfícies brancas sobre um fundo
-azul muito claro. Aparência de produto premium, mas acolhedora: o app fala como gente, mostra
-pouca coisa por vez e deixa claro o próximo passo.
+**Uma assistente que ajuda a agir.** O app mostra primeiro o que fazer agora, e não um painel de
+números. Visual de produto maduro: fundo claro, pouca superfície, contraste usado só onde importa.
+Azul elétrico para ação, âmbar para atenção, grafite para o texto.
 
 ## Princípios
 
-1. **Azul conduz, as outras cores informam.** O azul é a marca (cabeçalho, navegação, botão
-   principal). Verde = feito/pago/recebido, vermelho = atrasado/erro, laranja = alerta ou
-   pendência que pede atenção. Cor nunca é o único sinal: sempre há texto ou ícone junto.
-2. **Menos caixas.** Listas são linhas sobre o fundo, separadas por respiro ou fio fino. Cartão só
-   quando o bloco é de fato um objeto (um cartão de crédito, um resumo, um indicador).
-3. **Cada área tem cor.** Reconhecer Agenda, Remédios ou Contas de relance, pela cor e pelo ícone.
-4. **Falar como gente.** "Bom dia", "Nada marcado para hoje. Aproveite!" — nunca jargão.
-5. **Legibilidade não se negocia.** Base de 18px, Atkinson, toque ≥ 44px, contraste AA (≥ 4,5:1
-   em texto, ≥ 3:1 em bordas de campo e ícones), foco sempre visível.
-6. **Só tema claro.** Não há modo escuro.
+1. **O conteúdo é o protagonista, não o cartão.** Listas são linhas numa superfície branca,
+   separadas por fio fino. Cartão destacado só para o que é único na tela (o "Agora" do Início).
+   Nada de um cartão por item.
+2. **Hierarquia seletiva.** Em cada tela, uma coisa chama a atenção. Títulos em grafite, apoio em
+   cinza, azul só no que se toca.
+3. **Azul é ação; âmbar é atenção.** Azul em botões, links, item ativo e "agora". Âmbar só para
+   "vence hoje", "a definir" e lembretes, e sempre com texto grafite em cima (âmbar sobre branco ou
+   azul não tem contraste).
+4. **Estados iguais em todas as áreas** (tabela abaixo). Cor nunca é o único sinal: sempre há
+   ícone e texto juntos.
+5. **Falar como gente.** "Bom dia", "Nada programado para hoje." — nunca jargão.
+6. **Legibilidade não se negocia.** Base de 17px, toque ≥ 44px, contraste AA (≥ 4,5:1 em texto,
+   ≥ 3:1 em bordas de campo e ícones), foco sempre visível.
+7. **Sem degradê nas telas.** Só tema claro.
 
 ## Cores
 
-Tokens em `web/src/index.css`. Contrastes medidos (WCAG) contra a superfície indicada.
+Tokens em `web/src/index.css`.
 
-| Papel | Token | Valor | Uso | Contraste |
-|---|---|---|---|---|
-| Fundo | `--papel` | `#F4F7FC` | fundo de todas as telas | — |
-| Superfície | `--folha` | `#FFFFFF` | cartões, modais, campos, barra inferior | — |
-| Suave | `--suave` | `#EAF0F8` | fundos suaves, abas inativas, cabeçalho de tabela | — |
-| Fio | `--linha` | `#DBE3EF` | divisórias finas | decorativo |
-| Borda de campo | `--input` | `#7D8BA1` | contorno de input/select | 3,5:1 no branco |
-| Texto | `--grafite` | `#16233A` | texto principal (azul-marinho quase preto) | 14,6:1 no fundo |
-| Texto suave | `--muted-foreground` | `#55657D` | datas, legendas, apoio | 5,5:1 no fundo |
-| Azul | `--azul` / `--primary` | `#1F4FD1` | botão principal, links, item ativo, foco | 6,8:1 no branco |
-| Azul da capa | `--azul-capa` | `#1B3FAE` | cabeçalho e barra lateral (degradê até o azul) | branco 8,9:1 |
-| Azul profundo | `--azul-profundo` | `#142F86` | item ativo da barra lateral | branco 11,8:1 |
-| Azul claro | `--azul-claro` | `#C7D6FB` | texto secundário **sobre** a capa | 5,3:1 no pior ponto |
-| Fundo azul | `--azul-fundo` | `#E3EBFD` | selo da área geral, botão secundário, dia de hoje | azul 5,7:1 |
-| Céu | `--hoje` | `#7CC0FF` | só a fita do item ativo **sobre** a capa | 4,6:1 na capa |
-| Alerta | `--alerta` | `#9A4A07` | "A definir", fatura fechada, pendências | 5,4:1 no fundo laranja |
-| Fundo de alerta | `--alerta-fundo` | `#FDECD3` | selo de alerta | — |
-| Atraso | `--atraso` | `#C0262D` | vencido/atrasado, erro, exclusão | 5,9:1 no branco |
-| Feito | `--ok` | `#2F6B45` | pago, tomado, concluído, recebido; botão `confirmar` | 6,3:1 no branco |
+| Papel | Token | Valor | Uso |
+|---|---|---|---|
+| Fundo | `--papel` | `#F3F6FC` | fundo de todas as telas |
+| Superfície | `--folha` | `#FFFFFF` | listas, o bloco "Agora", modais, campos, barras |
+| Suave | `--suave` | `#EDF1F8` | hover, cabeçalho de tabela |
+| Fio | `--linha` | `#E3E9F2` | divisórias entre linhas |
+| Contorno | `--contorno` | `#CDD6E4` | botão de apoio, pílulas, abas |
+| Borda de campo | `--input` | `#7D8BA1` | input/select (3,5:1 no branco) |
+| Texto | `--grafite` | `#0E1A33` | texto principal; botão de criar escuro |
+| Texto suave | `--muted-foreground` | `#56647C` | datas, legendas (5,5:1 no fundo) |
+| Azul | `--azul` / `--primary` | `#1663F2` | ação: botão, link, item ativo, "agora" (5,1:1 no branco) |
+| Azul profundo | `--azul-profundo` | `#0B3FC4` | texto sobre `--azul-fundo`; pouco uso |
+| Fundo azul | `--azul-fundo` | `#E6EEFF` | botão secundário ("+ Nova"), item ativo da barra lateral |
+| Âmbar | `--ambar` | `#F5A524` | selo "Vence hoje" (texto grafite em cima) |
+| Âmbar escuro | `--alerta` | `#6B4300` | texto "Valor a definir", "fatura fechada" |
+| Fundo âmbar | `--alerta-fundo` | `#FFF1D6` | fundo claro de atenção |
+| Vencido | `--atraso` | `#C0262D` | vencido, atrasado, erro, excluir (5,9:1 no branco) |
+| Feito | `--ok` | `#2F6B45` | pago, tomado, concluído, recebido; botão `confirmar` |
 
-Atraso **sempre** vem com texto ou ícone ("Vencida há 3 dias"), nunca só a cor. "Hoje" e
-"acontecendo agora" usam o azul (fundo azul + texto azul), não o laranja: laranja é só alerta.
+### Estados
+
+As mesmas regras em todas as áreas. O componente é `components/Estado.tsx` (`MarcaEstado` para o
+círculo da linha e `SeloEstado` para o texto com ícone); nenhuma tela monta cor de estado à mão.
+
+| Estado | Como aparece |
+|---|---|
+| Pendente | círculo vazio cinza; texto normal |
+| Agora | azul: círculo azul e "agora" ao lado do horário; um item por vez |
+| Feito / pago / tomado | círculo verde cheio com ✓; título riscado e suave |
+| Não fiz / não tomei | círculo cinza com ✗ e a palavra; **sem vermelho** (não é erro) |
+| Vence hoje | selo âmbar cheio com relógio — o único selo cheio do app |
+| Vencido / atrasado | texto vermelho com ícone de alerta e a data ("Venceu em 19/10"); fica num grupo em cima |
+| A definir | texto âmbar escuro, sem selo |
+
+**Feito × Não fiz**: nunca dois botões iguais lado a lado. "Feito" é o botão cheio (ou o círculo
+da linha); "Não fiz" é secundário (texto sublinhado no "Agora", opção no menu da linha).
 
 ### Cor por área
 
-Cada área tem um par **tinta + fundo** (contraste ≥ 4,5:1 entre eles). Uso: o "selo" do ícone da
-área (quadradinho arredondado com fundo claro e ícone na tinta), marcadores na lista do Hoje, o
-item ativo da barra inferior e a fita da área embaixo do cabeçalho (esta na cor de **fundo**).
+Cada área tem um par **tinta + fundo**, usado só como identificação discreta: o pontinho ao lado
+do detalhe nas linhas do Início, o rótulo da seção acima do título e o selo nos menus de escolha.
 Texto corrido continua no grafite.
 
 | Área | Tinta | Fundo |
 |---|---|---|
-| Agenda, Hoje e geral | `#1F4FD1` | `#E3EBFD` |
+| Agenda, Hoje e geral | `#1663F2` | `#E6EEFF` |
 | Contas (e cartões, equipe, relatório) | `#0F766E` | `#D5F0EC` |
 | Recebíveis | `#05714F` | `#D3F2E5` |
 | Tarefas avulsas | `#475569` | `#E2E8F0` |
@@ -70,70 +88,71 @@ Texto corrido continua no grafite.
 | Atividade física | `#4F6B1F` | `#E6EDD3` |
 | Fisioterapia | `#3B5F73` | `#DDE8EE` |
 
-Tokens: `--area-<nome>` e `--area-<nome>-fundo`. A cor de cada rota fica junto da definição em
-`src/app/navegacao.ts`, para menu, cabeçalho e Hoje lerem do mesmo lugar.
+Tokens: `--area-<nome>` e `--area-<nome>-fundo`; a cor de cada rota fica em
+`src/app/navegacao.ts`.
 
-Relatório: série "pago" no azul, "previsto" em `#C2620A` (4,2:1 no branco).
+Relatório: série "pago" no azul, "previsto" em `#C2620A`.
 
 ## Tipografia
 
-Continua **só a Atkinson Hyperlegible Next** (variável), base de 18px. A personalidade vem de
-tamanho, peso e espaçamento, não de outra fonte.
+**Plus Jakarta Sans** (variável, `@fontsource-variable/plus-jakarta-sans`), base de 17px.
+Só os pesos 400, 500, 600 e 700 — nada de 800.
 
-- Título da tela (no cabeçalho azul): 1,75rem, peso 750, `letter-spacing: -0.01em`.
-- Título de seção: 1,25rem, peso 700, no grafite. Nada de títulos em caixa alta.
-- Texto: 1rem (18px), peso 400, `line-height: 1.5`. Apoio: 0,89rem no texto suave.
-- Números de destaque (valor de conta, horário): peso 700, `font-variant-numeric: tabular-nums`.
+- Título da tela: 1,65rem (28px), peso 700, `letter-spacing: -0.02em`, numa linha no celular
+  sempre que couber.
+- Título de seção: 1,18rem (20px), peso 700.
+- Item de lista: 1rem, peso 600 (500 quando já feito ou secundário).
+- Texto: 1rem, peso 400, `line-height: 1.5`. Apoio: 0,88rem (15px) no texto suave.
+- Números (valores, horários): `font-variant-numeric: tabular-nums`, peso 600–700.
 
 ## Formas
 
-- Raio base `0.875rem`; botões e campos com o raio médio, cartões e modais com o grande.
-- Cartão: contorno de 1px quase invisível + sombra azulada baixa (`--shadow-folha`), em vez de
-  borda cinza.
-- Divisória é `--linha`, 1px, só onde separa.
+- Raio base `0.875rem`. Superfícies de lista com raio grande (20px); botões 14px; pílulas 99px.
+- Superfície: branca, sombra quase invisível (`--shadow-folha`), sem borda cinza.
+- Divisória é `--linha`, 1px, só entre linhas da mesma lista.
 
 ## Estrutura das telas
 
-- **Cabeçalho cheio**: cada tela começa com a capa azul (degradê diagonal discreto do azul da capa
-  para o azul), título em branco, subtítulo em azul claro, ação principal à direita. Ela se
-  estende por trás da barra de status do celular (`theme-color` = `#1B3FAE`). Embaixo, uma fita
-  fina na cor de fundo da área.
-- **Corpo**: o conteúdo fica direto no fundo azul muito claro. Grupos com título de seção e linhas.
-- **Barra inferior** (celular): branca, com sombra para cima. Item ativo com o ícone preenchido
-  num selo na cor da área e a fita azul em cima.
-- **Barra lateral** (computador): azul como a capa, itens em azul claro; o ativo fica em branco
-  sobre `--azul-profundo`, com a fita céu à esquerda.
-- **Botões**: principal azul sólido; de apoio com contorno azul; `confirmar` verde ("Pagar",
-  "Recebi"); `perigo` vermelho (confirmar exclusão). Botões de criar ficam no cabeçalho ou fixos
-  embaixo, ao alcance do polegar.
+- **Cabeçalho leve** (`components/layout/Pagina.tsx`): sem capa colorida. Rótulo da área pequeno na
+  cor da área, título grande em grafite e, à direita, a ação de criar. `theme-color` = fundo.
+- **Criar = "+ Nova"** (`variant="secondary"`, fundo azul claro) sempre no canto direito do
+  cabeçalho. Cria o item daquela tela; no Início pergunta o tipo. Sem botão flutuante.
+- **Abas internas** em texto, com sublinhado azul no ativo.
+- **Corpo**: conteúdo direto no fundo; grupos com título de seção e uma superfície branca de linhas.
+- **Barra inferior** (celular): branca, fio no topo; o ativo muda só a cor (azul) e o ícone fica
+  cheio. Sem pílula nem fita.
+- **Barra lateral** (computador): branca, fio à direita; o ativo em `--azul-fundo` com texto azul.
+- **Botões**: principal azul sólido; de apoio com contorno cinza e texto grafite; secundário azul
+  claro ("+ Nova"); `confirmar` verde ("Pagar", "Recebi"); `perigo` vermelho.
+
+## Início
+
+1. Data (apoio) e "Bom dia, Nome" (título), "+ Nova" e a conta à direita; barra fina de progresso
+   ("3 de 9 feitas").
+2. **Agora**: o único bloco em destaque. A atividade com horário que está acontecendo ou é a próxima
+   pendente, com "Feito" e, embaixo, "Não fiz" e "Depois: 14:00 …".
+3. **Precisa de atenção**: só com atrasadas (vermelho).
+4. **Hoje**: uma superfície com as linhas (círculo de concluir à esquerda, título, horário e
+   detalhe com o ponto da área; "Vence hoje" nas contas do dia). Tocar no ⋯ abre as outras ações
+   (Não fiz, Desfazer, Abrir). "Dia todo" numa segunda superfície.
 
 ## Ícones
 
-**Phosphor** (`@phosphor-icons/react`) em todo o app: peso `regular` no geral e `fill` no item
-ativo da navegação e nos selos de área. Os `components/ui/` do shadcn podem manter o Lucide
-internamente (setas, x de fechar) até serem revisados.
-
-## Ilustrações
-
-Desenhos simples de traço (SVG inline, 1 ou 2 cores da paleta, traço arredondado ~2px). Onde:
-telas vazias de cada área, login/cadastro, página não encontrada e o "tudo em dia" do Hoje.
-Ficam em `web/src/components/ilustracoes/`, um componente por desenho, `aria-hidden` (o texto ao
-lado é que informa).
+**Phosphor** (`@phosphor-icons/react`): peso `regular` no geral, `bold` em ícones pequenos de
+estado e `fill` no item ativo da navegação.
 
 ## Tom dos textos
 
 - Segunda pessoa, frases curtas, calor sem exagero. Sem emoji na interface.
-- Hoje: "Bom dia" (bom dia / boa tarde / boa noite pelo horário) + data por extenso
-  ("sexta-feira, 16 de outubro").
-- Vazio: diga o que está acontecendo e o próximo passo. "Nenhuma conta neste mês." →
-  "Nenhuma conta para outubro. Quer cadastrar uma?"
+- Vazio: diga o que está acontecendo e o próximo passo.
 - Confirmação: "Pronto, conta paga." em vez de "Pagamento atualizado com sucesso".
 - Respeitar o vocabulário de quem usa o app (agendamentos, Compromissos — ver `web/CLAUDE.md`).
 - Nunca o nome de uma pessoa real nos textos fixos: a saudação usa o nome da conta que entrou.
 
 ## Marca
 
-Símbolo sem texto: um marcador de página branco com um "feito" azul, sobre um quadrado
-arredondado em degradê azul (`web/public/favicon.svg`). Usado no favicon, nos ícones do PWA
-(gerados com `npx pwa-assets-generator` a partir do SVG, incluindo o maskable com área segura) e
-na tela de entrar. O nome escrito continua "Minha Assistente".
+Símbolo **B, "conversa resolvida"** (provisório até a escolha do nome): um balão branco de cantos
+arredondados com o canto inferior esquerdo reto (no lugar do rabinho) e um "feito" âmbar, sobre um
+quadrado azul `#1663F2` chapado (`web/public/favicon.svg`). Ícones do PWA gerados com
+`npx pwa-assets-generator` (maskable com fundo azul). Conferir a leitura em 16, 24 e 32px ao mudar
+o desenho. O nome escrito continua "Minha Assistente".

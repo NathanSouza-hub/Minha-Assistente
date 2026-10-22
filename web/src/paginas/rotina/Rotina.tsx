@@ -36,7 +36,7 @@ export function Rotina() {
     <Pagina
       titulo="Lembretes que repetem"
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to="/rotina/nova">
             <PlusIcon weight="bold" aria-hidden />
             Novo

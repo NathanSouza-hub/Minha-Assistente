@@ -198,7 +198,7 @@ function DespesasPessoais({ mes, categoriaId, mudar }: { mes: string; categoriaI
 
 function BotaoNova({ para }: { para: string }) {
   return (
-    <Button asChild size="lg">
+    <Button asChild variant="secondary">
       <Link to={para}>
         <PlusIcon weight="bold" aria-hidden />
         Nova

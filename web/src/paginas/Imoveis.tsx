@@ -125,7 +125,7 @@ function CartaoImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresCo
           <span className="mt-auto flex flex-col gap-3">
             <span className="flex items-baseline justify-between gap-3">
               <span className="text-base text-muted-foreground">Contas do mês</span>
-              <span className="text-xl font-[750] tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
+              <span className="text-xl font-bold tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
             </span>
             <BarraPago v={valores} />
             <PagoPendente v={valores} />
@@ -179,7 +179,7 @@ export function Imoveis() {
       titulo="Imóveis"
       larga
       acoes={
-        <Button size="lg" onClick={() => setAdicionando(true)} disabled={formularioAberto}>
+        <Button variant="secondary" onClick={() => setAdicionando(true)} disabled={formularioAberto}>
           <PlusIcon weight="bold" aria-hidden />
           Novo imóvel
         </Button>

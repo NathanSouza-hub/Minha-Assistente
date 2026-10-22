@@ -32,7 +32,7 @@ export function NovaAtividade() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button size="lg">
+        <Button variant="secondary">
           <PlusIcon weight="bold" aria-hidden />
           Nova
         </Button>

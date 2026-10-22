@@ -5,7 +5,7 @@ import { SECOES, SECOES_DA_BARRA, secaoDaTela, type Secao } from '@/app/navegaca
 
 export function LayoutApp() {
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[16rem_1fr]">
+    <div className="min-h-dvh md:grid md:grid-cols-[16rem_minmax(0,1fr)]">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3"
@@ -14,7 +14,7 @@ export function LayoutApp() {
       </a>
       <BarraLateral />
       {/* Espaço embaixo para a barra de navegação fixa do celular não cobrir o conteúdo. */}
-      <main id="conteudo" className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main id="conteudo" className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
         <Outlet />
       </main>
       <BarraInferior />
@@ -32,14 +32,14 @@ function useSecaoAtual() {
 }
 
 /**
- * Computador: as 6 áreas na barra azul; a área aberta mostra embaixo as telas dela, com a atual
+ * Computador: as 6 áreas numa barra branca; a área aberta mostra embaixo as telas dela, com a atual
  * marcada.
  */
 function BarraLateral() {
   const { secao: atual, item: itemAtual } = useSecaoAtual()
   return (
-    <aside className="capa sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto px-3 py-6 md:flex">
-      <p className="flex items-center gap-3 px-3 text-xl font-bold">
+    <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-linha bg-folha px-3 py-6 md:flex">
+      <p className="flex items-center gap-3 px-3 text-lg font-bold tracking-[-0.01em]">
         <img src="/favicon.svg" alt="" className="size-9" />
         Minha Assistente
       </p>
@@ -53,11 +53,10 @@ function BarraLateral() {
                 to={secao.rota}
                 aria-current={aberta && !itemAtual ? 'page' : undefined}
                 className={cn(
-                  'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-semibold text-azul-claro hover:bg-azul-profundo/60 hover:text-folha',
-                  aberta && 'bg-azul-profundo text-folha',
+                  'flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-medium text-muted-foreground hover:bg-suave hover:text-foreground',
+                  aberta && 'bg-azul-fundo font-semibold text-azul-profundo hover:bg-azul-fundo hover:text-azul-profundo',
                 )}
               >
-                {aberta && <span aria-hidden className="absolute inset-y-2 left-0 w-1 rounded-full bg-hoje" />}
                 <Icone className="size-6 shrink-0" weight={aberta ? 'fill' : 'regular'} aria-hidden />
                 {secao.rotulo}
               </Link>
@@ -69,8 +68,8 @@ function BarraLateral() {
                         to={item.rota}
                         aria-current={item === itemAtual ? 'page' : undefined}
                         className={cn(
-                          'flex min-h-10 items-center rounded-lg px-3 text-base text-azul-claro hover:bg-azul-profundo/60 hover:text-folha',
-                          item === itemAtual && 'bg-azul-profundo/70 font-semibold text-folha',
+                          'flex min-h-10 items-center rounded-lg px-3 text-base text-muted-foreground hover:bg-suave hover:text-foreground',
+                          item === itemAtual && 'font-semibold text-azul-profundo',
                         )}
                       >
                         {item.rotulo}
@@ -88,13 +87,13 @@ function BarraLateral() {
   )
 }
 
-/** Celular: barra branca presa embaixo com as 5 áreas de uso; a aberta ganha o ícone cheio e a fita azul. */
+/** Celular: barra branca presa embaixo com as 5 áreas de uso; a aberta fica azul, com o ícone cheio. */
 function BarraInferior() {
   const { secao: atual } = useSecaoAtual()
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-40 bg-folha pb-[env(safe-area-inset-bottom)] shadow-barra md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-linha bg-folha pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-5">
         {SECOES_DA_BARRA.map((secao) => (
@@ -108,24 +107,16 @@ function BarraInferior() {
 function ItemBarra({ secao, ativa }: { secao: Secao; ativa: boolean }) {
   const Icone = secao.icone
   return (
-    <li className={`area-${secao.area}`}>
+    <li>
       <Link
         to={secao.rota}
         aria-current={ativa ? 'page' : undefined}
         className={cn(
-          'relative flex min-h-[4.5rem] flex-col items-center justify-center gap-1 px-0.5 text-[0.72rem] leading-tight font-semibold tracking-tight text-muted-foreground min-[400px]:text-[0.8rem] min-[400px]:tracking-normal',
-          ativa && 'text-foreground',
+          'flex min-h-16 flex-col items-center justify-center gap-1 px-0.5 text-[0.74rem] leading-tight font-medium text-muted-foreground min-[400px]:text-[0.8rem]',
+          ativa && 'font-bold text-primary',
         )}
       >
-        {ativa && <span aria-hidden className="absolute top-0 h-1 w-10 rounded-b-full bg-primary" />}
-        <span
-          className={cn(
-            'grid h-8 w-14 place-items-center rounded-full transition-colors',
-            ativa && 'bg-area-fundo text-area',
-          )}
-        >
-          <Icone className="size-7" weight={ativa ? 'fill' : 'regular'} aria-hidden />
-        </span>
+        <Icone className="size-[1.6rem]" weight={ativa ? 'fill' : 'regular'} aria-hidden />
         {secao.rotuloCurto ?? secao.rotulo}
       </Link>
     </li>

@@ -61,7 +61,7 @@ export function Recebiveis() {
       titulo="Recebíveis"
       larga
       acoes={
-        <Button asChild size="lg">
+        <Button asChild variant="secondary">
           <Link to={novo}>
             <PlusIcon weight="bold" aria-hidden />
             Novo recebível

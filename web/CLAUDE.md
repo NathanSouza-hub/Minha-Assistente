@@ -111,8 +111,11 @@ npm run lint                                  # oxlint
   `entradasDoPeriodo` dele).
 - **Início = atividades do dia** (`/`, `paginas/Hoje.tsx`; atrasadas numa seção em cima, "Nova" escolhe o módulo em `hoje/NovaAtividade.tsx`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
   `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
-  uma lista só, já normalizada pelo back-end, com ✓/✗ por linha (o texto de cada categoria em
-  `CATEGORIAS` de `LinhaTarefa`). `useMarcarTarefa` é otimista (linha e resumo) e, ao terminar a
+  saudação e barra de progresso no cabeçalho; o bloco "Agora" (a atividade com horário que começou há
+  menos de 1 h, senão a próxima: `destaqueDoDia` em `hoje/tarefas.ts`) com "Feito", "Não fiz" e o que
+  vem depois; atrasadas numa seção em cima (sem a que está no "Agora") e a lista do dia. Cada linha tem
+  o círculo de concluir e o ⋯ (folha com "Não fiz", "Voltar para pendente" e "Abrir"); os textos de
+  cada categoria ficam em `CATEGORIAS` e a marcação em `useMarcar` (`hoje/tarefas.ts`). `useMarcarTarefa` é otimista (linha e resumo) e, ao terminar a
   última marcação, invalida tudo (o ✓ de remédio, compromisso e conta vale nas áreas). A data fica
   em `?data=`. Toda mutação de agendamento, remédio, compromisso, viagem ou conta chama
   `invalidarPainel`; ao criar uma área nova que apareça em Hoje, faça o mesmo (e inclua no
@@ -234,17 +237,19 @@ npm run lint                                  # oxlint
 
 ## Design
 
-Público com pouca intimidade com tecnologia, uso no celular com uma mão: base de 18px, fonte
-Atkinson Hyperlegible Next, áreas de toque ≥ 44px, linguagem simples. A identidade visual
-(paleta, cor por área, tom dos textos, ícones, ilustrações) está em `../docs/identidade-visual.md`;
+Público com pouca intimidade com tecnologia, uso no celular com uma mão: base de 17px, fonte
+Plus Jakarta Sans (400–700), áreas de toque ≥ 44px, linguagem simples. A identidade visual
+(paleta, estados, cor por área, tipografia, marca) está em `../docs/identidade-visual.md`;
 os tokens em `src/index.css`. Na prática:
-- Cores: fundo azul muito claro `bg-papel`, superfícies brancas `bg-folha`, `bg-suave`, azul
-  `--primary` (`bg-azul-fundo` para destaque claro), laranja `text-alerta`/`bg-alerta-fundo` só para
-  alerta/pendência, `--atraso` (vermelho) para vencidos, `--ok` (verde) para pago/tomado/recebido.
-  "Hoje"/"agora" é azul. `bg-hoje` (céu) só sobre a capa. Sombra `shadow-folha` no lugar de borda.
-- **`.capa`**: superfície azul (cabeçalho do `Pagina`, barra lateral, `LayoutVisitante`).
-  Dentro dela as cores se invertem (`text-primary`, `text-muted-foreground`, botão padrão), então o
-  conteúdo de `cabecalho`/`acoes` usa as classes de sempre.
+- Cores: fundo `bg-papel`, superfícies brancas `bg-folha` (listas em `.superficie` + `divide-y`),
+  texto `text-grafite`/`foreground`, azul `--primary` só para ação e "agora" (`bg-azul-fundo` no
+  destaque claro), `bg-ambar` com texto grafite só no "Vence hoje", `text-alerta` para "Valor a
+  definir", `--atraso` (vermelho) para vencidos, `--ok` (verde) para feito/pago. Sem gradiente.
+- **Estados**: use `MarcaEstado` (círculo da linha) e `SeloEstado` de `components/Estado.tsx`; não
+  monte a cor de estado à mão. Cor sempre com ícone ou texto junto.
+- **Cabeçalho** (`Pagina`): leve, direto no fundo — rótulo da área pequeno na cor dela, título em
+  grafite e a ação de criar à direita, sempre `variant="secondary"` ("+ Nova"). No celular, as telas
+  da área viram abas de texto sublinhadas. Barra de baixo e lateral brancas, ativo em azul.
 - **Cor por área**: `areaDaRota()` em `app/navegacao.ts` dá a área da tela; `Pagina` põe a classe
   `area-<nome>`, e quem está dentro usa `text-area`, `bg-area`, `bg-area-fundo` ou `.selo-area`
   (ícone num quadradinho na cor da área). Rota nova fora do menu: incluir em `outrasRotas`.
