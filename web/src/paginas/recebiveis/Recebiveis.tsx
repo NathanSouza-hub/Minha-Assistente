@@ -1,19 +1,11 @@
 import type { ReactNode } from 'react'
-import {
-  ChartBarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  HandCoinsIcon,
-  ListBulletsIcon,
-  PlusIcon,
-  RepeatIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react'
+import { HandCoinsIcon, PlusIcon, RepeatIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Abas } from '@/components/Abas'
 import { Bloco, Vazio } from '@/components/Bloco'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { SeloEstado } from '@/components/Estado'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRelatorioFinanceiro } from '@/consultas/pagamentos'
@@ -79,7 +71,6 @@ export function Recebiveis() {
             {
               valor: 'mes',
               rotulo: 'Do mês',
-              icone: ListBulletsIcon,
               conteudo: listar(
                 lista,
                 'Recebíveis do mês',
@@ -99,7 +90,6 @@ export function Recebiveis() {
             {
               valor: 'a-receber',
               rotulo: 'A receber',
-              icone: ClockIcon,
               contador: aReceber.length,
               conteudo: listar(
                 aReceber,
@@ -110,7 +100,6 @@ export function Recebiveis() {
             {
               valor: 'recebidos',
               rotulo: 'Recebidos',
-              icone: CheckCircleIcon,
               conteudo: listar(
                 recebidos,
                 'Recebíveis recebidos',
@@ -120,7 +109,6 @@ export function Recebiveis() {
             {
               valor: 'resumo',
               rotulo: 'Resumo',
-              icone: ChartBarIcon,
               conteudo: (
                 <div className="grid items-start gap-5 md:grid-cols-2">
                   <PorOrigem mes={mes} />
@@ -167,7 +155,7 @@ function ListaRecebiveis({
     )
   if (itens.length === 0) return vazio
   return (
-    <ul className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha" aria-label={rotulo}>
+    <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label={rotulo}>
       {itens.map((r) => (
         <Linha key={r.id} recebivel={r} />
       ))}
@@ -178,23 +166,29 @@ function ListaRecebiveis({
 /** Previsto, já recebido, o que falta e o atrasado, das linhas da lista (os valores vêm da API). */
 function Resumo({ lista }: { lista: Recebivel[] }) {
   const soma = (f: (r: Recebivel) => number) => lista.reduce((s, r) => s + f(r), 0)
+  // O que falta dos que já passaram da data prevista (o `atrasado` vem da API).
+  const atrasado = soma((r) => (r.atrasado ? r.saldoCentavos : 0))
   const itens = [
     { rotulo: 'Previsto', valor: soma((r) => r.valorPrevistoCentavos), cor: '' },
     { rotulo: 'Recebido', valor: soma((r) => r.recebidoCentavos), cor: 'text-ok' },
-    { rotulo: 'A receber', valor: soma((r) => r.saldoCentavos), cor: 'text-alerta' },
-    // O que falta dos que já passaram da data prevista (o `atrasado` vem da API).
-    { rotulo: 'Atrasado', valor: soma((r) => (r.atrasado ? r.saldoCentavos : 0)), cor: 'text-atraso' },
+    { rotulo: 'A receber', valor: soma((r) => r.saldoCentavos), cor: '' },
+    { rotulo: 'Atrasado', valor: atrasado, cor: atrasado > 0 ? 'text-atraso' : '' },
   ]
   return (
-    // No celular estreito, uma linha por número (rótulo à esquerda); a partir de 520px, cartões lado a lado.
-    <dl className="grid gap-2 min-[520px]:grid-cols-2 lg:grid-cols-4">
-      {itens.map((i) => (
+    // Uma superfície só: 2 × 2 no celular, os 4 lado a lado no computador.
+    <dl className="superficie grid grid-cols-2 overflow-hidden lg:grid-cols-4">
+      {itens.map((i, n) => (
         <div
           key={i.rotulo}
-          className="flex items-baseline justify-between gap-3 rounded-xl bg-folha px-4 py-3 shadow-folha min-[520px]:block"
+          className={cn(
+            'min-w-0 px-4 py-3',
+            n % 2 === 1 && 'border-l border-linha',
+            n >= 2 && 'border-t border-linha lg:border-t-0',
+            n === 2 && 'lg:border-l',
+          )}
         >
-          <dt className="text-base text-muted-foreground">{i.rotulo}</dt>
-          <dd className={cn('text-lg font-bold tabular-nums sm:text-xl', i.cor)}>{formatarCentavos(i.valor)}</dd>
+          <dt className="text-[0.88rem] text-muted-foreground">{i.rotulo}</dt>
+          <dd className={cn('text-lg font-bold tabular-nums', i.cor)}>{formatarCentavos(i.valor)}</dd>
         </div>
       ))}
     </dl>
@@ -205,7 +199,7 @@ function Resumo({ lista }: { lista: Recebivel[] }) {
 function PorOrigem({ mes }: { mes: string }) {
   const consulta = useRelatorioFinanceiro(intervaloDoMes(mes))
   return (
-    <Bloco titulo="Previsto por origem" icone={ChartBarIcon} area="recebiveis" consulta={consulta}>
+    <Bloco titulo="Previsto por origem" area="recebiveis" consulta={consulta}>
       {() => {
         const porOrigem = consulta.data!.entradas.porOrigem
         if (porOrigem.length === 0) return <Vazio>Nenhum recebível previsto neste mês.</Vazio>
@@ -214,10 +208,10 @@ function PorOrigem({ mes }: { mes: string }) {
             {porOrigem.map((o) => (
               <li key={o.origem} className="flex flex-col gap-0.5 py-2.5">
                 <span className="flex items-baseline justify-between gap-3">
-                  <span className="font-bold">{ORIGENS[o.origem]}</span>
+                  <span className="font-semibold">{ORIGENS[o.origem]}</span>
                   <span className="font-bold tabular-nums">{formatarCentavos(o.totalCentavos)}</span>
                 </span>
-                <span className="text-base text-muted-foreground">
+                <span className="text-[0.88rem] text-muted-foreground">
                   Recebido <span className="font-semibold text-ok">{formatarCentavos(o.recebidoCentavos)}</span> · a
                   receber {formatarCentavos(o.pendenteCentavos)}
                 </span>
@@ -233,20 +227,20 @@ function PorOrigem({ mes }: { mes: string }) {
 function Situacao({ r }: { r: Recebivel }) {
   if (r.status === 'recebido')
     return (
-      <span className="flex items-center gap-1.5 font-semibold text-ok">
-        <CheckCircleIcon className="size-5" weight="fill" aria-hidden />
+      <SeloEstado estado="feito">
         {r.ultimoRecebimento ? `Recebido em ${dataCurta(r.ultimoRecebimento)}` : 'Recebido'}
-      </span>
+      </SeloEstado>
     )
   if (r.atrasado)
     return (
-      <span className="flex items-center gap-1.5 font-semibold text-atraso">
-        <WarningCircleIcon className="size-5" weight="fill" aria-hidden />
+      <SeloEstado estado="vencido">
         {r.status === 'parcial' ? 'Em parte, atrasado' : 'Atrasado'} · previsto {dataCurta(r.dataPrevista)}
-      </span>
+      </SeloEstado>
     )
+  if (r.status === 'parcial')
+    return <SeloEstado estado="a_definir">{STATUS[r.status]} · previsto {dataCurta(r.dataPrevista)}</SeloEstado>
   return (
-    <span className={cn('font-semibold', r.status === 'parcial' ? 'text-alerta' : 'text-muted-foreground')}>
+    <span>
       {STATUS[r.status]} · previsto {dataCurta(r.dataPrevista)}
     </span>
   )
@@ -255,12 +249,12 @@ function Situacao({ r }: { r: Recebivel }) {
 function Linha({ recebivel: r }: { recebivel: Recebivel }) {
   return (
     <li>
-      <Link to={`/recebiveis/${r.id}`} className="-mx-2 flex flex-col gap-1 rounded-lg px-2 py-3 hover:bg-suave/60">
+      <Link to={`/recebiveis/${r.id}`} className="flex flex-col gap-0.5 px-4 py-3 hover:bg-suave/50">
         <span className="flex items-start justify-between gap-3">
-          <span className="text-lg leading-snug font-bold">{r.descricao}</span>
-          <span className="shrink-0 text-lg font-bold tabular-nums">{formatarCentavos(r.valorPrevistoCentavos)}</span>
+          <span className="leading-snug font-semibold">{r.descricao}</span>
+          <span className="shrink-0 font-bold tabular-nums">{formatarCentavos(r.valorPrevistoCentavos)}</span>
         </span>
-        <span className="flex flex-wrap items-center gap-x-3 text-base text-muted-foreground">
+        <span className="flex flex-wrap items-center gap-x-2 text-[0.88rem] text-muted-foreground">
           {ORIGENS[r.origem]}
           {r.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1">
@@ -268,9 +262,14 @@ function Linha({ recebivel: r }: { recebivel: Recebivel }) {
               {r.recorrencia === 'mensal' ? 'Todo mês' : 'Todo ano'}
             </span>
           )}
-          {r.status === 'parcial' && <span>Falta {formatarCentavos(r.saldoCentavos)}</span>}
+          {r.status === 'parcial' && (
+            <>
+              <span aria-hidden>·</span>
+              <span>Falta {formatarCentavos(r.saldoCentavos)}</span>
+            </>
+          )}
         </span>
-        <span className="text-base">
+        <span className="text-[0.88rem] text-muted-foreground">
           <Situacao r={r} />
         </span>
       </Link>

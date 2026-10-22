@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { ChartBarIcon, FilePdfIcon, ListBulletsIcon, ScalesIcon, UsersThreeIcon } from '@phosphor-icons/react'
+import { ChartBarIcon, FilePdfIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
+import { SeloEstado } from '@/components/Estado'
 import { Campo } from '@/components/Campo'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Opcoes } from '@/components/Opcoes'
@@ -114,19 +115,16 @@ export function Relatorio() {
               {
                 valor: 'balanco',
                 rotulo: 'Balanço',
-                icone: ScalesIcon,
                 conteudo: <Carregado consulta={financeiro}>{(r) => <Balanco r={r} />}</Carregado>,
               },
               {
                 valor: 'entradas',
                 rotulo: 'Recebíveis e pessoais',
-                icone: UsersThreeIcon,
                 conteudo: <Carregado consulta={financeiro}>{(r) => <RecebiveisEPessoais r={r} />}</Carregado>,
               },
               {
                 valor: 'gastos',
                 rotulo: 'Por imóvel ou categoria',
-                icone: ListBulletsIcon,
                 conteudo: (
                   <div className="flex flex-col gap-5">
                     <div className="sm:max-w-sm">
@@ -174,27 +172,27 @@ function Carregado<T>({ consulta, children }: { consulta: Consulta<T>; children:
 }
 
 /** Uma linha "rótulo ... valor" com a nota do critério embaixo. */
-function Linha({ rotulo, valor, nota, cor }: { rotulo: string; valor: number; nota?: string; cor?: string }) {
+function Linha({ rotulo, valor, nota, cor }: { rotulo: string; valor: number; nota?: ReactNode; cor?: string }) {
   return (
     <div className="flex flex-col py-2">
       <div className="flex items-baseline justify-between gap-3">
         <dt>{rotulo}</dt>
         <dd className={cn('font-bold tabular-nums', cor)}>{formatarCentavos(valor)}</dd>
       </div>
-      {nota && <p className="text-sm text-muted-foreground">{nota}</p>}
+      {nota && <p className="text-[0.88rem] text-muted-foreground">{nota}</p>}
     </div>
   )
 }
 
-/** Cartão branco com título, um por grupo de números. */
+/** Grupo de números: título de seção e, embaixo, a superfície branca com as linhas. */
 function Cartao({ titulo, children }: { titulo: string; children: ReactNode }) {
   const id = `cartao-${titulo.toLowerCase().replace(/\W+/g, '-')}`
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-2 rounded-2xl bg-folha p-4 shadow-folha md:p-5">
-      <h2 id={id} className="text-xl font-bold">
+    <section aria-labelledby={id} className="flex flex-col gap-2">
+      <h2 id={id} className="text-[1.18rem] font-bold tracking-[-0.015em]">
         {titulo}
       </h2>
-      {children}
+      <div className="superficie px-4 py-1 md:px-5">{children}</div>
     </section>
   )
 }
@@ -215,8 +213,11 @@ function Balanco({ r }: { r: RelatorioFinanceiro }) {
             <Linha
               rotulo="A receber"
               valor={e.pendenteCentavos}
-              nota={e.vencidoCentavos > 0 ? `${formatarCentavos(e.vencidoCentavos)} atrasados` : undefined}
-              cor={e.vencidoCentavos > 0 ? 'text-atraso' : 'text-alerta'}
+              nota={
+                e.vencidoCentavos > 0 ? (
+                  <SeloEstado estado="vencido">{formatarCentavos(e.vencidoCentavos)} atrasados</SeloEstado>
+                ) : undefined
+              }
             />
             <Linha rotulo="Recebido no período" valor={e.recebidoNoPeriodoCentavos} nota="Pela data do recebimento" />
           </dl>
@@ -228,8 +229,11 @@ function Balanco({ r }: { r: RelatorioFinanceiro }) {
             <Linha
               rotulo="A pagar"
               valor={s.pendenteCentavos}
-              nota={s.vencidoCentavos > 0 ? `${formatarCentavos(s.vencidoCentavos)} vencidos` : undefined}
-              cor={s.vencidoCentavos > 0 ? 'text-atraso' : 'text-alerta'}
+              nota={
+                s.vencidoCentavos > 0 ? (
+                  <SeloEstado estado="vencido">{formatarCentavos(s.vencidoCentavos)} vencidos</SeloEstado>
+                ) : undefined
+              }
             />
             <Linha rotulo="Pago no período" valor={s.pagoNoPeriodoCentavos} nota="Pela data do pagamento" />
           </dl>
@@ -241,13 +245,13 @@ function Balanco({ r }: { r: RelatorioFinanceiro }) {
             rotulo="Saldo realizado"
             valor={saldo.realizadoCentavos}
             nota="Recebido no período − pago no período"
-            cor={saldo.realizadoCentavos < 0 ? 'text-atraso' : 'text-ok'}
+            cor={saldo.realizadoCentavos < 0 ? 'text-atraso' : undefined}
           />
           <Linha
             rotulo="Saldo projetado"
             valor={saldo.projetadoCentavos}
             nota="Recebíveis previstos − contas do período"
-            cor={saldo.projetadoCentavos < 0 ? 'text-atraso' : 'text-ok'}
+            cor={saldo.projetadoCentavos < 0 ? 'text-atraso' : undefined}
           />
         </dl>
       </Cartao>

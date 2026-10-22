@@ -4,14 +4,13 @@ import {
   CalendarDotsIcon,
   CaretLeftIcon,
   CaretRightIcon,
-  ListBulletsIcon,
-  RowsIcon,
 } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { areaDaRota } from '@/app/navegacao'
 import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { Navegador } from '@/components/NavegadorDia'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEventos } from '@/consultas/eventos'
@@ -73,9 +72,9 @@ export function Agenda() {
         rotulo="Formas de ver a agenda"
         parametro="visao"
         abas={[
-          { valor: 'mes', rotulo: 'Mês', icone: CalendarDotsIcon, conteudo: <VisaoMes data={data} mudar={mudar} /> },
-          { valor: 'semana', rotulo: 'Semana', icone: RowsIcon, conteudo: <VisaoSemana data={data} mudar={mudar} /> },
-          { valor: 'lista', rotulo: 'Próximos', icone: ListBulletsIcon, conteudo: <VisaoProximos /> },
+          { valor: 'mes', rotulo: 'Mês', conteudo: <VisaoMes data={data} mudar={mudar} /> },
+          { valor: 'semana', rotulo: 'Semana', conteudo: <VisaoSemana data={data} mudar={mudar} /> },
+          { valor: 'lista', rotulo: 'Próximos', conteudo: <VisaoProximos /> },
         ]}
       />
     </Pagina>
@@ -96,7 +95,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-      <section aria-label="Calendário" className="flex flex-col gap-3 rounded-2xl bg-folha p-3 shadow-folha sm:p-4">
+      <section aria-label="Calendário" className="superficie flex flex-col gap-3 p-3 sm:p-4">
         <nav aria-label="Mês" className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="icon" onClick={() => irPara(somarMeses(mes, -1))} aria-label="Mês anterior">
             <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
@@ -117,7 +116,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
       </section>
 
       <section aria-labelledby="titulo-do-dia" className="flex flex-col gap-2">
-        <h2 id="titulo-do-dia" className={cn('text-xl font-bold', data === hojeISO() && 'text-primary')}>
+        <h2 id="titulo-do-dia" className="text-[1.18rem] font-bold tracking-[-0.015em]">
           {rotuloDoDia(data)}
         </h2>
         {consulta.isPending ? (
@@ -138,7 +137,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
             Toque em "Novo" para agendar alguma coisa neste dia.
           </EstadoVazio>
         ) : (
-          <div className="flex flex-col rounded-2xl bg-folha px-4 py-1 shadow-folha">
+          <div className="flex flex-col gap-3">
             {viagensDia.length > 0 && <ListaViagens viagens={viagensDia} dia={data} />}
             {doDia.length > 0 && <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} />}
           </div>
@@ -228,21 +227,19 @@ function Calendario({
 /** Viagens do dia: abrem o detalhe da viagem (hospedagem, transporte e passagens). */
 function ListaViagens({ viagens, dia }: { viagens: Viagem[]; dia: string }) {
   return (
-    <ul className="flex flex-col divide-y divide-linha" aria-label={`Viagens de ${rotuloDoDia(dia)}`}>
+    <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label={`Viagens de ${rotuloDoDia(dia)}`}>
       {viagens.map((v) => (
-        <li key={v.id} className="area-viagens py-3">
-          <Link to={`/viagens/${v.id}`} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1 hover:bg-suave/70">
-            <span className="selo-area size-11" aria-hidden>
-              <AirplaneTiltIcon className="size-6" weight="fill" />
-            </span>
+        <li key={v.id} className="area-viagens">
+          <Link to={`/viagens/${v.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-suave/50">
+            <AirplaneTiltIcon className="size-6 shrink-0 text-area" weight="fill" aria-hidden />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-lg leading-snug font-bold">Viagem: {v.destino}</span>
-              <span className="text-base text-muted-foreground">
+              <span className="leading-snug font-semibold">Viagem: {v.destino}</span>
+              <span className="text-[0.88rem] text-muted-foreground">
                 {v.ida === dia ? 'Ida' : v.volta === dia ? 'Volta' : 'Em viagem'} ·{' '}
                 {v.volta ? `${dataCurta(v.ida)} a ${dataCurta(v.volta)}` : dataCurta(v.ida)}
               </span>
             </span>
-            <CaretRightIcon weight="bold" className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <CaretRightIcon weight="bold" className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </Link>
         </li>
       ))}
@@ -252,7 +249,7 @@ function ListaViagens({ viagens, dia }: { viagens: Viagem[]; dia: string }) {
 
 export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; rotulo: string; voltar?: string }) {
   return (
-    <ul className="flex flex-col divide-y divide-linha" aria-label={rotulo}>
+    <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label={rotulo}>
       {eventos.map((e) => (
         <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />
       ))}
@@ -261,13 +258,7 @@ export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; r
 }
 
 export function CabecalhoDia({ dia }: { dia: string }) {
-  const hoje = dia === hojeISO()
-  return (
-    <h3 className={cn('flex items-center gap-2 text-lg font-bold', hoje && 'text-primary')}>
-      {hoje && <span aria-hidden className="h-5 w-1.5 rounded-full bg-primary" />}
-      {rotuloDoDia(dia)}
-    </h3>
-  )
+  return <h3 className="text-base font-bold">{rotuloDoDia(dia)}</h3>
 }
 
 function tituloSemana(segunda: string) {
@@ -287,19 +278,14 @@ function VisaoSemana({ data, mudar }: { data: string; mudar: (dia: string) => vo
 
   return (
     <div className="flex flex-col gap-5">
-      <nav aria-label="Semana" className="flex items-center justify-between gap-2">
-        <Button variant="ghost" size="icon" onClick={() => mudar(somarDias(data, -7))} aria-label="Semana anterior">
-          <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
-        </Button>
-        <h2 className="text-center text-lg font-bold min-[400px]:text-xl" aria-live="polite">
-          {tituloSemana(segunda)}
-        </h2>
-        <Button variant="ghost" size="icon" onClick={() => mudar(somarDias(data, 7))} aria-label="Próxima semana">
-          <CaretRightIcon className="size-7" weight="bold" aria-hidden />
-        </Button>
-      </nav>
+      <Navegador
+        rotulo="Semana"
+        titulo={tituloSemana(segunda)}
+        anterior={{ rotulo: 'Semana anterior', ir: () => mudar(somarDias(data, -7)) }}
+        proximo={{ rotulo: 'Próxima semana', ir: () => mudar(somarDias(data, 7)) }}
+      />
       {!estaSemana && (
-        <Button variant="link" className="-mt-3 self-center" onClick={() => mudar(hojeISO())}>
+        <Button variant="link" className="-mt-4 h-11 self-start px-0" onClick={() => mudar(hojeISO())}>
           Voltar para hoje
         </Button>
       )}
@@ -310,7 +296,7 @@ function VisaoSemana({ data, mudar }: { data: string; mudar: (dia: string) => vo
           const doDia = grupos.get(dia) ?? []
           // Dia livre ocupa uma linha só: a semana cabe na tela.
           return doDia.length ? (
-            <section key={dia} className="flex flex-col gap-1">
+            <section key={dia} className="flex flex-col gap-2">
               <CabecalhoDia dia={dia} />
               <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
             </section>
@@ -342,7 +328,7 @@ function VisaoProximos() {
   return (
     <div className="flex flex-col gap-6">
       {[...porDia(eventos, inicio)].map(([dia, doDia]) => (
-        <section key={dia} className="flex flex-col gap-1">
+        <section key={dia} className="flex flex-col gap-2">
           <CabecalhoDia dia={dia} />
           <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
         </section>

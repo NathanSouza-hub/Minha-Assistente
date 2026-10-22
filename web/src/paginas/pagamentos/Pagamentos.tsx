@@ -18,7 +18,7 @@ import { AbaEquipe, BotaoAdicionarPessoa } from '@/paginas/equipe/AbaEquipe'
 import { NavegadorMes, ResumoContas } from './ResumoContas'
 import { type FiltroStatus, useFiltros } from './filtros'
 import { ProximasContas } from './ProximasContas'
-import { TabelaContas } from './TabelaContas'
+import { ContasPorUrgencia } from './ContasPorUrgencia'
 
 /** Valores de ?aba= dos grupos fixos (os outros grupos são ids de categoria). */
 const ABA_EQUIPE = 'equipe'
@@ -65,7 +65,7 @@ function PainelFiltros({
     .join(' · ')
 
   return (
-    <details className="group rounded-2xl bg-folha shadow-folha" open={criando || Boolean(imovelId) || undefined}>
+    <details className="group superficie" open={criando || Boolean(imovelId) || undefined}>
       <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-2 font-semibold [&::-webkit-details-marker]:hidden">
         <SlidersHorizontalIcon className="size-5 shrink-0 text-area" weight="bold" aria-hidden />
         <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-3">
@@ -142,14 +142,14 @@ function ListaDeContas({ filtros }: { filtros: Filtros }) {
   const { data: categorias, isPending, isError, refetch } = useCategorias()
   if (isPending) {
     return (
-      <Pagina titulo="Cadastro de despesas" larga>
+      <Pagina titulo="Cadastro de despesas">
         <Skeleton className="h-36" role="status" aria-label="Carregando categorias" />
       </Pagina>
     )
   }
   if (isError) {
     return (
-      <Pagina titulo="Cadastro de despesas" larga>
+      <Pagina titulo="Cadastro de despesas">
         <EstadoVazio
           icone={WalletIcon}
           titulo="Não foi possível carregar as categorias"
@@ -164,7 +164,7 @@ function ListaDeContas({ filtros }: { filtros: Filtros }) {
   const categoriaAtiva = categorias.find((c) => c.id === filtros.aba) ?? categorias[0]
   if (!categoriaAtiva) {
     return (
-      <Pagina titulo="Cadastro de despesas" larga>
+      <Pagina titulo="Cadastro de despesas">
         <div className="flex flex-col gap-5">
           <PainelFiltros categorias={categorias} grupo="" mudar={filtros.mudar} />
           <EstadoVazio icone={WalletIcon} titulo="Nenhuma categoria">
@@ -207,7 +207,6 @@ function ContasDaCategoria({
   return (
     <Pagina
       titulo="Cadastro de despesas"
-      larga
       acoes={
         <Button asChild variant="secondary">
           <Link to={novo}>
@@ -280,8 +279,8 @@ function ContasDaCategoria({
             />
           )
         ) : (
-          // Sem `voltar`: a conta aberta daqui volta para este grupo ao salvar ou excluir.
-          <TabelaContas pagamentos={pagamentos} rotulo={`Contas${ondeEstou} do mês`} voltar="" />
+          // A conta aberta daqui (sem `voltar`) volta para este grupo ao salvar ou excluir.
+          <ContasPorUrgencia pagamentos={pagamentos} rotulo={`Contas${ondeEstou} do mês`} />
         )}
 
         <ProximasContas />

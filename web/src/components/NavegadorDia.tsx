@@ -2,26 +2,45 @@ import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { hojeISO, rotuloDoDia, somarDias } from '@/lib/datas'
 
-/** ‹ Hoje, 13 de outubro › com "Voltar para hoje" quando estiver em outro dia. */
+/**
+ * "Hoje, 13 de outubro" à esquerda e as setas à direita (como no Início), com "Voltar para hoje"
+ * quando estiver em outro dia.
+ */
 export function NavegadorDia({ data, aoMudar }: { data: string; aoMudar: (data: string) => void }) {
   return (
-    <div className="flex flex-col gap-2">
-      <nav aria-label="Dia" className="flex items-center justify-between gap-2">
-        <Button variant="ghost" size="icon" onClick={() => aoMudar(somarDias(data, -1))} aria-label="Dia anterior">
-          <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
-        </Button>
-        <h2 className="text-center text-lg font-bold min-[400px]:text-xl" aria-live="polite">
-          {rotuloDoDia(data)}
-        </h2>
-        <Button variant="ghost" size="icon" onClick={() => aoMudar(somarDias(data, 1))} aria-label="Próximo dia">
-          <CaretRightIcon className="size-7" weight="bold" aria-hidden />
-        </Button>
-      </nav>
+    <div className="flex flex-col">
+      <Navegador
+        rotulo="Dia"
+        titulo={rotuloDoDia(data)}
+        anterior={{ rotulo: 'Dia anterior', ir: () => aoMudar(somarDias(data, -1)) }}
+        proximo={{ rotulo: 'Próximo dia', ir: () => aoMudar(somarDias(data, 1)) }}
+      />
       {data !== hojeISO() && (
-        <Button variant="link" className="self-center" onClick={() => aoMudar(hojeISO())}>
+        <Button variant="link" className="h-11 self-start px-0" onClick={() => aoMudar(hojeISO())}>
           Voltar para hoje
         </Button>
       )}
     </div>
+  )
+}
+
+type Passo = { rotulo: string; ir: () => void }
+
+/** Título do período e as duas setas; base do navegador de dia e de mês. */
+export function Navegador({ rotulo, titulo, anterior, proximo }: { rotulo: string; titulo: string; anterior: Passo; proximo: Passo }) {
+  return (
+    <nav aria-label={rotulo} className="flex items-center justify-between gap-2">
+      <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]" aria-live="polite">
+        {titulo}
+      </h2>
+      <div className="flex shrink-0">
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={anterior.ir} aria-label={anterior.rotulo}>
+          <CaretLeftIcon className="size-6" weight="bold" aria-hidden />
+        </Button>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={proximo.ir} aria-label={proximo.rotulo}>
+          <CaretRightIcon className="size-6" weight="bold" aria-hidden />
+        </Button>
+      </div>
+    </nav>
   )
 }

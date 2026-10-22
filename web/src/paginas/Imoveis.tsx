@@ -9,7 +9,7 @@ import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
 import { EstadoVazio } from '@/components/EstadoVazio'
-import { BarraPago, PagoPendente, SituacaoContas } from '@/components/ResumoValores'
+import { SituacaoContas } from '@/components/ResumoValores'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useExcluirImovel, useImoveis, useRelatorioFinanceiro, useSalvarImovel } from '@/consultas/pagamentos'
@@ -92,7 +92,7 @@ function CartaoImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresCo
 
   if (renomeando) {
     return (
-      <li className="rounded-2xl bg-folha p-4 shadow-folha">
+      <li className="p-4">
         <FormNome
           imovel={imovel}
           rotulo={`Novo nome para ${imovel.nome}`}
@@ -105,51 +105,55 @@ function CartaoImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresCo
   }
 
   return (
-    <li className="flex flex-col rounded-2xl bg-folha shadow-folha">
-      {/* O cartão abre o resumo do imóvel (quanto custa, por categoria e mês a mês, as contas e os dados). */}
-      <Link to={`/imoveis/${imovel.id}`} className="flex flex-1 flex-col gap-4 rounded-t-2xl p-4 hover:bg-suave/40">
-        <span className="flex items-start gap-3">
-          <span className="selo-area size-11" aria-hidden>
-            <BuildingsIcon className="size-6" />
+    <li className="flex items-start gap-1 py-1 pr-2">
+      {/* A linha abre o resumo do imóvel (quanto custa, por categoria e mês a mês, as contas e os dados). */}
+      <Link to={`/imoveis/${imovel.id}`} className="flex min-w-0 flex-1 flex-col gap-1 py-2.5 pl-4 hover:bg-suave/40">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 leading-snug font-semibold">{imovel.nome}</span>
+          {valores ? (
+            <span className="shrink-0 font-bold tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
+          ) : (
+            <Skeleton className="h-5 w-24" />
+          )}
+        </span>
+        {(imovel.endereco || imovel.complemento) && (
+          <span className="text-[0.88rem] text-muted-foreground">
+            {[imovel.endereco, imovel.complemento].filter(Boolean).join(' · ')}
           </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-lg leading-snug font-bold">{imovel.nome}</span>
-            {(imovel.endereco || imovel.complemento) && (
-              <span className="text-base text-muted-foreground">
-                {[imovel.endereco, imovel.complemento].filter(Boolean).join(' · ')}
+        )}
+        {valores && (
+          <span className="flex flex-col text-[0.88rem] text-muted-foreground">
+            <SituacaoContas v={valores} />
+            {valores.totalCentavos > 0 && (
+              <span className="tabular-nums">
+                Pago {formatarCentavos(valores.pagoCentavos)} · a pagar {formatarCentavos(valores.pendenteCentavos)}
               </span>
             )}
           </span>
-        </span>
-        {valores ? (
-          <span className="mt-auto flex flex-col gap-3">
-            <span className="flex items-baseline justify-between gap-3">
-              <span className="text-base text-muted-foreground">Contas do mês</span>
-              <span className="text-xl font-bold tabular-nums">{formatarCentavos(valores.totalCentavos)}</span>
-            </span>
-            <BarraPago v={valores} />
-            <PagoPendente v={valores} />
-            <SituacaoContas v={valores} />
-          </span>
-        ) : (
-          <Skeleton className="mt-auto h-24" />
         )}
       </Link>
-      <div className="flex gap-2 border-t border-linha p-3">
-        <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${imovel.nome}`}>
-          <PencilSimpleIcon aria-hidden />
-          Renomear
+      <div className="flex shrink-0 pt-1.5">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full text-muted-foreground"
+          onClick={() => setRenomeando(true)}
+          aria-label={`Renomear ${imovel.nome}`}
+          title="Renomear"
+        >
+          <PencilSimpleIcon className="size-5" aria-hidden />
         </Button>
         <Confirmar
           gatilho={
             <Button
               variant="ghost"
-              className="ml-auto text-destructive hover:bg-destructive/10"
+              size="icon"
+              className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               aria-label={`Excluir ${imovel.nome}`}
+              title="Excluir"
               disabled={excluir.isPending}
             >
-              <TrashIcon aria-hidden />
-              Excluir
+              <TrashIcon className="size-5" aria-hidden />
             </Button>
           }
           titulo={`Excluir ${imovel.nome}?`}
@@ -186,12 +190,12 @@ export function Imoveis() {
       }
     >
       <div className="flex flex-col gap-6">
-        <p className="max-w-prose text-lg text-muted-foreground">
+        <p className="max-w-prose text-muted-foreground">
           Separe as contas por imóvel para saber quanto cada um custa. Toque no imóvel para ver o resumo.
         </p>
 
         {formularioAberto && (
-          <section aria-label="Adicionar imóvel" className="rounded-2xl bg-folha p-4 shadow-folha sm:max-w-xl">
+          <section aria-label="Adicionar imóvel" className="superficie p-4 sm:max-w-xl">
             <FormNome
               rotulo="Nome do imóvel"
               textoBotao="Adicionar imóvel"
@@ -209,16 +213,13 @@ export function Imoveis() {
         )}
 
         {consulta.isPending ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Skeleton className="h-56" />
-            <Skeleton className="h-56" />
-          </div>
+          <Skeleton className="h-40 max-w-3xl rounded-2xl" />
         ) : imoveis.length === 0 ? (
           <EstadoVazio icone={BuildingsIcon} titulo="Nenhum imóvel cadastrado">
             Adicione o primeiro acima. Pagamentos sem imóvel aparecem como "Sem imóvel" no relatório.
           </EstadoVazio>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Seus imóveis">
+          <ul className="superficie flex max-w-3xl flex-col divide-y divide-linha overflow-hidden" aria-label="Seus imóveis">
             {imoveis.map((imovel) => (
               <CartaoImovel key={imovel.id} imovel={imovel} valores={doMes.find((i) => i.id === imovel.id)} />
             ))}

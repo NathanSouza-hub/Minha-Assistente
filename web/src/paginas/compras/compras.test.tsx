@@ -32,7 +32,7 @@ afterAll(() => servidor.close())
 const nomesEm = (lista: HTMLElement) =>
   within(lista)
     .getAllByRole('checkbox')
-    .map((c) => c.textContent)
+    .map((c) => c.closest('li')!.textContent)
 
 describe('lista', () => {
   test('pendentes por categoria (sem categoria no fim) e comprados depois', async () => {
@@ -71,7 +71,8 @@ describe('marcar', () => {
     expect(nomesEm(comprados)[0]).toBe('ArrozComprado às 10:00')
     expect(banco.compras.find((i) => i.nome === 'Arroz')?.comprado).toBe(true)
 
-    await usuario.click(within(comprados).getByRole('checkbox', { name: /Arroz/ }))
+    // Tocar no nome também marca (uso com uma mão no mercado).
+    await usuario.click(within(comprados).getByText('Arroz'))
     expect(await screen.findByText('1 de 6 itens comprados')).toBeInTheDocument()
     expect(within(screen.getByRole('list', { name: 'Mercado' })).getByRole('checkbox', { name: /Arroz/ })).toHaveAttribute(
       'aria-checked',

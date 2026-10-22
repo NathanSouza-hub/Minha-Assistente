@@ -1,7 +1,8 @@
-import { CalendarCheckIcon, MoonIcon, PillIcon, PlusIcon, SunHorizonIcon, SunIcon, type Icon } from '@phosphor-icons/react'
+import { PillIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { Lista, LinhaLink } from '@/components/Linha'
 import { NavegadorDia } from '@/components/NavegadorDia'
 import { Progresso } from '@/components/Progresso'
 import { Opcoes } from '@/components/Opcoes'
@@ -10,17 +11,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useDosesDoDia, useMedicamentos } from '@/consultas/medicamentos'
 import { dataCurta, hojeISO } from '@/lib/datas'
 import type { PeriodoRemedio } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
 import { ItemDose } from './ItemDose'
 import { descreverHorario } from './textos'
 
 type Visao = 'hoje' | 'lista'
 
-const GRUPOS: { periodo: PeriodoRemedio; titulo: string; icone: Icon }[] = [
-  { periodo: 'manha', titulo: 'Manhã', icone: SunHorizonIcon },
-  { periodo: 'tarde', titulo: 'Tarde', icone: SunIcon },
-  { periodo: 'noite', titulo: 'Noite', icone: MoonIcon },
-  { periodo: 'semanal', titulo: 'Remédio da semana', icone: CalendarCheckIcon },
+const GRUPOS: { periodo: PeriodoRemedio; titulo: string }[] = [
+  { periodo: 'manha', titulo: 'Manhã' },
+  { periodo: 'tarde', titulo: 'Tarde' },
+  { periodo: 'noite', titulo: 'Noite' },
+  { periodo: 'semanal', titulo: 'Remédio da semana' },
 ]
 
 export function Remedios() {
@@ -123,22 +123,19 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
             texto={`${tomadas} de ${doses.length} ${doses.length === 1 ? 'dose tomada' : 'doses tomadas'}`}
             textoCompleto="Tudo tomado neste dia."
           />
-          {GRUPOS.map(({ periodo, titulo, icone: Icone }) => {
+          {GRUPOS.map(({ periodo, titulo }) => {
             const doGrupo = doses.filter((d) => d.periodo === periodo)
             if (!doGrupo.length) return null
             return (
-              <section key={periodo} className="flex flex-col" aria-labelledby={`grupo-${periodo}`}>
-                <h3 id={`grupo-${periodo}`} className="flex items-center gap-2.5 text-lg font-bold">
-                  <span className="selo-area size-9" aria-hidden>
-                    <Icone className="size-5" weight="fill" />
-                  </span>
+              <section key={periodo} className="flex flex-col gap-2" aria-labelledby={`grupo-${periodo}`}>
+                <h3 id={`grupo-${periodo}`} className="text-[0.88rem] font-semibold text-muted-foreground">
                   {titulo}
                 </h3>
-                <ul className="flex flex-col divide-y divide-linha">
+                <Lista>
                   {doGrupo.map((d) => (
                     <ItemDose key={d.horarioId} dose={d} futuro={futuro} />
                   ))}
-                </ul>
+                </Lista>
               </section>
             )
           })}
@@ -177,30 +174,26 @@ function MeusRemedios() {
     )
   }
   return (
-    <ul className="flex flex-col divide-y divide-linha" aria-label="Meus remédios">
+    <Lista rotulo="Meus remédios">
       {remedios.map((m) => (
-        <li key={m.id}>
-          <Link
-            to={`/remedios/${m.id}`}
-            className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-suave/70"
-          >
-            <span className="flex items-center justify-between gap-3">
-              <span className={cn('text-lg font-bold', !m.ativo && 'text-muted-foreground')}>{m.nome}</span>
-              {!m.ativo && (
-                <span className="rounded-full bg-suave px-2.5 font-semibold text-muted-foreground">Pausado</span>
-              )}
-            </span>
-            {m.dose && <span className="text-base">{m.dose}</span>}
-            <span className="text-base text-muted-foreground">
-              {m.intervaloHoras && `A cada ${m.intervaloHoras} horas: `}
-              {m.horarios.map(descreverHorario).join('; ')}
-            </span>
-            {(m.dataInicio || m.dataFim) && (
-              <span className="text-base text-muted-foreground">{descreverPeriodo(m.dataInicio, m.dataFim)}</span>
-            )}
-          </Link>
-        </li>
+        <LinhaLink
+          key={m.id}
+          para={`/remedios/${m.id}`}
+          titulo={m.nome}
+          apagada={!m.ativo}
+          fim={!m.ativo && <span className="text-[0.88rem] font-semibold text-muted-foreground">Pausado</span>}
+          apoio={
+            <>
+              {m.dose && <span className="block text-foreground">{m.dose}</span>}
+              <span className="block">
+                {m.intervaloHoras && `A cada ${m.intervaloHoras} horas: `}
+                {m.horarios.map(descreverHorario).join('; ')}
+              </span>
+              {(m.dataInicio || m.dataFim) && <span className="block">{descreverPeriodo(m.dataInicio, m.dataFim)}</span>}
+            </>
+          }
+        />
       ))}
-    </ul>
+    </Lista>
   )
 }

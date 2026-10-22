@@ -2,6 +2,7 @@ import { CheckSquareIcon, PlusIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { Lista, LinhaLink } from '@/components/Linha'
 import { NavegadorDia } from '@/components/NavegadorDia'
 import { Opcoes } from '@/components/Opcoes'
 import { Progresso } from '@/components/Progresso'
@@ -9,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRotinas, useTarefasDoDia } from '@/consultas/rotinas'
 import { hojeISO } from '@/lib/datas'
-import { cn } from '@/lib/utils'
 import { descreverDias } from './dias'
 import { ItemTarefa } from './ItemTarefa'
 import { sugestoesFaltando } from './sugestoes'
@@ -75,7 +75,7 @@ function Sugestoes() {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes" className="flex flex-col gap-3">
-      <h2 id="sugestoes" className="text-lg font-semibold">
+      <h2 id="sugestoes" className="text-[1.18rem] font-bold tracking-[-0.015em]">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">
@@ -138,11 +138,11 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
             textoCompleto="Todos os compromissos do dia feitos."
           />
           {futuro && <p className="text-base text-muted-foreground">Dá para marcar quando o dia chegar.</p>}
-          <ul className="flex flex-col divide-y divide-linha" aria-label="Compromissos do dia">
+          <Lista rotulo="Compromissos do dia">
             {tarefas.map((t) => (
               <ItemTarefa key={t.rotinaId} tarefa={t} desabilitada={futuro} />
             ))}
-          </ul>
+          </Lista>
         </>
       )}
     </>
@@ -152,7 +152,7 @@ function TarefasDoDia({ data, mudarData }: { data: string; mudarData: (d: string
 function TodasAsTarefas() {
   const consulta = useRotinas()
   const rotinas = consulta.data ?? []
-  if (consulta.isPending) return <Skeleton className="h-40 rounded-xl" />
+  if (consulta.isPending) return <Skeleton className="h-40 rounded-2xl" />
   if (rotinas.length === 0) {
     return (
       <EstadoVazio
@@ -167,25 +167,17 @@ function TodasAsTarefas() {
     )
   }
   return (
-    <ul className="flex flex-col divide-y divide-linha" aria-label="Todos os compromissos">
+    <Lista rotulo="Todos os compromissos">
       {rotinas.map((r) => (
-        <li key={r.id}>
-          <Link to={`/rotina/${r.id}`} className="-mx-2 my-1 flex flex-col gap-0.5 rounded-lg px-2 py-3 hover:bg-suave/70">
-            <span className="flex items-center justify-between gap-3">
-              <span className={cn('text-lg font-semibold', !r.ativo && 'text-muted-foreground')}>
-                {r.titulo}
-              </span>
-              {!r.ativo && (
-                <span className="rounded-full bg-suave px-2.5 font-semibold text-muted-foreground">Pausado</span>
-              )}
-            </span>
-            <span className="text-base text-muted-foreground">
-              {descreverDias(r.diasSemana)}
-              {r.hora && `, às ${r.hora}`}
-            </span>
-          </Link>
-        </li>
+        <LinhaLink
+          key={r.id}
+          para={`/rotina/${r.id}`}
+          titulo={r.titulo}
+          apagada={!r.ativo}
+          fim={!r.ativo && <span className="text-[0.88rem] font-semibold text-muted-foreground">Pausado</span>}
+          apoio={`${descreverDias(r.diasSemana)}${r.hora ? `, às ${r.hora}` : ''}`}
+        />
       ))}
-    </ul>
+    </Lista>
   )
 }

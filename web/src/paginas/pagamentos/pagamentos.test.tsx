@@ -28,17 +28,17 @@ afterAll(() => servidor.close())
 // Linha da tabela da Lista de despesas.
 const item = async (descricao: string) =>
   (await screen.findByRole('link', { name: new RegExp(`^${descricao}`) })).closest('tr') as HTMLElement
-// Linha da tabela do grupo aberto no Cadastro de despesas (não a de "Próximas contas a pagar").
+// Linha da lista do grupo aberto no Cadastro de despesas (não a de "Próximas contas a pagar").
 const cartao = async (descricao: string) =>
   (
-    await within(await screen.findByRole('table', { name: /^Contas.* do mês$/ })).findByRole('link', {
+    await within(await screen.findByRole('region', { name: /^Contas.* do mês$/ })).findByRole('link', {
       name: new RegExp(`^${descricao}`),
     })
-  ).closest('tr') as HTMLElement
-/** Conta na tabela do grupo aberto (null se não está nela). */
+  ).closest('li') as HTMLElement
+/** Conta na lista do grupo aberto (null se não está nela). */
 const naAba = (nome: RegExp) => {
-  const tabela = screen.queryByRole('table', { name: /^Contas.* do mês$/ })
-  return tabela && within(tabela).queryByRole('link', { name: nome })
+  const lista = screen.queryByRole('region', { name: /^Contas.* do mês$/ })
+  return lista && within(lista).queryByRole('link', { name: nome })
 }
 /** O select "Grupo de contas" do painel de filtros. */
 const grupo = () => screen.getByLabelText('Grupo de contas') as HTMLSelectElement
@@ -237,10 +237,10 @@ describe('grupos de contas', () => {
     expect(grupo()).toHaveDisplayValue('Outros')
   })
 
-  test('conta aberta pela tabela volta para o grupo ao salvar', async () => {
+  test('conta aberta pela lista volta para o grupo ao salvar', async () => {
     const usuario = userEvent.setup()
     const { roteador } = renderizarApp('/pagamentos')
-    await usuario.click(within(await cartao('Conta de luz')).getByRole('link', { name: 'Editar Conta de luz' }))
+    await usuario.click(within(await cartao('Conta de luz')).getByRole('link', { name: /^Conta de luz/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Salvar alterações' }))
     expect(await cartao('Conta de luz')).toBeInTheDocument()
     expect(roteador.state.location.pathname).toBe('/pagamentos')

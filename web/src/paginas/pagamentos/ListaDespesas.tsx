@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react'
 import {
   CaretRightIcon,
-  ChartBarIcon,
-  ClockIcon,
-  ListBulletsIcon,
   PlusIcon,
   SlidersHorizontalIcon,
   WalletIcon,
@@ -136,7 +133,6 @@ function DespesasPessoais({ mes, categoriaId, mudar }: { mes: string; categoriaI
             {
               valor: 'despesas',
               rotulo: 'Despesas do mês',
-              icone: ListBulletsIcon,
               conteudo: (
                 <div className="flex flex-col gap-5">
                   <PainelFiltros titulo="Categoria" emUso={Number(Boolean(categoriaId))}>
@@ -168,7 +164,6 @@ function DespesasPessoais({ mes, categoriaId, mudar }: { mes: string; categoriaI
             {
               valor: 'a-pagar',
               rotulo: 'A pagar',
-              icone: ClockIcon,
               contador: pendentes.length,
               conteudo: (
                 <ConteudoLista
@@ -186,7 +181,6 @@ function DespesasPessoais({ mes, categoriaId, mudar }: { mes: string; categoriaI
             {
               valor: 'categorias',
               rotulo: 'Por categoria',
-              icone: ChartBarIcon,
               conteudo: <ResumoPessoais mes={mes} />,
             },
           ]}

@@ -125,6 +125,22 @@ Só os pesos 400, 500, 600 e 700 — nada de 800.
 - **Botões**: principal azul sólido; de apoio com contorno cinza e texto grafite; secundário azul
   claro ("+ Nova"); `confirmar` verde ("Pagar", "Recebi"); `perigo` vermelho.
 
+### Componentes de lista
+
+Todas as áreas usam as mesmas peças (`web/src/components/Linha.tsx`), no molde do Início:
+
+- `Lista`: a superfície branca com fio entre as linhas.
+- `LinhaMarcavel`: círculo de concluir à esquerda (`MarcaEstado`), título e apoio no meio (o meio
+  abre o item), valor opcional na linha do título e, à direita, o ⋯ de `MenuLinha` (as outras
+  ações: "Não fiz", "Voltar para pendente", "Abrir"). Remédios, compromissos, tarefas, compras e
+  contas (`ItemPagamento`: o círculo paga ou desfaz).
+- `LinhaLink`: linha de cadastro que só abre o item, com a seta à direita.
+- Navegação de dia, semana e mês (`components/NavegadorDia.tsx`): título à esquerda, setas à direita.
+- Barra de progresso fina e azul com o texto ao lado (`components/Progresso.tsx`).
+- Grupos de números (Finanças, Relatório): título de seção e uma superfície de linhas "rótulo e
+  critério à esquerda, valor à direita". Valor em grafite; verde só no que já foi pago/recebido,
+  vermelho só no saldo negativo, e o vencido vai como `SeloEstado` na linha do critério.
+
 ## Início
 
 1. Data (apoio) e "Bom dia, Nome" (título), "+ Nova" e a conta à direita; barra fina de progresso

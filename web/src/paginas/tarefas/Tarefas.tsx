@@ -1,12 +1,13 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { BellIcon, CheckIcon, ListChecksIcon, PlusIcon } from '@phosphor-icons/react'
+import { BellIcon, ListChecksIcon, PlusIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { Lista, LinhaMarcavel } from '@/components/Linha'
 import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -101,20 +102,27 @@ function AFazer({ lista }: { lista: Tarefa[] }) {
 function Grupo({ titulo, tarefas, mostrarData }: { titulo: string; tarefas: Tarefa[]; mostrarData?: boolean }) {
   const id = `grupo-${titulo.toLowerCase()}`
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-1">
-      <h2 id={id} className={cn('text-xl font-bold', titulo === 'Atrasadas' && 'text-atraso')}>
+    <section aria-labelledby={id} className="flex flex-col gap-2">
+      <h2
+        id={id}
+        className={cn(
+          'flex items-center gap-1.5 text-[1.18rem] font-bold tracking-[-0.015em]',
+          titulo === 'Atrasadas' && 'text-base text-atraso',
+        )}
+      >
+        {titulo === 'Atrasadas' && <WarningCircleIcon weight="bold" className="size-5" aria-hidden />}
         {titulo}
       </h2>
-      <ul className="flex flex-col divide-y divide-linha">
+      <Lista>
         {tarefas.map((t) => (
           <Linha key={t.id} tarefa={t} mostrarData={mostrarData} />
         ))}
-      </ul>
+      </Lista>
     </section>
   )
 }
 
-/** ✓ grande à esquerda (conclui/reabre); o resto da linha abre a tarefa. */
+/** Círculo à esquerda (conclui/reabre), como no Início; o resto da linha abre a tarefa. */
 function Linha({ tarefa: t, mostrarData }: { tarefa: Tarefa; mostrarData?: boolean }) {
   const concluir = useConcluirTarefa()
   const quando = [
@@ -125,42 +133,31 @@ function Linha({ tarefa: t, mostrarData }: { tarefa: Tarefa; mostrarData?: boole
     .filter(Boolean)
     .join(' · ')
   return (
-    <li className="flex items-center gap-3 py-2">
-      <button
-        type="button"
-        onClick={() =>
+    <LinhaMarcavel
+      estado={t.concluida ? 'feito' : 'pendente'}
+      marcar={{
+        rotulo: t.concluida ? `Reabrir ${t.titulo}` : `Marcar ${t.titulo} como feita`,
+        marcado: t.concluida,
+        desabilitado: concluir.isPending,
+        aoMarcar: () =>
           concluir.mutate(
             { id: t.id, concluida: !t.concluida },
             { onSuccess: () => toast.success(t.concluida ? 'Tarefa reaberta.' : 'Pronto, tarefa feita.') },
-          )
-        }
-        disabled={concluir.isPending}
-        aria-pressed={t.concluida}
-        aria-label={t.concluida ? `Reabrir ${t.titulo}` : `Marcar ${t.titulo} como feita`}
-        className={cn(
-          'grid size-12 shrink-0 place-items-center rounded-full border-2 transition-colors',
-          t.concluida ? 'border-ok bg-ok text-folha' : 'border-ok/60 text-ok hover:bg-ok-fundo',
-        )}
-      >
-        <CheckIcon className="size-6" weight="bold" aria-hidden />
-      </button>
-      <Link
-        to={`/tarefas/${t.id}`}
-        className="-mx-2 flex min-w-0 flex-1 flex-col rounded-lg px-2 py-1 hover:bg-suave/60"
-      >
-        <span className={cn('text-lg leading-snug font-bold', t.concluida && 'text-muted-foreground line-through')}>
-          {t.titulo}
-        </span>
-        {(quando || t.detalhes) && (
-          <span
-            className={cn('flex items-center gap-1.5 text-base', t.atrasada ? 'text-atraso' : 'text-muted-foreground')}
-          >
-            {t.lembrete && !t.concluida && <BellIcon className="size-4" aria-label="Com lembrete" />}
+          ),
+      }}
+      titulo={t.titulo}
+      para={`/tarefas/${t.id}`}
+      apoio={
+        (quando || t.detalhes) && (
+          <p className={cn(t.atrasada && 'font-semibold text-atraso')}>
+            {t.lembrete && !t.concluida && (
+              <BellIcon className="mr-1 mb-[0.15em] inline size-4 align-middle" aria-label="Com lembrete" />
+            )}
             {[quando, t.detalhes].filter(Boolean).join(' · ')}
-          </span>
-        )}
-      </Link>
-    </li>
+          </p>
+        )
+      }
+    />
   )
 }
 
@@ -195,7 +192,7 @@ function AdicionarRapido() {
     <form
       noValidate
       onSubmit={handleSubmit(enviar)}
-      className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha sm:flex-row sm:items-end"
+      className="superficie flex flex-col gap-3 p-4 sm:flex-row sm:items-end"
     >
       <div className="flex-1">
         <Campo
@@ -219,7 +216,7 @@ function Sugestoes({ pendentes }: { pendentes: Tarefa[] }) {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes-tarefas" className="flex flex-col gap-3">
-      <h2 id="sugestoes-tarefas" className="text-lg font-semibold">
+      <h2 id="sugestoes-tarefas" className="text-[1.18rem] font-bold tracking-[-0.015em]">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">

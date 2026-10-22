@@ -1,24 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { ArrowCounterClockwiseIcon, CheckCircleIcon, PaperclipIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
-import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
+import { SeloEstado } from '@/components/Estado'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { useExcluirPagamento } from '@/consultas/pagamentos'
 import { dataCurta, hojeISO } from '@/lib/datas'
-import { formatarCentavos, paraCentavos } from '@/lib/dinheiro'
+import { formatarCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { VOLTAR_DESPESAS } from './filtros'
 import { useDesfazerPagamento, useMarcarComoPago } from './marcarComoPago'
+import { PagarComValor } from './PagarComValor'
 
 // Colunas que só aparecem em tela larga; no celular a linha mostra descrição, valor, vencimento
 // e o botão de pagar; em tela larga ganha as outras colunas e editar/excluir (tocar na descrição abre a conta, onde ficam editar e excluir).
@@ -49,9 +43,9 @@ export function TabelaContas({
   voltar?: string
 }) {
   return (
-    <div className="overflow-x-auto rounded-2xl bg-folha shadow-folha">
+    <div className="superficie overflow-x-auto">
       <table className="w-full border-collapse text-left" aria-label={rotulo}>
-        <thead className="bg-suave text-base text-muted-foreground">
+        <thead className="bg-suave text-[0.88rem] text-muted-foreground">
           <tr>
             <th scope="col" className="px-2.5 py-2 font-semibold">
               Descrição
@@ -59,7 +53,7 @@ export function TabelaContas({
             <th scope="col" className="px-2.5 py-2 text-right font-semibold">
               Valor
             </th>
-            <th scope="col" className="px-2.5 py-2 font-semibold">
+            <th scope="col" className="hidden px-2.5 py-2 font-semibold sm:table-cell">
               Vencimento
             </th>
             <th scope="col" className={cn(soLargo, 'px-2.5 py-2 font-semibold')}>
@@ -114,26 +108,30 @@ function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: st
     <tr className="border-t border-linha align-middle">
       <td className="px-2.5 py-2">
         <Link to={enderecoDe(p, voltar)} className="-mx-1 flex flex-col rounded-md px-1 py-1 hover:bg-suave/70">
-          <span className="flex items-center gap-1.5 leading-snug font-bold">
+          <span className="flex items-center gap-1.5 leading-snug font-semibold">
             {p.descricao}
             {p.totalComprovantes > 0 && (
               <PaperclipIcon className="size-4 shrink-0 text-muted-foreground" aria-label="Com comprovante" role="img" />
             )}
           </span>
           {/* No celular as colunas escondidas viram uma linha de detalhes. */}
-          <span className="text-base text-muted-foreground lg:hidden" aria-hidden>
+          <span className="text-[0.88rem] text-muted-foreground lg:hidden" aria-hidden>
             {[grupo, parcela, p.status === 'pago' ? 'Pago' : null].filter(Boolean).join(' · ')}
           </span>
         </Link>
       </td>
       <td className="px-2.5 py-2 text-right whitespace-nowrap tabular-nums">
         {aDefinir ? (
-          <span className="rounded-full bg-alerta-fundo px-2.5 font-semibold text-alerta">A definir</span>
+          <SeloEstado estado="a_definir">A definir</SeloEstado>
         ) : (
           <span className="font-bold">{formatarCentavos(p.valorCentavos!)}</span>
         )}
+        {/* No celular estreito a data vem embaixo do valor (sem a coluna de vencimento). */}
+        <span className={cn('block text-[0.88rem] sm:hidden', p.vencido ? 'font-semibold text-atraso' : 'text-muted-foreground')} aria-hidden>
+          {dataCurta(p.vencimento).slice(0, 5)}
+        </span>
       </td>
-      <td className={cn('px-2.5 py-2 whitespace-nowrap tabular-nums', p.vencido && 'font-semibold text-atraso')}>
+      <td className={cn('hidden px-2.5 py-2 whitespace-nowrap tabular-nums sm:table-cell', p.vencido && 'font-semibold text-atraso')}>
         {/* No celular sem o ano, para sobrar espaço para a descrição. */}
         <span className="lg:hidden">{dataCurta(p.vencimento).slice(0, 5)}</span>
         <span className="hidden lg:inline">{dataCurta(p.vencimento)}</span>
@@ -147,11 +145,13 @@ function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: st
       <td className={cn(soLargo, 'px-2.5 py-2 whitespace-nowrap')}>
         {p.status === 'pago' ? (
           <span className="flex flex-col">
-            <span className="font-semibold text-ok">Pago</span>
+            <SeloEstado estado="feito">Pago</SeloEstado>
             <span className="text-sm text-muted-foreground">em {dataCurta(p.dataPagamento!)}</span>
           </span>
         ) : p.vencido ? (
-          <span className="font-semibold text-atraso">Atrasada</span>
+          <SeloEstado estado="vencido">Atrasada</SeloEstado>
+        ) : p.vencimento === hojeISO() ? (
+          <SeloEstado estado="vence_hoje" />
         ) : (
           <span className="font-semibold">Pendente</span>
         )}
@@ -230,61 +230,5 @@ function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: st
         )}
       </td>
     </tr>
-  )
-}
-
-/** Conta da equipe com valor a definir: pede o valor pago antes de marcar. */
-function PagarComValor({
-  pagamento: p,
-  enviando,
-  aoConfirmar,
-  aoFechar,
-}: {
-  pagamento: Pagamento
-  enviando: boolean
-  aoConfirmar: (centavos: number) => void
-  aoFechar: () => void
-}) {
-  const [valor, setValor] = useState('')
-  const [erro, setErro] = useState<string>()
-
-  function enviar(evento: FormEvent) {
-    evento.preventDefault()
-    const centavos = paraCentavos(valor)
-    if (!centavos) return setErro('Digite o valor pago, por exemplo 1.500,00.')
-    setErro(undefined)
-    aoConfirmar(centavos)
-  }
-
-  return (
-    <AlertDialog open onOpenChange={(aberto) => !aberto && aoFechar()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Pagar {p.descricao}</AlertDialogTitle>
-          <AlertDialogDescription>Informe quanto foi pago.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <form onSubmit={enviar} className="flex flex-col gap-4">
-          <Campo
-            rotulo={`Valor pago a ${p.descricao}`}
-            prefixo="R$"
-            inputMode="decimal"
-            placeholder="0,00"
-            autoFocus
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            erro={erro}
-          />
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button type="button" variant="outline" onClick={aoFechar}>
-              Voltar
-            </Button>
-            <Button type="submit" disabled={enviando}>
-              <CheckCircleIcon aria-hidden />
-              {enviando ? 'Marcando…' : 'Confirmar pagamento'}
-            </Button>
-          </div>
-        </form>
-      </AlertDialogContent>
-    </AlertDialog>
   )
 }

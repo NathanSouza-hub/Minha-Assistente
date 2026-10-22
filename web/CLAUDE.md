@@ -40,8 +40,8 @@ npm run lint                                  # oxlint
   de cada agendamento e das viagens de `useViagens`; o dia escolhido fica em `?data=` e aparece ao lado
   ou embaixo), Semana e Próximos (`?visao=`). O mês busca as 6 semanas e filtra cada dia com
   `eventosDoDia` (`porDia.ts`, fim exclusivo como na API). Cadastro só pelo "+ Novo"
-  (`NovoNaAgenda.tsx`, 7 opções; Viagens vai para `/viagens/nova`). Cada item tem a fita na cor da área do
-  tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda).
+  (`NovoNaAgenda.tsx`, 7 opções; Viagens vai para `/viagens/nova`). Cada item (`ItemEvento`) tem o ponto na cor da área
+  do tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda), como as linhas do Início.
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
 - **Remédios** (decisão 31): período de uso (`dataInicio`/`dataFim`) e "Tomar a cada" — `montarHorarios`
@@ -167,8 +167,9 @@ npm run lint                                  # oxlint
   `marcarComoPago.ts` (também usado por `ItemPagamento`, no painel e na equipe).
 - **Cadastro de despesas** (`/pagamentos`, "Contas a pagar" no menu): mesmo molde da Lista de
   despesas — mês, Todos/A pagar/Pagos, o painel recolhido "Grupo de contas e imóvel" (`PainelFiltros`,
-  com os selects e "Nova categoria"; recolhido mostra o que está escolhido), `ResumoContas`, a
-  `TabelaContas` com `voltar=""` (a conta aberta volta para o grupo) e, no fim, `ProximasContas`.
+  com os selects e "Nova categoria"; recolhido mostra o que está escolhido), `ResumoContas`, as
+  contas por urgência (`ContasPorUrgencia`: Vencidas, Vencem hoje, Próximas, Pagas, cada linha um
+  `ItemPagamento` com o círculo de pagar; a conta aberta volta para o grupo) e, no fim, `ProximasContas`.
   O grupo é `?aba=` (categoria do usuário, `equipe` ou `cartoes`; sem aba ou aba apagada abre na
   primeira categoria — não há "Todas"); o imóvel é `?imovel=`. A conta nova vem com a categoria do
   grupo (e o imóvel, nas contas residenciais) e volta para ele. `paginas/categorias/FormCategoria.tsx`

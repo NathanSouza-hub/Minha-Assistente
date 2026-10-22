@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CaretRightIcon, type Icon } from '@phosphor-icons/react'
+import { CaretRightIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import type { Area } from '@/app/navegacao'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 
 type Props = {
   titulo: string
-  icone: Icon
   area: Area
   /** "Ver tudo": a tela da área com o detalhe (sem ele, o bloco já está na tela da área). */
   link?: { para: string; rotulo: string }
@@ -18,19 +17,16 @@ type Props = {
   children: () => ReactNode
 }
 
-/** Cartão de resumo (Visão geral e topo das telas de Finanças): selo e título da área, o atalho para a tela dela e carregando/erro/conteúdo. */
-export function Bloco({ titulo, icone: Icone, area, link, consulta, className, children }: Props) {
+/**
+ * Grupo de resumo (Visão geral e telas de Finanças): título de seção com o atalho para a tela da
+ * área e, embaixo, uma superfície branca com carregando/erro/conteúdo.
+ */
+export function Bloco({ titulo, area, link, consulta, className, children }: Props) {
   const id = `bloco-${titulo.toLowerCase().replace(/\W+/g, '-')}`
   return (
-    <section
-      aria-labelledby={id}
-      className={cn(`area-${area} flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha md:p-5`, className)}
-    >
-      <header className="flex items-center gap-3">
-        <span className="selo-area size-10" aria-hidden>
-          <Icone className="size-6" weight="fill" />
-        </span>
-        <h2 id={id} className="flex-1 text-xl font-bold">
+    <section aria-labelledby={id} className={cn(`area-${area} flex flex-col gap-2`, className)}>
+      <header className="flex min-h-11 items-center gap-3">
+        <h2 id={id} className="flex-1 text-[1.18rem] font-bold tracking-[-0.015em]">
           {titulo}
         </h2>
         {link && (
@@ -43,21 +39,23 @@ export function Bloco({ titulo, icone: Icone, area, link, consulta, className, c
           </Link>
         )}
       </header>
-      {consulta.isPending ? (
-        <div role="status" aria-label={`Carregando ${titulo.toLowerCase()}`} className="flex flex-col gap-3">
-          <Skeleton className="h-12" />
-          <Skeleton className="h-12" />
-        </div>
-      ) : consulta.isError ? (
-        <div className="flex flex-col items-start gap-3">
-          <p className="text-muted-foreground">Não foi possível carregar. Verifique a internet.</p>
-          <Button variant="outline" size="sm" onClick={() => consulta.refetch()}>
-            Tentar de novo
-          </Button>
-        </div>
-      ) : (
-        children()
-      )}
+      <div className="superficie flex flex-col gap-4 p-4 md:p-5">
+        {consulta.isPending ? (
+          <div role="status" aria-label={`Carregando ${titulo.toLowerCase()}`} className="flex flex-col gap-3">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+          </div>
+        ) : consulta.isError ? (
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-muted-foreground">Não foi possível carregar. Verifique a internet.</p>
+            <Button variant="outline" size="sm" onClick={() => consulta.refetch()}>
+              Tentar de novo
+            </Button>
+          </div>
+        ) : (
+          children()
+        )}
+      </div>
     </section>
   )
 }

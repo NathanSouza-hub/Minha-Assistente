@@ -75,10 +75,11 @@ describe('aba Salários equipe', () => {
     ])
 
     await usuario.click(within(carla).getByRole('button', { name: 'Pagar Carla' }))
-    await usuario.click(within(carla).getByRole('button', { name: 'Confirmar pagamento' }))
-    expect(within(carla).getByText('Digite o valor pago, por exemplo 1.500,00.')).toBeInTheDocument()
-    await usuario.type(within(carla).getByLabelText('Valor pago a Carla'), '2.000,00')
-    await usuario.click(within(carla).getByRole('button', { name: 'Confirmar pagamento' }))
+    // O valor é pedido numa janela (fora da linha).
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar pagamento' }))
+    expect(screen.getByText('Digite o valor pago, por exemplo 1.500,00.')).toBeInTheDocument()
+    await usuario.type(screen.getByLabelText('Valor pago a Carla'), '2.000,00')
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar pagamento' }))
 
     expect(await screen.findByText('Carla marcado como pago.')).toBeInTheDocument()
     const paga = await itemDe('Carla')

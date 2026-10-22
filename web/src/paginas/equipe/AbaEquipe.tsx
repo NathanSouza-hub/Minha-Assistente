@@ -1,4 +1,4 @@
-import { CaretRightIcon, PlusIcon, ReceiptIcon, UsersIcon } from '@phosphor-icons/react'
+import { CaretRightIcon, PlusIcon, UsersIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Abas } from '@/components/Abas'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -102,7 +102,7 @@ function PagamentosDoMes({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: s
         </p>
       ) : (
         <ul
-          className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha"
+          className="superficie flex flex-col divide-y divide-linha overflow-hidden"
           aria-label="Pagamentos da equipe do mês"
         >
           {pagamentos.map((p) => (
@@ -125,10 +125,9 @@ export function AbaEquipe({ mes, aoMudarMes }: { mes: string; aoMudarMes: (mes: 
         {
           valor: 'pagamentos',
           rotulo: 'Pagamentos do mês',
-          icone: ReceiptIcon,
           conteudo: <PagamentosDoMes mes={mes} aoMudarMes={aoMudarMes} />,
         },
-        { valor: 'integrantes', rotulo: 'Integrantes', icone: UsersIcon, contador: equipe?.length, conteudo: <ListaEquipe /> },
+        { valor: 'integrantes', rotulo: 'Integrantes', contador: equipe?.length, conteudo: <ListaEquipe /> },
       ]}
     />
   )

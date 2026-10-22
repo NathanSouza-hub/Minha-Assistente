@@ -4,9 +4,6 @@ import { z } from 'zod'
 import {
   ArrowLeftIcon,
   BuildingsIcon,
-  ChartBarIcon,
-  IdentificationCardIcon,
-  ListBulletsIcon,
   PaperclipIcon,
   PlusIcon,
 } from '@phosphor-icons/react'
@@ -121,7 +118,6 @@ export function DetalheImovel() {
             {
               valor: 'resumo',
               rotulo: 'Resumo',
-              icone: ChartBarIcon,
               conteudo: resumo.isPending ? (
                 <div role="status" aria-label="Carregando o resumo" className="flex flex-col gap-3">
                   <Skeleton className="h-32" />
@@ -140,14 +136,10 @@ export function DetalheImovel() {
             {
               valor: 'contas',
               rotulo: 'Contas',
-              icone: ListBulletsIcon,
               contador: contas.data?.length,
               conteudo: (
-                <section
-                  aria-labelledby="titulo-contas"
-                  className="flex flex-col gap-2 rounded-2xl bg-folha p-4 shadow-folha"
-                >
-                  <h2 id="titulo-contas" className="text-xl font-bold">
+                <section aria-labelledby="titulo-contas" className="flex flex-col gap-2">
+                  <h2 id="titulo-contas" className="text-[1.18rem] font-bold tracking-[-0.015em]">
                     Contas do período
                   </h2>
                   {contas.isPending ? (
@@ -155,7 +147,7 @@ export function DetalheImovel() {
                   ) : (contas.data ?? []).length === 0 ? (
                     <p className="text-muted-foreground">Nenhuma conta deste imóvel no período.</p>
                   ) : (
-                    <ul className="flex flex-col divide-y divide-linha">
+                    <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden">
                       {[...contas.data!].reverse().map((p) => (
                         <ItemPagamento key={p.id} pagamento={p} />
                       ))}
@@ -167,7 +159,6 @@ export function DetalheImovel() {
             {
               valor: 'dados',
               rotulo: 'Dados do imóvel',
-              icone: IdentificationCardIcon,
               conteudo: dados ? <DadosImovel key={dados.id} imovel={dados} /> : <Skeleton className="h-64" />,
             },
           ]}

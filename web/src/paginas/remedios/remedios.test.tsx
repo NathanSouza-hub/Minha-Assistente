@@ -63,15 +63,16 @@ describe('doses do dia', () => {
     expect(screen.getByRole('button', { name: 'Tomei Vitamina D' })).toBeInTheDocument()
   })
 
-  test('"Não tomei" registra a dose como não tomada; "Desfazer" volta a pendente', async () => {
+  test('"Não tomei" (no ⋯) registra a dose como não tomada; "Voltar para pendente" desfaz', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/remedios')
-    await usuario.click(await screen.findByRole('button', { name: 'Não tomei Vitamina D' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Mais opções: Vitamina D' }))
+    await usuario.click(screen.getByRole('button', { name: 'Não tomei' }))
     expect(await screen.findByText('Não tomado')).toBeInTheDocument()
-    const desfazer = screen.getByRole('button', { name: 'Desfazer: Vitamina D volta a ficar pendente' })
     expect(await screen.findByText('1 de 4 doses tomadas')).toBeInTheDocument()
 
-    await usuario.click(desfazer)
+    await usuario.click(screen.getByRole('button', { name: 'Mais opções: Vitamina D' }))
+    await usuario.click(screen.getByRole('button', { name: 'Voltar para pendente' }))
     expect(await screen.findByRole('button', { name: 'Tomei Vitamina D' })).toBeInTheDocument()
     expect(screen.queryByText('Não tomado')).not.toBeInTheDocument()
   })

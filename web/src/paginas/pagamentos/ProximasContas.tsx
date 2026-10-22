@@ -1,11 +1,11 @@
-import { ReceiptIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { Bloco, Vazio } from '@/components/Bloco'
+import { SeloEstado } from '@/components/Estado'
 import { usePagamentos } from '@/consultas/pagamentos'
-import { descreverVencimento, hojeISO, somarDias } from '@/lib/datas'
+import { hojeISO, somarDias } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
+import { SituacaoConta } from './ItemPagamento'
 
 const QUANTAS_CONTAS = 5
 
@@ -22,7 +22,6 @@ export function ProximasContas() {
   return (
     <Bloco
       titulo="Próximas contas a pagar"
-      icone={ReceiptIcon}
       area="contas"
       link={{ para: '/despesas?status=pendente', rotulo: 'Ver todas' }}
       consulta={consulta}
@@ -41,23 +40,17 @@ export function ProximasContas() {
                     className="-mx-2 flex items-start gap-3 rounded-lg px-2 py-2.5 hover:bg-suave/60"
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="font-bold">{p.descricao}</span>
-                      <span className="text-base text-muted-foreground">{p.imovelNome ?? 'Pessoal'}</span>
+                      <span className="font-semibold">{p.descricao}</span>
+                      <span className="text-[0.88rem] text-muted-foreground">{p.imovelNome ?? 'Pessoal'}</span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end">
                       {p.valorCentavos === null ? (
-                        <span className="rounded-full bg-alerta-fundo px-2.5 font-semibold text-alerta">A definir</span>
+                        <SeloEstado estado="a_definir">A definir</SeloEstado>
                       ) : (
                         <span className="font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
                       )}
-                      <span
-                        className={cn(
-                          'flex items-center gap-1 text-base',
-                          p.vencido ? 'font-semibold text-atraso' : 'text-muted-foreground',
-                        )}
-                      >
-                        {p.vencido && <WarningCircleIcon className="size-4" weight="fill" aria-hidden />}
-                        {descreverVencimento(p.vencimento)}
+                      <span className="text-[0.88rem] text-muted-foreground">
+                        <SituacaoConta p={p} />
                       </span>
                     </span>
                   </Link>

@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckIcon, PencilSimpleIcon, PlusIcon, ShoppingCartIcon } from '@phosphor-icons/react'
+import { PencilSimpleIcon, PlusIcon, ShoppingCartIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 import { Pagina } from '@/components/layout/Pagina'
 import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
 import { EstadoVazio } from '@/components/EstadoVazio'
+import { Lista, LinhaMarcavel } from '@/components/Linha'
 import { Progresso } from '@/components/Progresso'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,7 +16,6 @@ import { useCompras, useLimparComprados, useMarcarComprado, useSalvarItem } from
 import { chaveCategoria } from '@/lib/compras'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { ItemCompra } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
 import { CamposExtras } from './CamposExtras'
 import {
   descreverCompra,
@@ -105,7 +105,7 @@ function AdicionarItem({ categorias }: { categorias: string[] }) {
       noValidate
       onSubmit={handleSubmit(enviar)}
       aria-label="Adicionar item"
-      className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha"
+      className="superficie flex flex-col gap-4 p-4"
     >
       <Campo
         rotulo="O que falta comprar?"
@@ -142,16 +142,16 @@ function Pendentes({ itens }: { itens: ItemCompra[] }) {
   const soUmSemCategoria = grupos.size === 1 && grupos.has('')
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold">A comprar</h2>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]">A comprar</h2>
       {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
-        <div key={chave} className="flex flex-col">
-          {!soUmSemCategoria && <h3 className="font-semibold text-area">{titulo}</h3>}
-          <ul className="flex flex-col divide-y divide-linha" aria-label={soUmSemCategoria ? 'A comprar' : titulo}>
+        <div key={chave} className="flex flex-col gap-2">
+          {!soUmSemCategoria && <h3 className="text-[0.88rem] font-semibold text-area">{titulo}</h3>}
+          <Lista rotulo={soUmSemCategoria ? 'A comprar' : titulo}>
             {doGrupo.map((i) => (
               <LinhaItem key={i.id} item={i} />
             ))}
-          </ul>
+          </Lista>
         </div>
       ))}
     </section>
@@ -170,9 +170,9 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
   }
 
   return (
-    <section className="flex flex-col gap-1">
+    <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">Já comprados</h2>
+        <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]">Já comprados</h2>
         <Confirmar
           gatilho={
             <Button variant="outline" size="sm" disabled={limpar.isPending}>
@@ -185,54 +185,41 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
           aoConfirmar={tirarDaLista}
         />
       </div>
-      <ul className="flex flex-col divide-y divide-linha" aria-label="Já comprados">
+      <Lista rotulo="Já comprados">
         {itens.map((i) => (
           <LinhaItem key={i.id} item={i} />
         ))}
-      </ul>
+      </Lista>
     </section>
   )
 }
 
-/** A linha inteira marca (alvo grande para usar com uma mão no mercado); o lápis abre a edição. */
+/** O círculo marca (como no Início); o lápis abre a edição. */
 function LinhaItem({ item: i }: { item: ItemCompra }) {
   const marcar = useMarcarComprado()
   const detalhe = i.comprado && i.compradoEm ? descreverCompra(i.compradoEm) : i.quantidade
 
   return (
-    <li className="flex items-center gap-1 py-1.5">
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={i.comprado}
-        onClick={() => marcar.mutate({ id: i.id, comprado: !i.comprado })}
-        className="-ml-2 flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-lg px-2 py-2 text-left outline-none hover:bg-suave/70 focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <span
-          aria-hidden
-          className={cn(
-            'grid size-8 shrink-0 place-items-center rounded-lg border-2',
-            i.comprado ? 'border-ok bg-ok text-folha' : 'border-input bg-folha',
-          )}
+    <LinhaMarcavel
+      estado={i.comprado ? 'feito' : 'pendente'}
+      marcar={{
+        rotulo: i.nome,
+        papel: 'checkbox',
+        marcado: i.comprado,
+        aoMarcar: () => marcar.mutate({ id: i.id, comprado: !i.comprado }),
+      }}
+      titulo={i.nome}
+      apoio={detalhe}
+      meioMarca
+      fim={
+        <Link
+          to={`/compras/${i.id}`}
+          aria-label={`Editar ${i.nome}`}
+          className="grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground outline-none hover:bg-suave hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          {i.comprado && <CheckIcon className="size-6" weight="bold" />}
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span
-            className={cn('text-lg font-semibold break-words', i.comprado && 'text-muted-foreground line-through')}
-          >
-            {i.nome}
-          </span>
-          {detalhe && <span className="text-base text-muted-foreground">{detalhe}</span>}
-        </span>
-      </button>
-      <Link
-        to={`/compras/${i.id}`}
-        aria-label={`Editar ${i.nome}`}
-        className="-mr-2 grid size-12 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-suave hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-      >
-        <PencilSimpleIcon className="size-6" aria-hidden />
-      </Link>
-    </li>
+          <PencilSimpleIcon className="size-5" aria-hidden />
+        </Link>
+      }
+    />
   )
 }

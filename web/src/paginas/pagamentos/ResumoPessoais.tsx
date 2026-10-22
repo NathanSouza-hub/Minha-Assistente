@@ -1,4 +1,3 @@
-import { UserIcon } from '@phosphor-icons/react'
 import { Bloco, Vazio } from '@/components/Bloco'
 import { BarraPago, PagoPendente } from '@/components/ResumoValores'
 import { useRelatorioFinanceiro } from '@/consultas/pagamentos'
@@ -10,7 +9,7 @@ import { formatarCentavos } from '@/lib/dinheiro'
 export function ResumoPessoais({ mes }: { mes: string }) {
   const consulta = useRelatorioFinanceiro(intervaloDoMes(mes))
   return (
-    <Bloco titulo="Despesas pessoais do mês" icone={UserIcon} area="contas" consulta={consulta}>
+    <Bloco titulo="Despesas pessoais do mês" area="contas" consulta={consulta}>
       {() => {
         const p = consulta.data!.pessoal
         if (p.categorias.length === 0) return <Vazio>Nenhuma despesa pessoal neste mês.</Vazio>
