@@ -106,7 +106,7 @@ function Grupo({ titulo, tarefas, mostrarData }: { titulo: string; tarefas: Tare
       <h2
         id={id}
         className={cn(
-          'flex items-center gap-1.5 text-[1.18rem] font-bold tracking-[-0.015em]',
+          'flex items-center gap-1.5 text-secao font-bold',
           titulo === 'Atrasadas' && 'text-base text-atraso',
         )}
       >
@@ -216,7 +216,7 @@ function Sugestoes({ pendentes }: { pendentes: Tarefa[] }) {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes-tarefas" className="flex flex-col gap-3">
-      <h2 id="sugestoes-tarefas" className="text-[1.18rem] font-bold tracking-[-0.015em]">
+      <h2 id="sugestoes-tarefas" className="text-secao font-bold">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">

@@ -18,7 +18,7 @@ export function Progresso({
           style={{ width: `${(feitos / total) * 100}%` }}
         />
       </div>
-      <p className="shrink-0 text-[0.88rem] font-semibold text-muted-foreground" aria-live="polite">
+      <p className="shrink-0 text-apoio font-semibold text-muted-foreground" aria-live="polite">
         {feitos === total ? textoCompleto : texto}
       </p>
     </div>

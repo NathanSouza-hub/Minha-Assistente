@@ -75,7 +75,7 @@ function Sugestoes() {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes" className="flex flex-col gap-3">
-      <h2 id="sugestoes" className="text-[1.18rem] font-bold tracking-[-0.015em]">
+      <h2 id="sugestoes" className="text-secao font-bold">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">
@@ -174,7 +174,7 @@ function TodasAsTarefas() {
           para={`/rotina/${r.id}`}
           titulo={r.titulo}
           apagada={!r.ativo}
-          fim={!r.ativo && <span className="text-[0.88rem] font-semibold text-muted-foreground">Pausado</span>}
+          fim={!r.ativo && <span className="text-apoio font-semibold text-muted-foreground">Pausado</span>}
           apoio={`${descreverDias(r.diasSemana)}${r.hora ? `, às ${r.hora}` : ''}`}
         />
       ))}

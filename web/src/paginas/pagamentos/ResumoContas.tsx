@@ -28,22 +28,22 @@ export function ResumoContas({ pagamentos }: { pagamentos: Pagamento[] }) {
   return (
     <dl className="superficie grid grid-cols-2 divide-x divide-linha">
       <div className="min-w-0 px-4 py-3">
-        <dt className="text-[0.88rem] text-muted-foreground">A pagar</dt>
-        <dd className="text-xl font-bold tabular-nums">{formatarCentavos(soma(aPagar))}</dd>
+        <dt className="text-apoio text-muted-foreground">A pagar</dt>
+        <dd className="text-destaque font-bold tabular-nums">{formatarCentavos(soma(aPagar))}</dd>
         {aDefinir > 0 && (
-          <dd className="text-[0.88rem]">
+          <dd className="text-apoio">
             <SeloEstado estado="a_definir">+ {aDefinir} a definir</SeloEstado>
           </dd>
         )}
         {vencidos > 0 && (
-          <dd className="text-[0.88rem]">
+          <dd className="text-apoio">
             <SeloEstado estado="vencido">{vencidos === 1 ? '1 conta vencida' : `${vencidos} contas vencidas`}</SeloEstado>
           </dd>
         )}
       </div>
       <div className="min-w-0 px-4 py-3">
-        <dt className="text-[0.88rem] text-muted-foreground">Pago</dt>
-        <dd className="text-xl font-bold tabular-nums">
+        <dt className="text-apoio text-muted-foreground">Pago</dt>
+        <dd className="text-destaque font-bold tabular-nums">
           {formatarCentavos(soma(pagamentos.filter((p) => p.status === 'pago')))}
         </dd>
       </div>

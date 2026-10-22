@@ -38,7 +38,7 @@ function useSecaoAtual() {
 function BarraLateral() {
   const { secao: atual, item: itemAtual } = useSecaoAtual()
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-linha bg-folha px-3 py-6 md:flex">
+    <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r [scrollbar-width:thin] border-linha bg-folha px-3 py-6 md:flex">
       <p className="flex items-center gap-3 px-3 text-lg font-bold tracking-[-0.01em]">
         <img src="/favicon.svg" alt="" className="size-9" />
         Minha Assistente

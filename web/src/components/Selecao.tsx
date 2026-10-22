@@ -21,7 +21,7 @@ export function Selecao({ rotulo, erro, dica, className, children, ...props }: P
           aria-invalid={erro ? true : undefined}
           aria-describedby={descricoes}
           className={cn(
-            'h-12 w-full appearance-none rounded-lg border-2 border-input bg-folha pr-12 pl-3 text-base outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
+            'h-12 w-full appearance-none rounded-lg border-[1.5px] border-input bg-folha pr-12 pl-3 text-base outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20',
             className,
           )}
           {...props}

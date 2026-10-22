@@ -143,10 +143,10 @@ function Pendentes({ itens }: { itens: ItemCompra[] }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]">A comprar</h2>
+      <h2 className="text-secao font-bold">A comprar</h2>
       {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
         <div key={chave} className="flex flex-col gap-2">
-          {!soUmSemCategoria && <h3 className="text-[0.88rem] font-semibold text-area">{titulo}</h3>}
+          {!soUmSemCategoria && <h3 className="text-apoio font-semibold text-area">{titulo}</h3>}
           <Lista rotulo={soUmSemCategoria ? 'A comprar' : titulo}>
             {doGrupo.map((i) => (
               <LinhaItem key={i.id} item={i} />
@@ -172,7 +172,7 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]">Já comprados</h2>
+        <h2 className="text-secao font-bold">Já comprados</h2>
         <Confirmar
           gatilho={
             <Button variant="outline" size="sm" disabled={limpar.isPending}>

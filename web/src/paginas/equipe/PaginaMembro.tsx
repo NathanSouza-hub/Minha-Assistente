@@ -40,7 +40,7 @@ export function PaginaMembro() {
   if (id && !membro) {
     return (
       <Pagina titulo="Pessoa não encontrada">
-        <p className="mb-4 text-lg">Esta pessoa não existe mais ou foi excluída.</p>
+        <p className="mb-4">Esta pessoa não existe mais ou foi excluída.</p>
         <Button asChild variant="outline">
           <Link to={LISTA}>Voltar para a equipe</Link>
         </Button>
@@ -194,8 +194,8 @@ function FormularioMembro({ membro }: { membro?: MembroEquipe }) {
           control={control}
           name="ativo"
           render={({ field }) => (
-            <div className="flex items-center justify-between gap-4 rounded-2xl bg-folha p-4 shadow-folha">
-              <Label htmlFor="ativo" className="flex flex-col items-start gap-1 text-lg">
+            <div className="superficie flex items-center justify-between gap-4 p-4">
+              <Label htmlFor="ativo" className="flex flex-col items-start gap-1 font-semibold">
                 Ativa
                 <span className="text-base font-normal text-muted-foreground">
                   Desligue quando a pessoa deixar de trabalhar: as contas futuras somem, o histórico fica.

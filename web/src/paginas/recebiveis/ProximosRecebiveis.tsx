@@ -28,14 +28,14 @@ export function ProximosRecebiveis() {
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="font-semibold">{r.descricao}</span>
-                      <span className="text-[0.88rem] text-muted-foreground">
+                      <span className="text-apoio text-muted-foreground">
                         {ORIGENS[r.origem]}
                         {r.status === 'parcial' && ` · recebido ${formatarCentavos(r.recebidoCentavos)}`}
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end">
                       <span className="font-bold tabular-nums">{formatarCentavos(r.saldoCentavos)}</span>
-                      <span className="text-[0.88rem] text-muted-foreground">
+                      <span className="text-apoio text-muted-foreground">
                         {r.atrasado ? (
                           <SeloEstado estado="vencido">Atrasado ({dataCurta(r.dataPrevista)})</SeloEstado>
                         ) : (

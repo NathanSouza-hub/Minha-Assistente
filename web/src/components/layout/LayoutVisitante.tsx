@@ -24,7 +24,7 @@ export function LayoutVisitante({ titulo, subtitulo, children, rodape, ilustraca
             <p className="text-xl font-bold tracking-[-0.01em]">Minha Assistente</p>
           </div>
           {ilustracao && <div className="mb-5">{ilustracao}</div>}
-          <h1 className="text-[1.65rem] leading-tight font-bold tracking-[-0.02em]">{titulo}</h1>
+          <h1 className="text-titulo font-bold">{titulo}</h1>
           <p className="mt-1 text-base text-muted-foreground">{subtitulo}</p>
         </header>
         <main className="flex flex-1 flex-col px-4 pt-5 pb-8 md:px-8">

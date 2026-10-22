@@ -100,7 +100,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
           <Button variant="ghost" size="icon" onClick={() => irPara(somarMeses(mes, -1))} aria-label="Mês anterior">
             <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
           </Button>
-          <h2 className="text-xl font-bold" aria-live="polite">
+          <h2 className="text-secao font-bold" aria-live="polite">
             {nomeDoMes(mes)}
           </h2>
           <Button variant="ghost" size="icon" onClick={() => irPara(somarMeses(mes, 1))} aria-label="Próximo mês">
@@ -116,7 +116,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
       </section>
 
       <section aria-labelledby="titulo-do-dia" className="flex flex-col gap-2">
-        <h2 id="titulo-do-dia" className="text-[1.18rem] font-bold tracking-[-0.015em]">
+        <h2 id="titulo-do-dia" className="text-secao font-bold">
           {rotuloDoDia(data)}
         </h2>
         {consulta.isPending ? (
@@ -234,7 +234,7 @@ function ListaViagens({ viagens, dia }: { viagens: Viagem[]; dia: string }) {
             <AirplaneTiltIcon className="size-6 shrink-0 text-area" weight="fill" aria-hidden />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="leading-snug font-semibold">Viagem: {v.destino}</span>
-              <span className="text-[0.88rem] text-muted-foreground">
+              <span className="text-apoio text-muted-foreground">
                 {v.ida === dia ? 'Ida' : v.volta === dia ? 'Volta' : 'Em viagem'} ·{' '}
                 {v.volta ? `${dataCurta(v.ida)} a ${dataCurta(v.volta)}` : dataCurta(v.ida)}
               </span>

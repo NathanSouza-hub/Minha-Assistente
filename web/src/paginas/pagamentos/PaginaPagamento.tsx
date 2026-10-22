@@ -65,7 +65,7 @@ export function PaginaPagamento() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Pagamento não encontrado">
-        <p className="mb-4 text-lg">Este pagamento não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este pagamento não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/despesas">Voltar para a lista de despesas</Link>
         </Button>
@@ -299,13 +299,13 @@ function FormularioPagamento({ pagamento }: { pagamento?: PagamentoDetalhe }) {
           )}
 
           {!parcelado && (
-            <div className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
+            <div className="superficie flex flex-col gap-4 p-4">
               <Controller
                 control={control}
                 name="jaPago"
                 render={({ field }) => (
                   <div className="flex items-center justify-between gap-4">
-                    <Label htmlFor="ja-pago" className="text-lg">
+                    <Label htmlFor="ja-pago" className="font-semibold">
                       Já foi pago
                     </Label>
                     <Switch id="ja-pago" checked={field.value} onCheckedChange={field.onChange} />

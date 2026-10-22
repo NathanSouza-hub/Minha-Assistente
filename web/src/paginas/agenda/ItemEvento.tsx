@@ -31,14 +31,14 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
         <span className={cn('flex flex-col', passou && 'text-muted-foreground')}>
           <span className={cn('font-bold tabular-nums', acontecendo && 'text-primary')}>{horaDe(e.inicio)}</span>
           {e.fim && (
-            <span className="text-[0.88rem] whitespace-nowrap tabular-nums text-muted-foreground">até {horaDe(e.fim)}</span>
+            <span className="text-apoio whitespace-nowrap tabular-nums text-muted-foreground">até {horaDe(e.fim)}</span>
           )}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className={cn('leading-snug font-semibold break-words', passou && 'font-medium text-muted-foreground')}>
             {e.titulo}
           </span>
-          <span className="text-[0.88rem] leading-snug text-muted-foreground">
+          <span className="text-apoio leading-snug text-muted-foreground">
             <span aria-hidden className="mr-1.5 mb-[0.12em] inline-block size-[0.45rem] rounded-full bg-area align-middle" />
             {acontecendo && (
               <SeloEstado estado="agora" className="mr-1">
@@ -47,15 +47,15 @@ export function ItemEvento({ evento: e, voltar }: { evento: Evento; voltar?: str
             )}
             {detalhes}
           </span>
-          {profissional && <span className="text-[0.88rem] text-foreground">{profissional}</span>}
+          {profissional && <span className="text-apoio text-foreground">{profissional}</span>}
           {e.local && (
-            <span className="flex items-start gap-1 text-[0.88rem] text-muted-foreground">
+            <span className="flex items-start gap-1 text-apoio text-muted-foreground">
               <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
               {e.local}
             </span>
           )}
           {e.recorrencia !== 'nenhuma' && (
-            <span className="flex items-center gap-1 text-[0.88rem] text-muted-foreground">
+            <span className="flex items-center gap-1 text-apoio text-muted-foreground">
               <RepeatIcon className="size-4" aria-hidden />
               {RECORRENCIAS[e.recorrencia]}
             </span>

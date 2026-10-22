@@ -186,7 +186,7 @@ function Resumo({ lista }: { lista: Recebivel[] }) {
             n === 2 && 'lg:border-l',
           )}
         >
-          <dt className="text-[0.88rem] text-muted-foreground">{i.rotulo}</dt>
+          <dt className="text-apoio text-muted-foreground">{i.rotulo}</dt>
           <dd className={cn('text-lg font-bold tabular-nums', i.cor)}>{formatarCentavos(i.valor)}</dd>
         </div>
       ))}
@@ -210,7 +210,7 @@ function PorOrigem({ mes }: { mes: string }) {
                   <span className="font-semibold">{ORIGENS[o.origem]}</span>
                   <span className="font-bold tabular-nums">{formatarCentavos(o.totalCentavos)}</span>
                 </span>
-                <span className="text-[0.88rem] text-muted-foreground">
+                <span className="text-apoio text-muted-foreground">
                   Recebido <span className="font-semibold text-ok">{formatarCentavos(o.recebidoCentavos)}</span> · a
                   receber {formatarCentavos(o.pendenteCentavos)}
                 </span>
@@ -253,7 +253,7 @@ function Linha({ recebivel: r }: { recebivel: Recebivel }) {
           <span className="leading-snug font-semibold">{r.descricao}</span>
           <span className="shrink-0 font-bold tabular-nums">{formatarCentavos(r.valorPrevistoCentavos)}</span>
         </span>
-        <span className="flex flex-wrap items-center gap-x-2 text-[0.88rem] text-muted-foreground">
+        <span className="flex flex-wrap items-center gap-x-2 text-apoio text-muted-foreground">
           {ORIGENS[r.origem]}
           {r.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1">
@@ -268,7 +268,7 @@ function Linha({ recebivel: r }: { recebivel: Recebivel }) {
             </>
           )}
         </span>
-        <span className="text-[0.88rem] text-muted-foreground">
+        <span className="text-apoio text-muted-foreground">
           <Situacao r={r} />
         </span>
       </Link>

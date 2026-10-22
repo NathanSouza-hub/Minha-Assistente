@@ -45,7 +45,7 @@ export function TabelaContas({
   return (
     <div className="superficie overflow-x-auto">
       <table className="w-full border-collapse text-left" aria-label={rotulo}>
-        <thead className="bg-suave text-[0.88rem] text-muted-foreground">
+        <thead className="bg-suave text-apoio text-muted-foreground">
           <tr>
             <th scope="col" className="px-2.5 py-2 font-semibold">
               Descrição
@@ -115,7 +115,7 @@ function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: st
             )}
           </span>
           {/* No celular as colunas escondidas viram uma linha de detalhes. */}
-          <span className="text-[0.88rem] text-muted-foreground lg:hidden" aria-hidden>
+          <span className="text-apoio text-muted-foreground lg:hidden" aria-hidden>
             {[grupo, parcela, p.status === 'pago' ? 'Pago' : null].filter(Boolean).join(' · ')}
           </span>
         </Link>
@@ -127,7 +127,7 @@ function LinhaConta({ pagamento: p, voltar }: { pagamento: Pagamento; voltar: st
           <span className="font-bold">{formatarCentavos(p.valorCentavos!)}</span>
         )}
         {/* No celular estreito a data vem embaixo do valor (sem a coluna de vencimento). */}
-        <span className={cn('block text-[0.88rem] sm:hidden', p.vencido ? 'font-semibold text-atraso' : 'text-muted-foreground')} aria-hidden>
+        <span className={cn('block text-apoio sm:hidden', p.vencido ? 'font-semibold text-atraso' : 'text-muted-foreground')} aria-hidden>
           {dataCurta(p.vencimento).slice(0, 5)}
         </span>
       </td>

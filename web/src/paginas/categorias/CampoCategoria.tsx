@@ -59,7 +59,7 @@ export function CampoCategoria({
         <option value={NOVA_CATEGORIA}>+ Nova categoria…</option>
       </Selecao>
       {criando && (
-        <div className="rounded-2xl bg-folha p-4 shadow-folha">
+        <div className="superficie p-4">
           <FormCategoria
             rotulo="Nome da nova categoria"
             autoFocus

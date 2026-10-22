@@ -98,17 +98,26 @@ Relatório: série "pago" no azul, "previsto" em `#C2620A`.
 **Plus Jakarta Sans** (variável, `@fontsource-variable/plus-jakarta-sans`), base de 17px.
 Só os pesos 400, 500, 600 e 700 — nada de 800.
 
-- Título da tela: 1,65rem (28px), peso 700, `letter-spacing: -0.02em`, numa linha no celular
-  sempre que couber.
-- Título de seção: 1,18rem (20px), peso 700.
-- Item de lista: 1rem, peso 600 (500 quando já feito ou secundário).
-- Texto: 1rem, peso 400, `line-height: 1.5`. Apoio: 0,88rem (15px) no texto suave.
+Escala em tokens do `@theme` (`index.css`); não use tamanhos soltos (`text-[1.18rem]`, `text-xl`):
+
+| Classe | Tamanho | Uso |
+|---|---|---|
+| `text-titulo` | 1,65rem (28px), -0.02em | título da tela (1,5rem abaixo de 380–400px) |
+| `text-destaque` | 1,25rem | totais em destaque, título do "Agora" |
+| `text-secao` | 1,18rem (20px), -0.015em | títulos de seção, de painel e de folha (`SheetTitle`) |
+| (base) | 1rem | item de lista (peso 600; 500 quando feito), texto corrido, rótulo de campo |
+| `text-apoio` | 0,88rem (15px) | detalhes, datas e explicações, no texto suave |
+
+- Texto: peso 400, `line-height: 1.5`.
 - Números (valores, horários): `font-variant-numeric: tabular-nums`, peso 600–700.
 
 ## Formas
 
 - Raio base `0.875rem`. Superfícies de lista com raio grande (20px); botões 14px; pílulas 99px.
-- Superfície: branca, sombra quase invisível (`--shadow-folha`), sem borda cinza.
+- Superfície: branca, sombra quase invisível (`--shadow-folha`), sem borda cinza. Sempre pela
+  classe `superficie` (não monte `rounded-2xl bg-folha shadow-folha` à mão).
+- Campos (input, select, textarea): borda de 1,5px em `--input`; foco com anel azul.
+- Interruptor ligado em azul (é uma escolha, não um "feito").
 - Divisória é `--linha`, 1px, só entre linhas da mesma lista.
 
 ## Estrutura das telas
@@ -135,6 +144,9 @@ Todas as áreas usam as mesmas peças (`web/src/components/Linha.tsx`), no molde
   ações: "Não fiz", "Voltar para pendente", "Abrir"). Remédios, compromissos, tarefas, compras e
   contas (`ItemPagamento`: o círculo paga ou desfaz).
 - `LinhaLink`: linha de cadastro que só abre o item, com a seta à direita.
+- Linhas de cadastro com ações (Residências, Categorias): ícones discretos à direita (lápis,
+  lixeira, setas), sem botões com contorno empilhados.
+- Contas por urgência: as pagas ficam recolhidas ("Pagas 3") enquanto houver conta a pagar.
 - Navegação de dia, semana e mês (`components/NavegadorDia.tsx`): título à esquerda, setas à direita.
 - Barra de progresso fina e azul com o texto ao lado (`components/Progresso.tsx`).
 - Grupos de números (Finanças, Relatório): título de seção e uma superfície de linhas "rótulo e

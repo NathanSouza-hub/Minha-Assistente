@@ -45,7 +45,7 @@ export function LinhaTarefa({ tarefa: t, data, agora = false }: { tarefa: Tarefa
         </p>
         {/* Texto corrido (não flex): se quebrar, o ponto da área acompanha a primeira palavra. */}
         {temApoio && (
-          <p className="mt-0.5 text-[0.88rem] leading-snug text-muted-foreground">
+          <p className="mt-0.5 text-apoio leading-snug text-muted-foreground">
           <span aria-hidden className="mr-1.5 mb-[0.12em] inline-block size-[0.45rem] rounded-full bg-area align-middle" />
           {t.horario && (
             <span
@@ -87,7 +87,7 @@ export function LinhaTarefa({ tarefa: t, data, agora = false }: { tarefa: Tarefa
           showCloseButton={false}
           className="mx-auto max-w-xl rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="text-lg font-bold">{t.titulo}</SheetTitle>
+          <SheetTitle className="text-secao font-bold">{t.titulo}</SheetTitle>
           <SheetDescription className="-mt-3 text-base text-muted-foreground">
             {[t.horario, t.detalhe].filter(Boolean).join(' · ') || CATEGORIAS[t.categoria].nome}
           </SheetDescription>

@@ -49,7 +49,7 @@ export function PaginaTarefa() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Tarefa não encontrada">
-        <p className="mb-4 text-lg">Esta tarefa não existe mais ou foi excluída.</p>
+        <p className="mb-4">Esta tarefa não existe mais ou foi excluída.</p>
         <Button asChild variant="outline">
           <Link to="/tarefas">Voltar para tarefas</Link>
         </Button>
@@ -138,7 +138,7 @@ function Formulario({ tarefa }: { tarefa?: Tarefa }) {
         {tarefa && (
           <section
             aria-label="Situação"
-            className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha sm:flex-row sm:items-center sm:justify-between"
+            className="superficie flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <p className="text-lg font-semibold">
               {tarefa.concluida && tarefa.concluidaEm

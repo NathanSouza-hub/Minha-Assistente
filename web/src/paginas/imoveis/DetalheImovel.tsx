@@ -65,7 +65,7 @@ export function DetalheImovel() {
   if (imovel.isError) {
     return (
       <Pagina titulo="Imóvel não encontrado">
-        <p className="mb-4 text-lg">Este imóvel não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este imóvel não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/imoveis">Voltar para imóveis</Link>
         </Button>
@@ -139,7 +139,7 @@ export function DetalheImovel() {
               contador: contas.data?.length,
               conteudo: (
                 <section aria-labelledby="titulo-contas" className="flex flex-col gap-2">
-                  <h2 id="titulo-contas" className="text-[1.18rem] font-bold tracking-[-0.015em]">
+                  <h2 id="titulo-contas" className="text-secao font-bold">
                     Contas do período
                   </h2>
                   {contas.isPending ? (
@@ -175,10 +175,10 @@ function Resumo({ r }: { r: RelatorioImovel }) {
   const maiorMes = Math.max(...r.meses.map((m) => m.totalCentavos), 1)
   return (
     <div className="flex flex-col gap-5">
-      <section aria-label="Resumo do período" className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
+      <section aria-label="Resumo do período" className="superficie flex flex-col gap-3 p-4">
         <p className="flex items-baseline justify-between gap-3">
           <span className="text-muted-foreground">Total do período</span>
-          <span className="text-2xl font-bold tabular-nums">{formatarCentavos(r.totalCentavos)}</span>
+          <span className="text-destaque font-bold tabular-nums">{formatarCentavos(r.totalCentavos)}</span>
         </p>
         <BarraPago v={r} />
         <PagoPendente v={r} />
@@ -201,9 +201,9 @@ function Resumo({ r }: { r: RelatorioImovel }) {
         {r.categorias.length > 0 && (
           <section
             aria-labelledby="titulo-categorias"
-            className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha"
+            className="superficie flex flex-col gap-3 p-4"
           >
-            <h2 id="titulo-categorias" className="text-xl font-bold">
+            <h2 id="titulo-categorias" className="text-secao font-bold">
               Por categoria
             </h2>
             <ul className="flex flex-col gap-3">
@@ -228,9 +228,9 @@ function Resumo({ r }: { r: RelatorioImovel }) {
         {r.meses.length > 1 && (
           <section
             aria-labelledby="titulo-evolucao"
-            className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha"
+            className="superficie flex flex-col gap-3 p-4"
           >
-            <h2 id="titulo-evolucao" className="text-xl font-bold">
+            <h2 id="titulo-evolucao" className="text-secao font-bold">
               Mês a mês
             </h2>
             {/* Barras horizontais: cabem no celular e cada linha diz o valor por escrito. */}
@@ -301,9 +301,9 @@ function DadosImovel({ imovel }: { imovel: Imovel }) {
   return (
     <section
       aria-labelledby="titulo-dados-imovel"
-      className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha md:max-w-2xl md:p-5"
+      className="superficie flex flex-col gap-4 p-4 md:max-w-2xl md:p-5"
     >
-      <h2 id="titulo-dados-imovel" className="text-xl font-bold">
+      <h2 id="titulo-dados-imovel" className="text-secao font-bold">
         Dados do imóvel
       </h2>
       <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-5">

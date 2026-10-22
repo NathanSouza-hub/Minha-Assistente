@@ -30,7 +30,7 @@ export function PaginaItemCompra() {
   if (!item) {
     return (
       <Pagina titulo="Item não encontrado">
-        <p className="mb-4 text-lg">Este item não existe mais ou foi tirado da lista.</p>
+        <p className="mb-4">Este item não existe mais ou foi tirado da lista.</p>
         <Button asChild variant="outline">
           <Link to="/compras">Voltar para a lista</Link>
         </Button>

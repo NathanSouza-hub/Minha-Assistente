@@ -36,7 +36,7 @@ function Indicador({
       <dd className={cn('col-start-2 row-span-2 row-start-1 self-center text-right text-lg font-bold tabular-nums', cor)}>
         {formatarCentavos(valor)}
       </dd>
-      <dd className="col-start-1 row-start-2 text-[0.88rem] text-muted-foreground">{nota}</dd>
+      <dd className="col-start-1 row-start-2 text-apoio text-muted-foreground">{nota}</dd>
       {para && (
         <dd aria-hidden className="col-start-3 row-span-2 row-start-1 self-center text-muted-foreground">
           <CaretRightIcon weight="bold" className="size-4" />
@@ -58,7 +58,7 @@ function Indicador({
 function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-[1.18rem] font-bold tracking-[-0.015em]">{titulo}</h3>
+      <h3 className="text-secao font-bold">{titulo}</h3>
       <dl className="superficie flex flex-col divide-y divide-linha overflow-hidden">{children}</dl>
     </div>
   )

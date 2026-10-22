@@ -49,7 +49,7 @@ export function PaginaRemedio() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Remédio não encontrado">
-        <p className="mb-4 text-lg">Este remédio não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este remédio não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/remedios?visao=lista">Voltar para meus remédios</Link>
         </Button>
@@ -234,9 +234,9 @@ function FormularioRemedio({ remedio }: { remedio?: Medicamento }) {
             control={control}
             name="ativo"
             render={({ field }) => (
-              <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
+              <div className="superficie flex flex-col gap-1 p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <Label htmlFor="em-uso" className="text-lg">
+                  <Label htmlFor="em-uso" className="font-semibold">
                     Em uso
                   </Label>
                   <Switch id="em-uso" checked={field.value} onCheckedChange={field.onChange} />
@@ -309,7 +309,7 @@ function LinhaHorario({
   })
 
   return (
-    <li className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
+    <li className="superficie flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="font-semibold text-muted-foreground">Horário {numero}</span>
         {podeRemover && (

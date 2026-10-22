@@ -125,7 +125,7 @@ describe('"+ Novo" da agenda', () => {
     const { roteador } = renderizarApp('/agenda')
     await usuario.click(await screen.findByRole('button', { name: 'Novo' }))
     const opcoes = await screen.findByRole('list', { name: 'Tipos de cadastro' })
-    expect(within(opcoes).getAllByRole('link').map((l) => l.querySelector('.text-lg')?.textContent)).toEqual([
+    expect(within(opcoes).getAllByRole('link').map((l) => l.querySelector('.font-semibold')?.textContent)).toEqual([
       'Compromissos e eventos',
       'Consultas',
       'Exames',

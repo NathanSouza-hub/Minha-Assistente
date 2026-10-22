@@ -26,7 +26,7 @@ export function Bloco({ titulo, area, link, consulta, className, children }: Pro
   return (
     <section aria-labelledby={id} className={cn(`area-${area} flex flex-col gap-2`, className)}>
       <header className="flex min-h-11 items-center gap-3">
-        <h2 id={id} className="flex-1 text-[1.18rem] font-bold tracking-[-0.015em]">
+        <h2 id={id} className="flex-1 text-secao font-bold">
           {titulo}
         </h2>
         {link && (

@@ -51,7 +51,7 @@ export function NovoNaAgenda({ data = '' }: { data?: string }) {
         showCloseButton={false}
         className="mx-auto max-h-[90dvh] max-w-xl overflow-y-auto rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
-        <SheetTitle className="text-xl font-bold">O que você quer agendar?</SheetTitle>
+        <SheetTitle className="text-secao font-bold">O que você quer agendar?</SheetTitle>
         <SheetDescription className="sr-only">Escolha o tipo de cadastro.</SheetDescription>
         <ul className="flex flex-col divide-y divide-linha" aria-label="Tipos de cadastro">
           {OPCOES.map(({ titulo, texto, icone: Icone, area, rota }) => (
@@ -62,7 +62,7 @@ export function NovoNaAgenda({ data = '' }: { data?: string }) {
                     <Icone className="size-6" weight="fill" />
                   </span>
                   <span className="flex flex-1 flex-col">
-                    <span className="text-lg font-semibold">{titulo}</span>
+                    <span className="font-semibold">{titulo}</span>
                     <span className="text-base text-muted-foreground">{texto}</span>
                   </span>
                   <CaretRightIcon weight="bold" className="size-5 text-muted-foreground" aria-hidden />

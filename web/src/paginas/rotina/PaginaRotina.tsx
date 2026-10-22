@@ -75,7 +75,7 @@ export function PaginaRotina() {
   if (id && !rotina) {
     return (
       <Pagina titulo="Compromisso não encontrado">
-        <p className="mb-4 text-lg">Este compromisso não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este compromisso não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/rotina?visao=todas">Voltar para os compromissos</Link>
         </Button>
@@ -178,9 +178,9 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
           control={control}
           name="lembrete"
           render={({ field }) => (
-            <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
+            <div className="superficie flex flex-col gap-1 p-4">
               <div className="flex items-center justify-between gap-4">
-                <Label htmlFor="lembrete" className="text-lg">
+                <Label htmlFor="lembrete" className="font-semibold">
                   Lembrar na hora
                 </Label>
                 <Switch id="lembrete" checked={field.value} onCheckedChange={field.onChange} />
@@ -206,9 +206,9 @@ function FormularioRotina({ rotina }: { rotina?: Rotina }) {
             control={control}
             name="ativo"
             render={({ field }) => (
-              <div className="flex flex-col gap-1 rounded-2xl bg-folha p-4 shadow-folha">
+              <div className="superficie flex flex-col gap-1 p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <Label htmlFor="ativa" className="text-lg">
+                  <Label htmlFor="ativa" className="font-semibold">
                     Ativo
                   </Label>
                   <Switch id="ativa" checked={field.value} onCheckedChange={field.onChange} />
@@ -286,7 +286,7 @@ function Historico({ id }: { id: string }) {
   const itens = consulta.data ?? []
   return (
     <section aria-labelledby="historico" className="mt-10 flex flex-col gap-3">
-      <h2 id="historico" className="text-xl font-bold">
+      <h2 id="historico" className="text-secao font-bold">
         Histórico
       </h2>
       {consulta.isPending ? (

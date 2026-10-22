@@ -35,7 +35,7 @@ export function PaginaViagem() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Viagem não encontrada">
-        <p className="mb-4 text-lg">Esta viagem não existe mais ou foi excluída.</p>
+        <p className="mb-4">Esta viagem não existe mais ou foi excluída.</p>
         <Button asChild variant="outline">
           <Link to="/viagens">Voltar para minhas viagens</Link>
         </Button>

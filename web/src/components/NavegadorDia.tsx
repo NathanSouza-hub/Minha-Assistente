@@ -30,7 +30,7 @@ type Passo = { rotulo: string; ir: () => void }
 export function Navegador({ rotulo, titulo, anterior, proximo }: { rotulo: string; titulo: string; anterior: Passo; proximo: Passo }) {
   return (
     <nav aria-label={rotulo} className="flex items-center justify-between gap-2">
-      <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]" aria-live="polite">
+      <h2 className="text-secao font-bold" aria-live="polite">
         {titulo}
       </h2>
       <div className="flex shrink-0">

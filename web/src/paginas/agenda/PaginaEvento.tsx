@@ -49,7 +49,7 @@ export function PaginaEvento() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Agendamento não encontrado">
-        <p className="mb-4 text-lg">Este agendamento não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este agendamento não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/agenda">Voltar para a agenda</Link>
         </Button>

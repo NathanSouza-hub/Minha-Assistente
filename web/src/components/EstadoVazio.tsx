@@ -19,7 +19,7 @@ export function EstadoVazio({ icone: Icone, ilustracao, titulo, children, acao }
           <Icone className="size-9" />
         </span>
       )}
-      <h2 className="text-xl font-bold">{titulo}</h2>
+      <h2 className="text-secao font-bold">{titulo}</h2>
       {children && <div className="max-w-prose text-muted-foreground">{children}</div>}
       {acao && <div className="mt-2">{acao}</div>}
     </div>

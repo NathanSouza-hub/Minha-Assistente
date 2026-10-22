@@ -18,7 +18,7 @@ export function ResumoPessoais({ mes }: { mes: string }) {
           <div className="flex flex-col gap-4">
             <p className="flex items-baseline justify-between gap-3">
               <span className="text-muted-foreground">Total do mês</span>
-              <span className="text-2xl font-bold tabular-nums">{formatarCentavos(p.totalCentavos)}</span>
+              <span className="text-destaque font-bold tabular-nums">{formatarCentavos(p.totalCentavos)}</span>
             </p>
             <BarraPago v={p} />
             <PagoPendente v={p} />

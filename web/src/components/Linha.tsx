@@ -72,7 +72,7 @@ export function LinhaMarcavel({
         </p>
         {valor && <span className="shrink-0 text-right font-bold tabular-nums">{valor}</span>}
       </div>
-      {apoio && <div className="mt-0.5 text-[0.88rem] leading-snug text-muted-foreground">{apoio}</div>}
+      {apoio && <div className="mt-0.5 text-apoio leading-snug text-muted-foreground">{apoio}</div>}
     </>
   )
   return (
@@ -132,7 +132,7 @@ export function MenuLinha({ titulo, descricao, acoes }: { titulo: string; descri
           showCloseButton={false}
           className="mx-auto max-w-xl rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
-          <SheetTitle className="text-lg font-bold">{titulo}</SheetTitle>
+          <SheetTitle className="text-secao font-bold">{titulo}</SheetTitle>
           <SheetDescription className={cn('-mt-3 text-base text-muted-foreground', !descricao && 'sr-only')}>
             {descricao || 'Escolha uma ação.'}
           </SheetDescription>
@@ -180,7 +180,7 @@ export function LinhaLink({ para, titulo, apoio, fim, apagada }: { para: string;
           <span className={cn('text-base leading-snug font-semibold break-words', apagada && 'text-muted-foreground')}>
             {titulo}
           </span>
-          {apoio && <span className="text-[0.88rem] leading-snug text-muted-foreground">{apoio}</span>}
+          {apoio && <span className="text-apoio leading-snug text-muted-foreground">{apoio}</span>}
         </span>
         {fim}
         <CaretRightIcon weight="bold" className="size-4 shrink-0 text-muted-foreground" aria-hidden />

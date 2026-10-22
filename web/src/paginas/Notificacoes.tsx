@@ -83,7 +83,7 @@ function OQueAvisar() {
   const salvar = useSalvarAvisos()
   return (
     <section aria-labelledby="avisos-titulo" className="flex flex-col gap-3">
-      <h2 id="avisos-titulo" className="text-xl font-bold">
+      <h2 id="avisos-titulo" className="text-secao font-bold">
         O que avisar
       </h2>
       <p className="text-base text-muted-foreground">Desligue o que não quer receber. Vale para todos os seus aparelhos.</p>
@@ -92,15 +92,15 @@ function OQueAvisar() {
       ) : consulta.isError ? (
         <p className="text-muted-foreground">Não foi possível carregar as preferências.</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-linha rounded-2xl bg-folha px-4 shadow-folha">
+        <ul className="superficie flex flex-col divide-y divide-linha px-4">
           {O_QUE_AVISA.map(({ categoria, icone: Icone, area, titulo, texto }) => (
             <li key={categoria} className={`area-${area} flex items-center gap-4 py-3`}>
-              <span className="selo-area size-11" aria-hidden>
-                <Icone className="size-6" weight="fill" />
+              <span className="selo-area size-10" aria-hidden>
+                <Icone className="size-5" weight="fill" />
               </span>
               <Label htmlFor={`aviso-${categoria}`} className="flex flex-1 flex-col items-start gap-0.5">
-                <span className="text-lg">{titulo}</span>
-                <span className="text-base font-normal text-muted-foreground">{texto}</span>
+                <span className="font-semibold">{titulo}</span>
+                <span className="text-apoio font-normal text-muted-foreground">{texto}</span>
               </Label>
               <Switch
                 id={`aviso-${categoria}`}
@@ -140,12 +140,12 @@ function ResumoDaManha() {
 
   return (
     <section aria-labelledby="resumo-titulo" className="flex flex-col gap-3">
-      <h2 id="resumo-titulo" className="text-xl font-bold">
+      <h2 id="resumo-titulo" className="text-secao font-bold">
         Resumo da manhã
       </h2>
-      <div className="flex flex-col gap-4 rounded-2xl bg-folha p-4 shadow-folha">
+      <div className="superficie flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="resumo-ativo" className="text-lg">
+          <Label htmlFor="resumo-ativo" className="font-semibold">
             Receber o resumo do dia
           </Label>
           <Switch
@@ -155,7 +155,7 @@ function ResumoDaManha() {
             onCheckedChange={(ligar) => salvar.mutate({ ativo: ligar, hora })}
           />
         </div>
-        <p className="text-base text-muted-foreground">
+        <p className="text-apoio text-muted-foreground">
           Um aviso por dia com os agendamentos, remédios, compromissos e contas de hoje. Em dia sem nada, não avisa.
         </p>
         {ativo && (
@@ -182,17 +182,17 @@ const TONS: Record<Tom, string> = {
   atraso: 'bg-atraso-fundo text-atraso',
 }
 
-/** O estado do aparelho é um objeto de verdade: folha com sombra e o sino num selo. */
+/** O estado do aparelho: superfície com o sino num selo. */
 function Cartao({ icone: Icone, tom = 'area', titulo, children }: { icone: Icon; tom?: Tom; titulo: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl bg-folha p-5 shadow-folha">
+    <section className="superficie flex flex-col gap-4 p-4 md:p-5">
       <div className="flex items-center gap-3">
-        <span className={cn('grid size-12 shrink-0 place-items-center rounded-lg', TONS[tom])} aria-hidden>
-          <Icone className="size-7" weight="fill" />
+        <span className={cn('grid size-10 shrink-0 place-items-center rounded-lg', TONS[tom])} aria-hidden>
+          <Icone className="size-5" weight="fill" />
         </span>
-        <h2 className="text-xl font-bold">{titulo}</h2>
+        <h2 className="text-secao font-bold">{titulo}</h2>
       </div>
-      <div className="flex flex-col gap-4 text-lg">{children}</div>
+      <div className="flex flex-col gap-4">{children}</div>
     </section>
   )
 }

@@ -117,12 +117,12 @@ function CartaoImovel({ imovel, valores }: { imovel: Imovel; valores?: ValoresCo
           )}
         </span>
         {(imovel.endereco || imovel.complemento) && (
-          <span className="text-[0.88rem] text-muted-foreground">
+          <span className="text-apoio text-muted-foreground">
             {[imovel.endereco, imovel.complemento].filter(Boolean).join(' · ')}
           </span>
         )}
         {valores && (
-          <span className="flex flex-col text-[0.88rem] text-muted-foreground">
+          <span className="flex flex-col text-apoio text-muted-foreground">
             <SituacaoContas v={valores} />
             {valores.totalCentavos > 0 && (
               <span className="tabular-nums">

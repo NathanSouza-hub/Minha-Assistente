@@ -37,7 +37,7 @@ export function PaginaCartao() {
   if (id && !cartao) {
     return (
       <Pagina titulo="Cartão não encontrado">
-        <p className="mb-4 text-lg">Este cartão não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este cartão não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to={LISTA}>Voltar para os cartões</Link>
         </Button>

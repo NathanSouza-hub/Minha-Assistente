@@ -30,7 +30,7 @@ function LinhaCategoria({
 
   if (renomeando) {
     return (
-      <li className="py-4">
+      <li className="p-4">
         <FormCategoria
           categoria={categoria}
           rotulo={`Novo nome para ${categoria.nome}`}
@@ -47,17 +47,13 @@ function LinhaCategoria({
   }
 
   return (
-    <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
-      <span className="flex flex-1 items-center gap-3 text-lg font-semibold">
-        <span className="selo-area size-11" aria-hidden>
-          <TagIcon className="size-6" />
-        </span>
-        {categoria.nome}
-      </span>
-      <div className="flex flex-wrap gap-2">
+    <li className="flex items-center gap-1 py-1.5 pr-2 pl-4">
+      <span className="min-w-0 flex-1 py-2 leading-snug font-semibold break-words">{categoria.nome}</span>
+      <div className="flex shrink-0">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
+          className="rounded-full text-muted-foreground"
           onClick={() => mover(categoria, -1)}
           disabled={primeira || movendo}
           aria-label={`Subir ${categoria.nome}`}
@@ -65,23 +61,36 @@ function LinhaCategoria({
           <ArrowUpIcon weight="bold" aria-hidden />
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
+          className="rounded-full text-muted-foreground"
           onClick={() => mover(categoria, 1)}
           disabled={ultima || movendo}
           aria-label={`Descer ${categoria.nome}`}
         >
           <ArrowDownIcon weight="bold" aria-hidden />
         </Button>
-        <Button variant="outline" onClick={() => setRenomeando(true)} aria-label={`Renomear ${categoria.nome}`}>
-          <PencilSimpleIcon aria-hidden />
-          Renomear
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full text-muted-foreground"
+          onClick={() => setRenomeando(true)}
+          aria-label={`Renomear ${categoria.nome}`}
+          title="Renomear"
+        >
+          <PencilSimpleIcon className="size-5" aria-hidden />
         </Button>
         <Confirmar
           gatilho={
-            <Button variant="destructive" aria-label={`Excluir ${categoria.nome}`} disabled={excluir.isPending}>
-              <TrashIcon aria-hidden />
-              Excluir
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Excluir ${categoria.nome}`}
+              title="Excluir"
+              disabled={excluir.isPending}
+            >
+              <TrashIcon className="size-5" aria-hidden />
             </Button>
           }
           titulo={`Excluir ${categoria.nome}?`}
@@ -123,22 +132,22 @@ export function Categorias() {
   return (
     <Pagina titulo="Categorias">
       <div className="flex flex-col gap-8">
-        <p className="max-w-prose text-lg text-muted-foreground">
+        <p className="max-w-prose text-muted-foreground">
           Cada categoria é uma aba na tela de Contas, nesta ordem. Crie as que precisar.
         </p>
 
-        <section className="rounded-2xl bg-folha p-4 shadow-folha">
+        <section className="superficie p-4 sm:max-w-xl">
           <FormCategoria aoSalvar={(c) => toast.success(`${c.nome} criada.`)} />
         </section>
 
         {consulta.isPending ? (
-          <Skeleton className="h-40" />
+          <Skeleton className="h-40 max-w-3xl rounded-2xl" />
         ) : categorias.length === 0 ? (
           <EstadoVazio icone={TagIcon} titulo="Nenhuma categoria">
             Crie a primeira acima para separar suas contas.
           </EstadoVazio>
         ) : (
-          <ul className="flex flex-col divide-y divide-linha" aria-label="Suas categorias">
+          <ul className="superficie flex max-w-3xl flex-col divide-y divide-linha overflow-hidden" aria-label="Suas categorias">
             {categorias.map((categoria, i) => (
               <LinhaCategoria
                 key={categoria.id}

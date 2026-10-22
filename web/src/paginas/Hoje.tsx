@@ -22,7 +22,7 @@ function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
     <div className="flex w-full min-w-0 flex-col gap-3">
       {/* Data e ações numa linha; a saudação embaixo, com a largura toda, para caber numa linha só. */}
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 text-[0.88rem] font-medium text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
+        <p className="min-w-0 text-apoio font-medium text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
         <div className="flex shrink-0 items-center gap-2">
           <NovaAtividade />
           {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
@@ -33,7 +33,7 @@ function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
           </Button>
         </div>
       </div>
-      <h1 className="-mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.02em] min-[380px]:text-[1.65rem]">
+      <h1 className="-mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.02em] min-[380px]:text-titulo">
         {saudacao(hoje.hour)}
         {primeiroNome && `, ${primeiroNome}`}
       </h1>
@@ -52,7 +52,7 @@ function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
               style={{ width: `${(resumo.concluidas / resumo.programadas) * 100}%` }}
             />
           </div>
-          <span className="text-[0.88rem] font-semibold text-muted-foreground" aria-live="polite">
+          <span className="text-apoio font-semibold text-muted-foreground" aria-live="polite">
             {resumo.concluidas} de {resumo.programadas} feitas
           </span>
         </div>
@@ -125,7 +125,7 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
 
       <section aria-label={ehHoje ? 'Atividades de hoje' : 'Atividades do dia'} className="flex flex-col gap-2">
         <nav aria-label="Dia" className="flex items-center justify-between gap-2">
-          <h2 className="text-[1.18rem] font-bold tracking-[-0.015em]" aria-live="polite">
+          <h2 className="text-secao font-bold" aria-live="polite">
             {rotuloDoDia(dia.data)}
           </h2>
           <div className="flex shrink-0">
@@ -155,14 +155,14 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
             {comHorario.length > 0 && lista(comHorario)}
             {diaTodo.length > 0 && (
               <>
-                <h3 className="mt-3 text-[0.88rem] font-semibold text-muted-foreground">Dia todo</h3>
+                <h3 className="mt-3 text-apoio font-semibold text-muted-foreground">Dia todo</h3>
                 {lista(diaTodo)}
               </>
             )}
           </>
         )}
 
-        <label className="mt-2 flex items-center gap-3 text-[0.88rem] text-muted-foreground">
+        <label className="mt-2 flex items-center gap-3 text-apoio text-muted-foreground">
           Ir para o dia
           <input
             type="date"
@@ -189,8 +189,8 @@ function Agora({ destaque, data }: { destaque: NonNullable<ReturnType<typeof des
             <span aria-hidden className="size-2 rounded-full bg-primary shadow-[0_0_0_4px_var(--azul-fundo)]" />
             {acontecendo ? 'Agora' : 'Próxima'} · {t.horario}
           </p>
-          <h2 className="mt-1 text-[1.25rem] leading-tight font-bold tracking-[-0.015em] break-words">{t.titulo}</h2>
-          {t.detalhe && <p className="mt-0.5 text-[0.88rem] text-muted-foreground">{t.detalhe}</p>}
+          <h2 className="mt-1 text-destaque font-bold break-words">{t.titulo}</h2>
+          {t.detalhe && <p className="mt-0.5 text-apoio text-muted-foreground">{t.detalhe}</p>}
         </Link>
         <Button onClick={() => marcarComo('feito')} aria-label={`${feito}: ${t.titulo}`} className="shrink-0 px-4">
           <CheckIcon weight="bold" aria-hidden />
@@ -201,7 +201,7 @@ function Agora({ destaque, data }: { destaque: NonNullable<ReturnType<typeof des
         <button
           type="button"
           onClick={() => marcarComo('nao_feito')}
-          className="min-h-11 shrink-0 text-[0.88rem] font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          className="min-h-11 shrink-0 text-apoio font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
         >
           {naoFeito}
           <span className="sr-only">: {t.titulo}</span>
@@ -209,7 +209,7 @@ function Agora({ destaque, data }: { destaque: NonNullable<ReturnType<typeof des
         {depois && (
           <Link
             to={depois.link}
-            className="flex min-h-11 min-w-0 items-center gap-1.5 text-[0.88rem] hover:underline"
+            className="flex min-h-11 min-w-0 items-center gap-1.5 text-apoio hover:underline"
           >
             <span className="shrink-0 text-muted-foreground">Depois:</span>
             <span className="truncate font-semibold">

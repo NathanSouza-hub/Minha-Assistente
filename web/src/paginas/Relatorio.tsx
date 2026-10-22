@@ -78,7 +78,7 @@ export function Relatorio() {
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="grid gap-4 rounded-2xl bg-folha p-4 shadow-folha sm:grid-cols-3">
+        <div className="superficie grid gap-4 p-4 sm:grid-cols-3">
           <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
             <option value="este-mes">Este mês</option>
             <option value="mes-passado">Mês passado</option>
@@ -179,7 +179,7 @@ function Linha({ rotulo, valor, nota, cor }: { rotulo: string; valor: number; no
         <dt>{rotulo}</dt>
         <dd className={cn('font-bold tabular-nums', cor)}>{formatarCentavos(valor)}</dd>
       </div>
-      {nota && <p className="text-[0.88rem] text-muted-foreground">{nota}</p>}
+      {nota && <p className="text-apoio text-muted-foreground">{nota}</p>}
     </div>
   )
 }
@@ -189,7 +189,7 @@ function Cartao({ titulo, children }: { titulo: string; children: ReactNode }) {
   const id = `cartao-${titulo.toLowerCase().replace(/\W+/g, '-')}`
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2 id={id} className="text-[1.18rem] font-bold tracking-[-0.015em]">
+      <h2 id={id} className="text-secao font-bold">
         {titulo}
       </h2>
       <div className="superficie px-4 py-1 md:px-5">{children}</div>
@@ -318,25 +318,25 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
   return (
     <div className="flex flex-col gap-5">
       <dl className="grid grid-cols-2 gap-3">
-        <div className="min-w-0 rounded-2xl bg-folha p-4 shadow-folha">
+        <div className="superficie min-w-0 p-4">
           <dt className="flex items-center gap-2 text-base text-muted-foreground">
             <span aria-hidden className="size-3 rounded-sm bg-serie-pago" />
             Pago
           </dt>
-          <dd className="text-xl font-bold tabular-nums sm:text-2xl">{formatarCentavos(totalPagoCentavos)}</dd>
+          <dd className="text-destaque font-bold tabular-nums">{formatarCentavos(totalPagoCentavos)}</dd>
         </div>
-        <div className="min-w-0 rounded-2xl bg-folha p-4 shadow-folha">
+        <div className="superficie min-w-0 p-4">
           <dt className="flex items-center gap-2 text-base text-muted-foreground">
             <span aria-hidden className="size-3 rounded-sm bg-serie-previsto" />
             Previsto
           </dt>
-          <dd className="text-xl font-bold tabular-nums sm:text-2xl">{formatarCentavos(totalPrevistoCentavos)}</dd>
+          <dd className="text-destaque font-bold tabular-nums">{formatarCentavos(totalPrevistoCentavos)}</dd>
         </div>
       </dl>
 
-      <section className="rounded-2xl bg-folha p-4 shadow-folha md:p-5" aria-labelledby="titulo-grafico">
+      <section className="superficie p-4 md:p-5" aria-labelledby="titulo-grafico">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h2 id="titulo-grafico" className="text-xl font-bold">
+          <h2 id="titulo-grafico" className="text-secao font-bold">
             {relatorio.agruparPor === 'imovel' ? 'Por imóvel' : 'Por categoria'}
           </h2>
           <p className="text-base text-muted-foreground">
@@ -350,7 +350,7 @@ function Resultado({ relatorio }: { relatorio: RelatorioGastos }) {
         <ul className="grid gap-x-8 gap-y-5 lg:grid-cols-2">
           {itens.map((item) => (
             <li key={item.id ?? item.nome} className="flex flex-col gap-2">
-              <span className="text-lg font-bold">{item.nome}</span>
+              <span className="font-semibold">{item.nome}</span>
               <Barra rotulo="Pago" centavos={item.pagoCentavos} maximo={maximo} cor="bg-serie-pago" />
               <Barra rotulo="Previsto" centavos={item.previstoCentavos} maximo={maximo} cor="bg-serie-previsto" />
             </li>

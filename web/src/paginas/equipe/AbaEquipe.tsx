@@ -54,7 +54,7 @@ function ListaEquipe() {
         <li key={m.id}>
           <Link
             to={`/equipe/${m.id}`}
-            className="flex h-full items-center gap-4 rounded-2xl bg-folha p-4 shadow-folha hover:bg-suave/40"
+            className="superficie flex h-full items-center gap-4 p-4 hover:bg-suave/40"
           >
             <span
               aria-hidden
@@ -63,7 +63,7 @@ function ListaEquipe() {
               {m.nome.trim().charAt(0).toUpperCase()}
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="flex flex-wrap items-center gap-x-2 text-lg leading-snug font-bold">
+              <span className="flex flex-wrap items-center gap-x-2 leading-snug font-semibold">
                 <span className={cn(!m.ativo && 'text-muted-foreground')}>{m.nome}</span>
                 {!m.ativo && (
                   <span className="rounded-full bg-suave px-2.5 text-base font-semibold text-muted-foreground">

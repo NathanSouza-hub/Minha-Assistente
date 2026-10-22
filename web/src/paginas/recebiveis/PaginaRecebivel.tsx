@@ -60,7 +60,7 @@ export function PaginaRecebivel() {
   if (id && consulta.isError) {
     return (
       <Pagina titulo="Recebível não encontrado">
-        <p className="mb-4 text-lg">Este recebível não existe mais ou foi excluído.</p>
+        <p className="mb-4">Este recebível não existe mais ou foi excluído.</p>
         <Button asChild variant="outline">
           <Link to="/recebiveis">Voltar para recebíveis</Link>
         </Button>
@@ -101,7 +101,7 @@ export function PaginaRecebivel() {
 function Situacao({ recebivel: r }: { recebivel: RecebivelDetalhe }) {
   const cor = r.status === 'recebido' ? 'text-ok' : r.atrasado ? 'text-atraso' : 'text-alerta'
   return (
-    <section aria-label="Situação" className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
+    <section aria-label="Situação" className="superficie flex flex-col gap-3 p-4">
       <p className={cn('flex items-center gap-2 text-lg font-bold', cor)}>
         {r.status === 'recebido' && <CheckCircleIcon className="size-6" weight="fill" aria-hidden />}
         {r.atrasado ? `${STATUS[r.status]} · atrasado` : STATUS[r.status]}
@@ -163,7 +163,7 @@ function RegistrarRecebimento({ recebivel: r }: { recebivel: RecebivelDetalhe })
 
   return (
     <section aria-labelledby="titulo-receber" className="flex flex-col gap-4">
-      <h2 id="titulo-receber" className="text-xl font-bold">
+      <h2 id="titulo-receber" className="text-secao font-bold">
         Registrar recebimento
       </h2>
       <form noValidate onSubmit={handleSubmit(enviar)} className="flex flex-col gap-5">
@@ -221,7 +221,7 @@ function Historico({ recebivel: r }: { recebivel: RecebivelDetalhe }) {
   const desfazer = useDesfazerRecebimento(r.id)
   return (
     <section aria-labelledby="titulo-historico" className="flex flex-col gap-3">
-      <h2 id="titulo-historico" className="text-xl font-bold">
+      <h2 id="titulo-historico" className="text-secao font-bold">
         Histórico de recebimentos
       </h2>
       {r.recebimentos.length === 0 ? (
@@ -336,7 +336,7 @@ function Formulario({ recebivel }: { recebivel?: RecebivelDetalhe }) {
   return (
     <section aria-labelledby={editando ? 'titulo-dados' : undefined} className="flex flex-col gap-4">
       {editando && (
-        <h2 id="titulo-dados" className="text-xl font-bold">
+        <h2 id="titulo-dados" className="text-secao font-bold">
           Dados do recebível
         </h2>
       )}

@@ -204,7 +204,7 @@ function BotaoNova({ para }: { para: string }) {
 /** Filtros recolhidos; recolhido mostra quantos estão em uso (e abre sozinho se algum estiver). */
 function PainelFiltros({ titulo, emUso, children }: { titulo: string; emUso: number; children: ReactNode }) {
   return (
-    <details className="group rounded-2xl bg-folha shadow-folha" open={emUso > 0 || undefined}>
+    <details className="superficie group" open={emUso > 0 || undefined}>
       <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 font-semibold [&::-webkit-details-marker]:hidden">
         <SlidersHorizontalIcon className="size-5 text-area" weight="bold" aria-hidden />
         {titulo}

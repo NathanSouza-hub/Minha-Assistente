@@ -128,7 +128,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
             if (!doGrupo.length) return null
             return (
               <section key={periodo} className="flex flex-col gap-2" aria-labelledby={`grupo-${periodo}`}>
-                <h3 id={`grupo-${periodo}`} className="text-[0.88rem] font-semibold text-muted-foreground">
+                <h3 id={`grupo-${periodo}`} className="text-apoio font-semibold text-muted-foreground">
                   {titulo}
                 </h3>
                 <Lista>
@@ -181,7 +181,7 @@ function MeusRemedios() {
           para={`/remedios/${m.id}`}
           titulo={m.nome}
           apagada={!m.ativo}
-          fim={!m.ativo && <span className="text-[0.88rem] font-semibold text-muted-foreground">Pausado</span>}
+          fim={!m.ativo && <span className="text-apoio font-semibold text-muted-foreground">Pausado</span>}
           apoio={
             <>
               {m.dose && <span className="block text-foreground">{m.dose}</span>}

@@ -83,7 +83,7 @@ export function ListaArquivos({ titulo, descricao, arquivos, maximo, textos: t, 
 
   return (
     <section className="flex flex-col gap-3" aria-labelledby={`${idEntrada}-titulo`}>
-      <h2 id={`${idEntrada}-titulo`} className="text-xl font-bold">
+      <h2 id={`${idEntrada}-titulo`} className="text-secao font-bold">
         {titulo}
       </h2>
       <p className="text-base text-muted-foreground">{descricao}</p>
@@ -145,7 +145,7 @@ function ItemArquivo({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl bg-folha p-4 shadow-folha sm:flex-row sm:items-center">
+    <li className="superficie flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className="selo-area size-11" aria-hidden><Icone className="size-6" /></span>
         <div className="min-w-0">

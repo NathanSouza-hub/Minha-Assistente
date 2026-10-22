@@ -41,7 +41,7 @@ export function ProximasContas() {
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="font-semibold">{p.descricao}</span>
-                      <span className="text-[0.88rem] text-muted-foreground">{p.imovelNome ?? 'Pessoal'}</span>
+                      <span className="text-apoio text-muted-foreground">{p.imovelNome ?? 'Pessoal'}</span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end">
                       {p.valorCentavos === null ? (
@@ -49,7 +49,7 @@ export function ProximasContas() {
                       ) : (
                         <span className="font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
                       )}
-                      <span className="text-[0.88rem] text-muted-foreground">
+                      <span className="text-apoio text-muted-foreground">
                         <SituacaoConta p={p} />
                       </span>
                     </span>

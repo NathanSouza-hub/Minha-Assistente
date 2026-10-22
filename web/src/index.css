@@ -56,6 +56,19 @@
   --color-serie-pago: var(--serie-pago);
   --color-serie-previsto: var(--serie-previsto);
 
+  /* Escala tipográfica (docs/identidade-visual.md): apoio, texto, seção, destaque e título da tela. */
+  --text-apoio: 0.88rem;
+  --text-apoio--line-height: 1.45;
+  --text-secao: 1.18rem;
+  --text-secao--line-height: 1.3;
+  --text-secao--letter-spacing: -0.015em;
+  --text-destaque: 1.25rem;
+  --text-destaque--line-height: 1.25;
+  --text-destaque--letter-spacing: -0.015em;
+  --text-titulo: 1.65rem;
+  --text-titulo--line-height: 1.2;
+  --text-titulo--letter-spacing: -0.02em;
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

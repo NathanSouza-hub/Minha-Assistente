@@ -42,7 +42,7 @@ function CartaoDesenhado({
       )}
     >
       <span className="flex items-start justify-between gap-2">
-        <span className="text-lg leading-tight font-bold">{c.nome}</span>
+        <span className="leading-tight font-semibold">{c.nome}</span>
         <CreditCardIcon className="size-6 shrink-0 opacity-80" aria-hidden />
       </span>
       {c.final && (
@@ -54,7 +54,7 @@ function CartaoDesenhado({
         <span className="flex items-end justify-between gap-2">
           <span className="flex flex-col">
             <span className="text-sm opacity-80">Fatura</span>
-            <span className="text-xl font-bold tabular-nums">{formatarCentavos(c.faturaAtual.totalCentavos)}</span>
+            <span className="text-destaque font-bold tabular-nums">{formatarCentavos(c.faturaAtual.totalCentavos)}</span>
           </span>
           <span className="text-sm">vence {diaMes(c.faturaAtual.vencimento)}</span>
         </span>
@@ -87,7 +87,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
         <Button variant="ghost" size="icon" onClick={() => aoMudarMes(somarMeses(mes, -1))} aria-label="Fatura anterior">
           <CaretLeftIcon weight="bold" className="size-7" aria-hidden />
         </Button>
-        <h2 className="text-xl font-bold" aria-live="polite">
+        <h2 className="text-secao font-bold" aria-live="polite">
           {nomeDoMes(mes)}
         </h2>
         <Button variant="ghost" size="icon" onClick={() => aoMudarMes(somarMeses(mes, 1))} aria-label="Próxima fatura">
@@ -99,7 +99,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
         <Skeleton className="h-32" role="status" aria-label="Carregando fatura" />
       ) : (
         <>
-          <div className="flex flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha">
+          <div className="superficie flex flex-col gap-3 p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col">
                 <span className="text-base text-muted-foreground">Total da fatura</span>
@@ -148,13 +148,13 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
                     className="-mx-2 my-1 flex items-start justify-between gap-3 rounded-lg px-2 py-3 hover:bg-suave/70"
                   >
                     <span className="flex min-w-0 flex-col gap-1">
-                      <span className="text-lg leading-snug font-bold">{p.descricao}</span>
+                      <span className="leading-snug font-semibold">{p.descricao}</span>
                       <span className="text-base text-muted-foreground">
                         {[dataCurta(p.dataCompra), p.categoriaNome].filter(Boolean).join(' · ')}
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-lg font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
+                      <span className="font-bold tabular-nums">{formatarCentavos(p.valorCentavos)}</span>
                       {p.totalParcelas > 1 && (
                         <span
                           className="rounded-full bg-suave px-2.5 font-semibold tabular-nums"

@@ -45,8 +45,8 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
         >
           {cabecalho ?? (
             <div className="min-w-0">
-              {rotulo && <p className="text-[0.88rem] font-semibold text-area">{rotulo}</p>}
-              <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] hyphens-auto min-[400px]:text-[1.65rem]">
+              {rotulo && <p className="text-apoio font-semibold text-area">{rotulo}</p>}
+              <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] hyphens-auto min-[400px]:text-titulo">
                 {titulo}
               </h1>
             </div>
@@ -61,6 +61,14 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
   )
 }
 
+/** Rola o menu (não a página) até o item, se ele estiver cortado na borda. */
+function mostrarNoMenu(item: HTMLAnchorElement | null) {
+  const menu = item?.closest('ul')
+  if (!item || !menu) return
+  const li = item.parentElement as HTMLElement
+  if (li.offsetLeft + li.offsetWidth > menu.clientWidth) menu.scrollLeft = li.offsetLeft - 16
+}
+
 /**
  * Celular: as telas da área (ex.: Finanças → Visão geral, Contas a pagar...) em abas de texto que
  * rolam para o lado, só nas telas de lista (num formulário, o "voltar" basta). No computador a barra
@@ -72,12 +80,14 @@ function MenuDaSecao({ larga }: { larga?: boolean }) {
   if (!secao || !exato || secao.itens.length < 2) return null
   return (
     <nav aria-label={`Telas de ${secao.rotulo}`} className="mt-2 border-b border-linha md:hidden">
-      <ul className={cn('mx-auto flex gap-6 overflow-x-auto px-4 [scrollbar-width:none]', larga ? 'max-w-6xl' : 'max-w-3xl')}>
+      <ul className={cn('relative mx-auto flex gap-6 overflow-x-auto px-4 [scrollbar-width:none]', larga ? 'max-w-6xl' : 'max-w-3xl')}>
         {secao.itens.map((item) => (
           <li key={item.rota} className="shrink-0">
             <Link
               to={item.rota}
               aria-current={item === atual ? 'page' : undefined}
+              // A tela atual fica à vista mesmo quando o menu rola para o lado (ex.: a última da lista).
+              ref={item === atual ? mostrarNoMenu : undefined}
               className={cn(
                 'flex min-h-11 items-center text-base font-medium whitespace-nowrap text-muted-foreground hover:text-foreground',
                 item === atual && 'font-bold text-foreground shadow-[inset_0_-3px_0_var(--azul)]',

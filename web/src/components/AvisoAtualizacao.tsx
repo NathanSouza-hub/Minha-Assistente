@@ -52,7 +52,7 @@ export function AvisoAtualizacao() {
       <section
         role="status"
         aria-label="Nova versão do app"
-        className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md flex-col gap-3 rounded-2xl bg-folha p-4 shadow-folha ring-1 ring-primary/20 md:inset-x-auto md:right-6 md:bottom-6"
+        className="superficie fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md flex-col gap-3 p-4 ring-1 ring-primary/20 md:inset-x-auto md:right-6 md:bottom-6"
       >
         <div className="flex items-start gap-3">
           <ArrowsClockwiseIcon className="mt-0.5 size-7 shrink-0 text-primary" aria-hidden />

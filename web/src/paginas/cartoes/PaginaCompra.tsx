@@ -50,7 +50,7 @@ export function PaginaCompra() {
   if (!cartao || (compraId && compra.isError)) {
     return (
       <Pagina titulo="Compra não encontrada">
-        <p className="mb-4 text-lg">Esta compra ou este cartão não existe mais.</p>
+        <p className="mb-4">Esta compra ou este cartão não existe mais.</p>
         <Button asChild variant="outline">
           <Link to={voltar}>Voltar para os cartões</Link>
         </Button>

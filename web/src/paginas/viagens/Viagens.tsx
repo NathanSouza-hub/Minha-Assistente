@@ -70,9 +70,9 @@ export function Viagens() {
 function Grupo({ titulo, viagens, hoje }: { titulo: string; viagens: Viagem[]; hoje: string }) {
   if (viagens.length === 0) return null
   return (
-    <section className="flex flex-col gap-1">
-      <h2 className="text-xl font-bold">{titulo}</h2>
-      <ul className="flex flex-col divide-y divide-linha" aria-label={titulo}>
+    <section className="flex flex-col gap-2">
+      <h2 className="text-secao font-bold">{titulo}</h2>
+      <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label={titulo}>
         {viagens.map((v) => (
           <ItemViagem key={v.id} viagem={v} hoje={hoje} />
         ))}
@@ -86,7 +86,7 @@ function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
   const ida = deDataISO(v.ida)
   return (
     <li>
-      <Link to={`/viagens/${v.id}`} className="-mx-2 my-1 flex items-center gap-4 rounded-lg px-2 py-3 hover:bg-suave/70">
+      <Link to={`/viagens/${v.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-suave/50">
         {/* Canhoto da passagem: dia e mês da ida. Em viagem, na cor cheia da área. */}
         <span
           aria-hidden
@@ -97,22 +97,22 @@ function ItemViagem({ viagem: v, hoje }: { viagem: Viagem; hoje: string }) {
             fase === 'passada' && 'bg-suave text-muted-foreground',
           )}
         >
-          <span className="text-2xl font-bold">{ida.day}</span>
+          <span className="text-destaque font-bold">{ida.day}</span>
           <span className="mt-1 text-sm font-semibold">{ida.toFormat('LLL').replace('.', '')}</span>
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className={cn('text-lg leading-snug font-bold break-words', fase === 'passada' && 'text-muted-foreground')}>
+          <span className={cn('leading-snug font-semibold break-words', fase === 'passada' && 'text-muted-foreground')}>
             {v.destino}
           </span>
-          <span className="text-base">{descreverPeriodo(v.ida, v.volta, hoje)}</span>
+          <span className="text-apoio text-muted-foreground">{descreverPeriodo(v.ida, v.volta, hoje)}</span>
           {(texto || v.anexos.length > 0) && (
-            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-apoio">
               {texto && (
                 <span className={cn('font-semibold', fase === 'agora' ? 'text-primary' : 'text-area')}>{texto}</span>
               )}
               {v.anexos.length > 0 && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <PaperclipIcon className="size-5" aria-hidden />
+                  <PaperclipIcon className="size-4" aria-hidden />
                   {contarAnexos(v.anexos.length)}
                 </span>
               )}
