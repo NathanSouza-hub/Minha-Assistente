@@ -109,7 +109,9 @@ npm run lint                                  # oxlint
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
   valores a receber do mês (pela data prevista): previsto/recebido/a receber em cima e as abas Do mês,
   A receber (status ≠ recebido, inclui parcial), Recebidos e Resumo (por origem e próximos 30 dias);
-  "Novo recebível" no cabeçalho. Status, saldo e atrasado vêm da API, derivados do
+  "Novo recebível" no cabeçalho. Origem "Outros" mostra "Especifique a origem" logo abaixo (obrigatório
+  só nela; trocar de origem apaga o texto) e `nomeDaOrigem()` (`formulario.ts`) exibe "Outros · <descrição>"
+  (decisão 35). Status, saldo e atrasado vêm da API, derivados do
   histórico de recebimentos — não recalcule. No detalhe: situação, "Registrar recebimento" (o valor
   já vem com o que falta; abaixo do saldo aparece "Foi o valor final", que manda `encerrar`),
   histórico com "Desfazer" e comprovantes (`ListaArquivos`). Toda mutação invalida `recebiveis` e os

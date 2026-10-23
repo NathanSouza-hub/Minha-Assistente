@@ -15,7 +15,7 @@ import { formatarCentavos } from '@/lib/dinheiro'
 import type { Recebivel } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { NavegadorMes } from '@/paginas/pagamentos/ResumoContas'
-import { ORIGENS, STATUS } from './formulario'
+import { nomeDaOrigem, ORIGENS, STATUS } from './formulario'
 import { ProximosRecebiveis } from './ProximosRecebiveis'
 
 type AbaRecebiveis = 'mes' | 'a-receber' | 'recebidos' | 'resumo'
@@ -254,7 +254,7 @@ function Linha({ recebivel: r }: { recebivel: Recebivel }) {
           <span className="shrink-0 font-bold tabular-nums">{formatarCentavos(r.valorPrevistoCentavos)}</span>
         </span>
         <span className="flex flex-wrap items-center gap-x-2 text-[0.88rem] text-muted-foreground">
-          {ORIGENS[r.origem]}
+          {nomeDaOrigem(r)}
           {r.recorrencia !== 'nenhuma' && (
             <span className="flex items-center gap-1">
               <RepeatIcon className="size-4" aria-hidden />

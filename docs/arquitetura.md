@@ -316,7 +316,7 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     `src/modules/recebiveis/`):
     - `recebivel` (descricao, origem `dividendos|aluguel|rendimentos|honorarios|outros`,
       valor_previsto_centavos, data_prevista, encerrado, recorrencia `nenhuma|mensal|anual`,
-      recorrencia_origem_id, observacoes) e o histórico em `recebimento` (valor_centavos > 0, data,
+      recorrencia_origem_id, observacoes, origem_descricao — decisão 35) e o histórico em `recebimento` (valor_centavos > 0, data,
       observacoes). Comprovantes em `recebivel_comprovante`, com as regras dos de conta
       (`src/lib/comprovantes.js`, a mesma fábrica dos comprovantes de conta).
     - **Situação derivada, nada em dobro**: `recebidoCentavos` = soma dos recebimentos; `status`
@@ -416,6 +416,14 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     No rádio, a emissora vai em `local`; na consulta e na fisioterapia sem título, o front monta um
     ("Consulta de Cardiologia"). Viagens e Programa de rádio saíram do menu; `/viagens` e `/radio`
     continuam. Na Equipe a aba de pessoas chama "Integrantes" e Recebíveis mostra também o atrasado.
+35. **Recebíveis: "Especifique a origem" em "Outros"** (migration 31): `recebivel.origem_descricao`
+    (text, nulo). `POST`/`PUT /recebiveis` aceitam `origemDescricao` (até 100 caracteres), obrigatório
+    quando `origem = 'outros'` (`400 VALIDACAO` "Especifique a origem."); nas outras origens é
+    ignorado e gravado `null` (trocar de origem apaga a antiga). A origem continua `outros` (filtro e
+    "Previsto por origem" não mudam); a resposta traz `origemDescricao` e a próxima ocorrência da série
+    a copia. O banco só garante `origem = 'outros' OR origem_descricao IS NULL`: os "outros" já
+    cadastrados ficam com `null` e continuam valendo (recebem normalmente); ao editar, o formulário
+    pede a descrição. O front exibe "Outros · <descrição>" na lista, nos próximos e no detalhe.
 
 ## Convenções de banco
 

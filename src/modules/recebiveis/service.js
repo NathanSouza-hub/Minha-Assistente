@@ -17,6 +17,7 @@ function consulta(conexao, usuarioId) {
       'r.id',
       'r.descricao',
       'r.origem',
+      'r.origemDescricao',
       'r.valorPrevistoCentavos',
       'r.dataPrevista',
       'r.encerrado',
@@ -93,6 +94,7 @@ async function garantirProxima(trx, usuarioId, id) {
     usuarioId,
     descricao: atual.descricao,
     origem: atual.origem,
+    origemDescricao: atual.origemDescricao,
     valorPrevistoCentavos: atual.valorPrevistoCentavos,
     dataPrevista: somar(inicioDaSerie, passo + 1, atual.recorrencia === 'mensal' ? 'months' : 'years'),
     recorrencia: atual.recorrencia,
@@ -101,15 +103,20 @@ async function garantirProxima(trx, usuarioId, id) {
   });
 }
 
+// A descrição da origem só existe em "outros" (trocar de origem apaga a antiga).
+const camposGravaveis = (d) => ({ ...d, origemDescricao: d.origem === 'outros' ? d.origemDescricao : null });
+
 async function criar(usuarioId, dados) {
-  const [{ id }] = await db('recebivel').insert({ usuarioId, ...dados }).returning('id');
+  const [{ id }] = await db('recebivel')
+    .insert({ usuarioId, ...camposGravaveis(dados) })
+    .returning('id');
   return buscar(usuarioId, id);
 }
 
 // Muda só esta ocorrência; as próximas da série nascem dela, então já seguem o novo valor.
 async function atualizar(usuarioId, id, dados) {
   return db.transaction(async (trx) => {
-    const alterados = await trx('recebivel').where({ id, usuarioId }).update(dados);
+    const alterados = await trx('recebivel').where({ id, usuarioId }).update(camposGravaveis(dados));
     if (!alterados) throw naoEncontrado('Recebível');
     await garantirProxima(trx, usuarioId, id);
     return buscar(usuarioId, id, trx);

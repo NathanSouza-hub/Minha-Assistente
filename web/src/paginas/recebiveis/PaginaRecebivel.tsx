@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils'
 import {
   esquemaRecebimento,
   esquemaRecebivel,
+  nomeDaOrigem,
   ORIGENS,
   paraCorpo,
   STATUS,
@@ -121,7 +122,7 @@ function Situacao({ recebivel: r }: { recebivel: RecebivelDetalhe }) {
         ))}
       </dl>
       <p className="text-base text-muted-foreground">
-        {ORIGENS[r.origem]} · previsto para {dataCurta(r.dataPrevista)}
+        {nomeDaOrigem(r)} · previsto para {dataCurta(r.dataPrevista)}
         {r.recorrencia !== 'nenhuma' && ` · ${r.recorrencia === 'mensal' ? 'todo mês' : 'todo ano'}`}
       </p>
     </section>
@@ -301,6 +302,9 @@ function Formulario({ recebivel }: { recebivel?: RecebivelDetalhe }) {
   const {
     register,
     handleSubmit,
+    control,
+    getValues,
+    setValue,
     setError,
     setFocus,
     formState: { errors, isSubmitting, isDirty },
@@ -308,10 +312,16 @@ function Formulario({ recebivel }: { recebivel?: RecebivelDetalhe }) {
     resolver: zodResolver(esquemaRecebivel),
     defaultValues: valoresIniciais(recebivel, dataPadrao),
   })
+  const origem = useWatch({ control, name: 'origem' })
 
   useEffect(() => {
     if (!editando) setFocus('descricao')
   }, [editando, setFocus])
+
+  // "Especifique a origem" só vale em "Outros": trocar de origem apaga o que foi digitado.
+  useEffect(() => {
+    if (origem !== 'outros' && getValues('origemDescricao')) setValue('origemDescricao', '')
+  }, [origem, getValues, setValue])
 
   async function enviar(dados: DadosRecebivel) {
     try {
@@ -348,13 +358,23 @@ function Formulario({ recebivel }: { recebivel?: RecebivelDetalhe }) {
           {...register('descricao')}
         />
         <div className="grid gap-6 sm:grid-cols-2">
-          <Selecao rotulo="Origem" erro={errors.origem?.message} {...register('origem')}>
-            {Object.entries(ORIGENS).map(([valor, rotulo]) => (
-              <option key={valor} value={valor}>
-                {rotulo}
-              </option>
-            ))}
-          </Selecao>
+          <div className="flex flex-col gap-6">
+            <Selecao rotulo="Origem" erro={errors.origem?.message} {...register('origem')}>
+              {Object.entries(ORIGENS).map(([valor, rotulo]) => (
+                <option key={valor} value={valor}>
+                  {rotulo}
+                </option>
+              ))}
+            </Selecao>
+            {origem === 'outros' && (
+              <Campo
+                rotulo="Especifique a origem"
+                placeholder="Ex.: Juros de empréstimo, reembolso, venda de veículo"
+                erro={errors.origemDescricao?.message}
+                {...register('origemDescricao')}
+              />
+            )}
+          </div>
           <Campo
             rotulo="Valor previsto"
             prefixo="R$"

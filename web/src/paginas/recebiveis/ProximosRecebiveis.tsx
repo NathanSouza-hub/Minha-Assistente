@@ -4,7 +4,7 @@ import { SeloEstado } from '@/components/Estado'
 import { useRecebiveis } from '@/consultas/recebiveis'
 import { dataCurta, hojeISO, somarDias } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
-import { ORIGENS } from './formulario'
+import { nomeDaOrigem } from './formulario'
 
 const QUANTOS_RECEBIVEIS = 5
 
@@ -29,7 +29,7 @@ export function ProximosRecebiveis() {
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="font-semibold">{r.descricao}</span>
                       <span className="text-[0.88rem] text-muted-foreground">
-                        {ORIGENS[r.origem]}
+                        {nomeDaOrigem(r)}
                         {r.status === 'parcial' && ` · recebido ${formatarCentavos(r.recebidoCentavos)}`}
                       </span>
                     </span>

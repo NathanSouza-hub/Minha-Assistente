@@ -14,14 +14,23 @@ const RECORRENCIAS = ['nenhuma', 'mensal', 'anual'];
 // Derivado dos recebimentos: nada recebido, parte ou tudo (ou encerrado com menos).
 const STATUS = ['pendente', 'parcial', 'recebido'];
 
-const corpo = z.object({
-  descricao: z.string().trim().min(1, 'Informe a descrição.').max(200, 'Descrição longa demais.'),
-  origem: z.enum(ORIGENS),
-  valorPrevistoCentavos: centavos,
-  dataPrevista: data,
-  recorrencia: z.enum(RECORRENCIAS).default('nenhuma'),
-  observacoes: textoOpcional(2000),
-});
+const corpo = z
+  .object({
+    descricao: z.string().trim().min(1, 'Informe a descrição.').max(200, 'Descrição longa demais.'),
+    origem: z.enum(ORIGENS),
+    origemDescricao: textoOpcional(100).describe(
+      'Obrigatório quando a origem é "outros" ("Especifique a origem"); nas outras é ignorado',
+    ),
+    valorPrevistoCentavos: centavos,
+    dataPrevista: data,
+    recorrencia: z.enum(RECORRENCIAS).default('nenhuma'),
+    observacoes: textoOpcional(2000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.origem === 'outros' && !v.origemDescricao) {
+      ctx.addIssue({ code: 'custom', path: ['origemDescricao'], message: 'Especifique a origem.' });
+    }
+  });
 
 const filtros = z
   .object({
@@ -49,6 +58,7 @@ const recebivel = z.object({
   id: z.uuid(),
   descricao: z.string(),
   origem: z.enum(ORIGENS),
+  origemDescricao: z.string().nullable().describe('Só na origem "outros" (null nos cadastros antigos)'),
   valorPrevistoCentavos: z.number().int(),
   dataPrevista: z.iso.date(),
   recebidoCentavos: z.number().int().describe('Soma dos recebimentos'),
