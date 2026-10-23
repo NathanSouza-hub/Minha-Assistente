@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react'
 import { ChartBarIcon, FilePdfIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Abas } from '@/components/Abas'
-import { Pagina } from '@/components/layout/Pagina'
 import { SeloEstado } from '@/components/Estado'
 import { Campo } from '@/components/Campo'
 import { EstadoVazio } from '@/components/EstadoVazio'
@@ -11,7 +10,7 @@ import { Selecao } from '@/components/Selecao'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRelatorioFinanceiro, useRelatorioGastos } from '@/consultas/pagamentos'
-import { agora, dataCurta, intervaloDoMes, mesDe, somarMeses } from '@/lib/datas'
+import { agora, dataCurta, intervaloDoMes, mesDe, periodoAnterior, somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { AgruparGastosPor, RelatorioFinanceiro, RelatorioGastos } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -30,11 +29,13 @@ function periodoDoAtalho(atalho: Exclude<Atalho, 'escolher'>) {
 type Consulta<T> = { isPending: boolean; isError: boolean; data?: T; refetch: () => unknown }
 
 /**
- * /relatorio: o período em cima (vale para tudo) e as abas Balanço (entradas, saídas e saldo),
- * Recebíveis e pessoais (por origem e as despesas sem imóvel) e Por imóvel ou categoria (gastos).
- * "Gerar PDF" leva os mesmos números do período e o "Separar por" escolhido (`lib/relatorioPdf.ts`).
+ * Finanças → Visão geral → Relatório (`?vista=relatorio`; o antigo /relatorio redireciona para cá):
+ * o período em cima (vale para tudo), "Gerar PDF" e as abas Balanço (entradas, saídas, saldo e a
+ * comparação com o período anterior), Recebíveis e pessoais e Por imóvel ou categoria (gastos).
+ * As abas internas usam `?parte=` (o `?vista=` é da Visão geral). O PDF leva os mesmos números do
+ * período e o "Separar por" escolhido (`lib/relatorioPdf.ts`).
  */
-export function Relatorio() {
+export function RelatorioDoPeriodo() {
   const [atalho, setAtalho] = useState<Atalho>('este-mes')
   const [personalizado, setPersonalizado] = useState(periodoDoAtalho('este-mes'))
   const [agruparPor, setAgruparPor] = useState<AgruparGastosPor>('imovel')
@@ -44,6 +45,8 @@ export function Relatorio() {
   const periodoValido = Boolean(periodo.inicio && periodo.fim && periodo.inicio <= periodo.fim)
   const financeiro = useRelatorioFinanceiro(periodo, periodoValido)
   const gastos = useRelatorioGastos({ ...periodo, agruparPor }, periodoValido)
+  const anterior = periodoAnterior(periodo)
+  const financeiroAnterior = useRelatorioFinanceiro(anterior, periodoValido)
   // Enquanto o período novo carrega, a tela mostra o anterior: o PDF só sai com os dados do período escolhido.
   const prontos =
     periodoValido &&
@@ -67,18 +70,16 @@ export function Relatorio() {
   }
 
   return (
-    <Pagina
-      titulo="Relatório de gastos"
-      larga
-      acoes={
-        <Button variant="secondary" onClick={gerarPdf} disabled={!prontos || gerando}>
-          <FilePdfIcon weight="bold" aria-hidden />
-          {gerando ? 'Gerando…' : 'Gerar PDF'}
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-5">
-        <div className="superficie grid gap-4 p-4 sm:grid-cols-3">
+    <div className="flex flex-col gap-5">
+      <div className="superficie flex flex-col gap-4 p-4 md:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-secao font-bold">Relatório do período</h2>
+          <Button variant="secondary" onClick={gerarPdf} disabled={!prontos || gerando}>
+            <FilePdfIcon weight="bold" aria-hidden />
+            {gerando ? 'Gerando…' : 'Gerar PDF'}
+          </Button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
           <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
             <option value="este-mes">Este mês</option>
             <option value="mes-passado">Mês passado</option>
@@ -107,15 +108,21 @@ export function Relatorio() {
             </p>
           )}
         </div>
+      </div>
 
         {periodoValido && (
           <Abas<AbaRelatorio>
             rotulo="Partes do relatório"
+            parametro="parte"
             abas={[
               {
                 valor: 'balanco',
                 rotulo: 'Balanço',
-                conteudo: <Carregado consulta={financeiro}>{(r) => <Balanco r={r} />}</Carregado>,
+                conteudo: (
+                  <Carregado consulta={financeiro}>
+                    {(r) => <Balanco r={r} anterior={financeiroAnterior.isPlaceholderData ? undefined : financeiroAnterior.data} />}
+                  </Carregado>
+                ),
               },
               {
                 valor: 'entradas',
@@ -146,8 +153,7 @@ export function Relatorio() {
             ]}
           />
         )}
-      </div>
-    </Pagina>
+    </div>
   )
 }
 
@@ -201,10 +207,11 @@ function Cartao({ titulo, children }: { titulo: string; children: ReactNode }) {
  * Entradas (recebíveis), saídas (contas) e saldo do período, com o critério de cada número escrito:
  * previsto pela data prevista/vencimento, realizado pela data do recebimento/pagamento.
  */
-function Balanco({ r }: { r: RelatorioFinanceiro }) {
+function Balanco({ r, anterior }: { r: RelatorioFinanceiro; anterior?: RelatorioFinanceiro }) {
   const { entradas: e, saidas: s, saldo } = r
   return (
     <div className="flex flex-col gap-5">
+      {anterior && <Comparacao atual={r} anterior={anterior} />}
       <div className="grid items-start gap-5 md:grid-cols-2">
         <Cartao titulo="Entradas (recebíveis)">
           <dl className="flex flex-col divide-y divide-linha">
@@ -374,5 +381,48 @@ function Barra({ rotulo, centavos, maximo, cor }: { rotulo: string; centavos: nu
         <div className={`h-full rounded-r-[4px] ${cor}`} style={{ width: `${largura}%` }} />
       </div>
     </div>
+  )
+}
+
+/**
+ * O realizado do período ao lado do mesmo realizado no período anterior (mesmo tamanho), com a
+ * diferença. Só o realizado: o previsto do passado já virou pago/recebido ou vencido.
+ */
+function Comparacao({ atual, anterior }: { atual: RelatorioFinanceiro; anterior: RelatorioFinanceiro }) {
+  const linhas = [
+    { rotulo: 'Recebido', agora: atual.entradas.recebidoNoPeriodoCentavos, antes: anterior.entradas.recebidoNoPeriodoCentavos, subirEBom: true },
+    { rotulo: 'Pago', agora: atual.saidas.pagoNoPeriodoCentavos, antes: anterior.saidas.pagoNoPeriodoCentavos, subirEBom: false },
+    { rotulo: 'Saldo realizado', agora: atual.saldo.realizadoCentavos, antes: anterior.saldo.realizadoCentavos, subirEBom: true },
+  ]
+  return (
+    <section aria-labelledby="comparacao" className="flex flex-col gap-2">
+      <h2 id="comparacao" className="text-secao font-bold">
+        Comparação com o período anterior
+      </h2>
+      <p className="text-apoio text-muted-foreground">
+        {dataCurta(anterior.inicio)} a {dataCurta(anterior.fim)}, pela data do recebimento e do pagamento.
+      </p>
+      {/* Lista (não tabela): no celular as três colunas não cabem lado a lado. */}
+      <dl className="superficie flex flex-col divide-y divide-linha">
+        {linhas.map((l) => {
+          const dif = l.agora - l.antes
+          const bom = dif === 0 ? null : (dif > 0) === l.subirEBom
+          return (
+            <div key={l.rotulo} className="flex flex-col gap-0.5 px-4 py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="font-semibold">{l.rotulo}</dt>
+                <dd className="font-bold tabular-nums">{formatarCentavos(l.agora)}</dd>
+              </div>
+              <dd className="flex flex-wrap justify-between gap-x-3 text-apoio text-muted-foreground tabular-nums">
+                <span>Antes: {formatarCentavos(l.antes)}</span>
+                <span className={cn('font-semibold', bom === true && 'text-ok', bom === false && 'text-atraso')}>
+                  {dif === 0 ? 'Igual' : `${dif > 0 ? '+' : ''}${formatarCentavos(dif)}`}
+                </span>
+              </dd>
+            </div>
+          )
+        })}
+      </dl>
+    </section>
   )
 }

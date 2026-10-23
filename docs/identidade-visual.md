@@ -1,31 +1,31 @@
 # Identidade visual
 
-Guia do visual do front (`web/`). Mudança de direção se combina aqui primeiro. Esta versão
-(2026-10-21) substituiu a identidade azul de capa cheia (2026-10-20), que por sua vez tinha
-substituído a "agenda de couro" (petróleo, creme e terracota).
+Guia do visual do front (`web/`). Mudança de direção se combina aqui primeiro. Esta versão,
+**"Vivo suave"** (2026-10-22), substituiu a identidade v3 azul (2026-10-21), que por sua vez tinha
+substituído a capa azul (2026-10-20) e a "agenda de couro" (petróleo, creme e terracota).
 
 ## A ideia
 
-**Uma assistente que ajuda a agir.** O app mostra primeiro o que fazer agora, e não um painel de
-números. Visual de produto maduro: fundo claro, pouca superfície, contraste usado só onde importa.
-Azul elétrico para ação, âmbar para atenção, grafite para o texto.
+**Uma assistente com personalidade, que ajuda a agir.** A v3 ficou correta, mas "sem vida, tudo
+igual, com cara de IA". A direção nova (caminho A da amostra no canvas, com as cores suavizadas):
+fundo quente de papel, tinta quase preta, **um** bloco azul-noite com a lua âmbar para o que fazer
+agora, e cada área com a sua cor clara em blocos. Cada módulo tem o próprio desenho: o Início é a
+assistente, Finanças é um painel com gráficos, Medicamentos é o anel das doses.
 
 ## Princípios
 
-1. **O conteúdo é o protagonista, não o cartão.** Listas são linhas numa superfície branca,
-   separadas por fio fino. Cartão destacado só para o que é único na tela (o "Agora" do Início).
-   Nada de um cartão por item.
-2. **Hierarquia seletiva.** Em cada tela, uma coisa chama a atenção. Títulos em grafite, apoio em
-   cinza, azul só no que se toca.
-3. **Azul é ação; âmbar é atenção.** Azul em botões, links, item ativo e "agora". Âmbar só para
-   "vence hoje", "a definir" e lembretes, e sempre com texto grafite em cima (âmbar sobre branco ou
-   azul não tem contraste).
-4. **Estados iguais em todas as áreas** (tabela abaixo). Cor nunca é o único sinal: sempre há
-   ícone e texto juntos.
-5. **Falar como gente.** "Bom dia", "Nada programado para hoje." — nunca jargão.
-6. **Legibilidade não se negocia.** Base de 17px, toque ≥ 44px, contraste AA (≥ 4,5:1 em texto,
-   ≥ 3:1 em bordas de campo e ícones), foco sempre visível.
-7. **Sem degradê nas telas.** Só tema claro.
+1. **O que fazer agora vem primeiro.** O Início abre com uma frase de assistente (feita só com os
+   dados do dia) e o bloco "Agora".
+2. **Cor com função.** Azul-noite só no "Agora"; âmbar é o destaque (botão do "Agora", item ativo
+   da barra, a lua); cada área tem um par tinta + fundo claro que identifica blocos e selos.
+   Vermelho só para vencido/atrasado, verde só para feito/pago.
+3. **Escuro para ação e navegação.** Botão principal, item ativo da barra lateral e a barra de baixo
+   são grafite. Nada de azul elétrico.
+4. **Estados iguais em todas as áreas** (tabela abaixo). Cor nunca é o único sinal.
+5. **Falar como gente.** "Agora é a hora da Losartana." — nunca jargão.
+6. **Legibilidade não se negocia.** Base de 17px, toque ≥ 44px, contraste AA, foco visível.
+7. **Sem degradê e sem excesso de cartão.** Listas continuam linhas numa superfície branca; bloco
+   colorido só para resumo de área, o "Agora" e o saldo.
 
 ## Cores
 
@@ -33,154 +33,150 @@ Tokens em `web/src/index.css`.
 
 | Papel | Token | Valor | Uso |
 |---|---|---|---|
-| Fundo | `--papel` | `#F3F6FC` | fundo de todas as telas |
-| Superfície | `--folha` | `#FFFFFF` | listas, o bloco "Agora", modais, campos, barras |
-| Suave | `--suave` | `#EDF1F8` | hover, cabeçalho de tabela |
-| Fio | `--linha` | `#E3E9F2` | divisórias entre linhas |
-| Contorno | `--contorno` | `#CDD6E4` | botão de apoio, pílulas, abas |
-| Borda de campo | `--input` | `#7D8BA1` | input/select (3,5:1 no branco) |
-| Texto | `--grafite` | `#0E1A33` | texto principal; botão de criar escuro |
-| Texto suave | `--muted-foreground` | `#56647C` | datas, legendas (5,5:1 no fundo) |
-| Azul | `--azul` / `--primary` | `#1663F2` | ação: botão, link, item ativo, "agora" (5,1:1 no branco) |
-| Azul profundo | `--azul-profundo` | `#0B3FC4` | texto sobre `--azul-fundo`; pouco uso |
-| Fundo azul | `--azul-fundo` | `#E6EEFF` | botão secundário ("+ Nova"), item ativo da barra lateral |
-| Âmbar | `--ambar` | `#F5A524` | selo "Vence hoje" (texto grafite em cima) |
-| Âmbar escuro | `--alerta` | `#6B4300` | texto "Valor a definir", "fatura fechada" |
-| Fundo âmbar | `--alerta-fundo` | `#FFF1D6` | fundo claro de atenção |
-| Vencido | `--atraso` | `#C0262D` | vencido, atrasado, erro, excluir (5,9:1 no branco) |
-| Feito | `--ok` | `#2F6B45` | pago, tomado, concluído, recebido; botão `confirmar` |
+| Fundo | `--papel` | `#F4F3EF` | fundo de todas as telas (quente) |
+| Superfície | `--folha` | `#FFFFFF` | listas, Verso do dia, gráficos, campos |
+| Suave | `--suave` | `#ECEAE3` | barra lateral, hover, botão secundário |
+| Fio | `--linha` | `#E4E2DB` | divisórias, grade dos gráficos |
+| Contorno | `--contorno` | `#D3D0C7` | trilho de progresso, linha do zero |
+| Texto / ação | `--grafite` (`--primary`) | `#1B1D26` | texto, botão principal, item ativo, barra de baixo |
+| Texto suave | `--muted-foreground` | `#5E6170` | datas, legendas |
+| Noite | `--noite` | `#2F2D5B` | só o bloco "Agora" (texto branco; apoio em `--noite-texto` `#CFCDEB`) |
+| Âmbar | `--ambar` | `#F0B44C` | botão do "Agora", item ativo da barra de baixo, a lua, "Vence hoje" (texto grafite em cima) |
+| Azul | `--azul` | `#2E3D8C` | foco (anel), "agora" nas linhas |
+| Âmbar escuro | `--alerta` | `#6B4A00` | "Valor a definir" |
+| Vencido | `--atraso` / `--atraso-fundo` | `#B3261E` / `#F7E0DB` | vencido, atrasado, "Pede atenção" |
+| Feito | `--ok` / `--ok-fundo` | `#2F7A4F` / `#DDEEE2` | pago, tomado, concluído |
 
 ### Estados
 
-As mesmas regras em todas as áreas. O componente é `components/Estado.tsx` (`MarcaEstado` para o
-círculo da linha e `SeloEstado` para o texto com ícone); nenhuma tela monta cor de estado à mão.
+Componente `components/Estado.tsx` (`MarcaEstado`, `SeloEstado`); nenhuma tela monta cor de estado
+à mão.
 
 | Estado | Como aparece |
 |---|---|
-| Pendente | círculo vazio cinza; texto normal |
-| Agora | azul: círculo azul e "agora" ao lado do horário; um item por vez |
+| Pendente | círculo vazio cinza |
+| Agora | no Início, o bloco azul-noite; na linha, "· agora" |
 | Feito / pago / tomado | círculo verde cheio com ✓; título riscado e suave |
-| Não fiz / não tomei | círculo cinza com ✗ e a palavra; **sem vermelho** (não é erro) |
-| Vence hoje | selo âmbar cheio com relógio — o único selo cheio do app |
-| Vencido / atrasado | texto vermelho com ícone de alerta e a data ("Venceu em 19/10"); fica num grupo em cima |
-| A definir | texto âmbar escuro, sem selo |
-
-**Feito × Não fiz**: nunca dois botões iguais lado a lado. "Feito" é o botão cheio (ou o círculo
-da linha); "Não fiz" é secundário (texto sublinhado no "Agora", opção no menu da linha).
+| Não fiz / não tomei | círculo cinza com ✗ e a palavra; sem vermelho |
+| Vence hoje | selo âmbar cheio com relógio |
+| Vencido / atrasado | texto vermelho com ícone e a data; grupo "Atrasadas" em cima |
+| A definir | texto âmbar escuro |
 
 ### Cor por área
 
-Cada área tem um par **tinta + fundo**, usado só como identificação discreta: o pontinho ao lado
-do detalhe nas linhas do Início, o rótulo da seção acima do título e o selo nos menus de escolha.
-Texto corrido continua no grafite.
+Par **tinta + fundo** (contraste ≥ 4,5:1 entre os dois). Blocos de resumo usam o fundo com o rótulo
+na tinta e o número em grafite; nas linhas, o pontinho ao lado do detalhe.
 
 | Área | Tinta | Fundo |
 |---|---|---|
-| Agenda, Hoje e geral | `#1663F2` | `#E6EEFF` |
-| Contas (e cartões, equipe, relatório) | `#0F766E` | `#D5F0EC` |
-| Recebíveis | `#05714F` | `#D3F2E5` |
-| Tarefas avulsas | `#475569` | `#E2E8F0` |
-| Remédios | `#2F6B45` | `#DDEFE2` |
-| Compromissos | `#8A5A00` | `#F6E7C6` |
-| Viagens | `#0369A1` | `#DBEEFA` |
-| Compras | `#7A3F6B` | `#F0DDEA` |
-| Programa de rádio | `#5B3FC4` | `#E8E2FB` |
+| Agenda | `#2E3D8C` | `#DEE4F7` |
+| Finanças / contas | `#5A4710` | `#F5E6B0` |
+| Recebíveis | `#1D6455` | `#D6ECE5` |
+| Lembretes (tarefas e compromissos) | `#8B3352` | `#F5DFE6` |
+| Medicamentos | `#23603F` | `#DDEEE2` |
+| Viagens | `#0B5C8A` | `#D9EAF5` |
+| Compras | `#5A3F86` | `#E8E1F2` |
+| Programa de rádio | `#4B3399` | `#E8E2FB` |
 | Atividade física | `#4F6B1F` | `#E6EDD3` |
-| Fisioterapia | `#3B5F73` | `#DDE8EE` |
+| Fisioterapia | `#3B5F73` | `#DCE8EE` |
+| Hoje | `--noite` | `#E3E2F2` |
 
-Tokens: `--area-<nome>` e `--area-<nome>-fundo`; a cor de cada rota fica em
-`src/app/navegacao.ts`.
+Tokens: `--area-<nome>` e `--area-<nome>-fundo`; a cor de cada rota em `src/app/navegacao.ts`.
 
-Relatório: série "pago" no azul, "previsto" em `#C2620A`.
+### Gráficos
+
+Desenhados à mão (`web/src/paginas/financas/graficos.tsx`, sem biblioteca). Entradas `#0F8A6A`,
+saídas `#C08A1E` (par conferido no validador de paleta: daltonismo ΔE 10,5, contraste ≥ 3:1 no
+branco). Resultado mensal em grafite: linha cheia = realizado, tracejada com marcador vazado =
+projeção. Eixo sempre do zero, grade de 1px, colunas de no máximo 22px com ponta arredondada,
+tooltip no toque/passar, legenda com o nome de cada série e "Ver os números" (tabela) em todo
+gráfico. Relatório: série "pago" grafite, "previsto" `#C08A1E`.
 
 ## Tipografia
 
-**Plus Jakarta Sans** (variável, `@fontsource-variable/plus-jakarta-sans`), base de 17px.
-Só os pesos 400, 500, 600 e 700 — nada de 800.
+**Bricolage Grotesque** (títulos `h1`/`h2`, números grandes: classe `font-heading`) + **Figtree**
+(texto), as duas variáveis (`@fontsource-variable/*`). Base de 17px; pesos 400–700.
 
-Escala em tokens do `@theme` (`index.css`); não use tamanhos soltos (`text-[1.18rem]`, `text-xl`):
+| Classe | Uso |
+|---|---|
+| título da tela | 1,75rem no celular, 2rem a partir de 400px, 2,25rem no computador; -0.03em |
+| saudação do Início | 1,9rem → 2,6rem |
+| `text-destaque` | totais, título de folha |
+| `text-secao` | títulos de seção e de gráfico |
+| (base) | item de lista, texto corrido |
+| `text-apoio` | detalhes, datas, explicações |
 
-| Classe | Tamanho | Uso |
-|---|---|---|
-| `text-titulo` | 1,65rem (28px), -0.02em | título da tela (1,5rem abaixo de 380–400px) |
-| `text-destaque` | 1,25rem | totais em destaque, título do "Agora" |
-| `text-secao` | 1,18rem (20px), -0.015em | títulos de seção, de painel e de folha (`SheetTitle`) |
-| (base) | 1rem | item de lista (peso 600; 500 quando feito), texto corrido, rótulo de campo |
-| `text-apoio` | 0,88rem (15px) | detalhes, datas e explicações, no texto suave |
-
-- Texto: peso 400, `line-height: 1.5`.
-- Números (valores, horários): `font-variant-numeric: tabular-nums`, peso 600–700.
+Números em coluna (listas, eixos): `tabular-nums`.
 
 ## Formas
 
-- Raio base `0.875rem`. Superfícies de lista com raio grande (20px); botões 14px; pílulas 99px.
-- Superfície: branca, sombra quase invisível (`--shadow-folha`), sem borda cinza. Sempre pela
-  classe `superficie` (não monte `rounded-2xl bg-folha shadow-folha` à mão).
-- Campos (input, select, textarea): borda de 1,5px em `--input`; foco com anel azul.
-- Interruptor ligado em azul (é uma escolha, não um "feito").
-- Divisória é `--linha`, 1px, só entre linhas da mesma lista.
+- Raio base `1rem`; blocos de área e "Agora" com 1,4–1,75rem; botões e pílulas totalmente
+  redondos (`rounded-full`).
+- Superfície pela classe `superficie` (branca, sombra quase invisível).
+- Campos com borda de 1,5px em `--input`; foco com anel azul.
 
 ## Estrutura das telas
 
-- **Cabeçalho leve** (`components/layout/Pagina.tsx`): sem capa colorida. Rótulo da área pequeno na
-  cor da área, título grande em grafite e, à direita, a ação de criar. `theme-color` = fundo.
-- **Criar = "+ Nova"** (`variant="secondary"`, fundo azul claro) sempre no canto direito do
-  cabeçalho. Cria o item daquela tela; no Início pergunta o tipo. Sem botão flutuante.
-- **Abas internas** em texto, com sublinhado azul no ativo.
-- **Corpo**: conteúdo direto no fundo; grupos com título de seção e uma superfície branca de linhas.
-- **Barra inferior** (celular): branca, fio no topo; o ativo muda só a cor (azul) e o ícone fica
-  cheio. Sem pílula nem fita.
-- **Barra lateral** (computador): branca, fio à direita; o ativo em `--azul-fundo` com texto azul.
-- **Botões**: principal azul sólido; de apoio com contorno cinza e texto grafite; secundário azul
-  claro ("+ Nova"); `confirmar` verde ("Pagar", "Recebi"); `perigo` vermelho.
-
-### Componentes de lista
-
-Todas as áreas usam as mesmas peças (`web/src/components/Linha.tsx`), no molde do Início:
-
-- `Lista`: a superfície branca com fio entre as linhas.
-- `LinhaMarcavel`: círculo de concluir à esquerda (`MarcaEstado`), título e apoio no meio (o meio
-  abre o item), valor opcional na linha do título e, à direita, o ⋯ de `MenuLinha` (as outras
-  ações: "Não fiz", "Voltar para pendente", "Abrir"). Remédios, compromissos, tarefas, compras e
-  contas (`ItemPagamento`: o círculo paga ou desfaz).
-- `LinhaLink`: linha de cadastro que só abre o item, com a seta à direita.
-- Linhas de cadastro com ações (Residências, Categorias): ícones discretos à direita (lápis,
-  lixeira, setas), sem botões com contorno empilhados.
-- Contas por urgência: as pagas ficam recolhidas ("Pagas 3") enquanto houver conta a pagar.
-- Navegação de dia, semana e mês (`components/NavegadorDia.tsx`): título à esquerda, setas à direita.
-- Barra de progresso fina e azul com o texto ao lado (`components/Progresso.tsx`).
-- Grupos de números (Finanças, Relatório): título de seção e uma superfície de linhas "rótulo e
-  critério à esquerda, valor à direita". Valor em grafite; verde só no que já foi pago/recebido,
-  vermelho só no saldo negativo, e o vencido vai como `SeloEstado` na linha do critério.
+- **Cabeçalho** (`Pagina`): título grande em Bricolage, ação de criar à direita (`variant="secondary"`).
+- **Telas da área** no celular: pílulas que rolam para o lado (a atual em grafite). Abas internas
+  (`components/Abas.tsx`) continuam em texto sublinhado.
+- **Barra de baixo** (celular): pílula grafite flutuante; a área atual em pílula âmbar com ícone e
+  nome, as outras só com o ícone (o nome fica para leitores de tela).
+- **Barra lateral** (computador): fundo `--suave`; a área ativa em pílula grafite com o ícone âmbar.
+- **Menu**: Início, Finanças, Agenda, Medicamentos, Lembretes, Configurações. Consultas, exames,
+  fisioterapia e atividade física saíram do menu (rotas e dados continuam, abertos pela Agenda).
 
 ## Início
 
-1. Data (apoio) e "Bom dia, Nome" (título), "+ Nova" e a conta à direita; barra fina de progresso
-   ("3 de 9 feitas").
-2. **Agora**: o único bloco em destaque. A atividade com horário que está acontecendo ou é a próxima
-   pendente, com "Feito" e, embaixo, "Não fiz" e "Depois: 14:00 …".
-3. **Precisa de atenção**: só com atrasadas (vermelho).
-4. **Hoje**: uma superfície com as linhas (círculo de concluir à esquerda, título, horário e
-   detalhe com o ponto da área; "Vence hoje" nas contas do dia). Tocar no ⋯ abre as outras ações
-   (Não fiz, Desfazer, Abrir). "Dia todo" numa segunda superfície.
+1. Data, "+ Nova" e a engrenagem (celular); saudação grande; **frase da assistente** (o que é agora
+   ou o próximo, e quantas ficaram para trás — só com os dados de `/hoje`); barra de progresso.
+2. **Agora**: bloco azul-noite com a lua âmbar, o horário numa pílula, título grande, "Tomei/Feito"
+   em âmbar, "Não fiz" sublinhado e "Depois:".
+3. **Resumo das áreas** (`hoje/ResumoDasAreas.tsx`): Remédios (doses com anel), próximo da Agenda e
+   Lembretes feitos, cada um na cor da área.
+4. **Verso do dia** (`hoje/VersoDoDia.tsx`) no lugar do antigo resumo financeiro.
+5. Atrasadas e a lista do dia. No computador, as listas à esquerda e o resumo com o verso numa
+   coluna fixa à direita.
+
+### Verso do dia
+
+- Texto da **tradução de João Ferreira de Almeida (domínio público)**, copiado sem alteração da
+  bible-api.com (`?translation=almeida`) e guardado em `web/src/lib/versos.ts` (71 versos). Não
+  depende de internet; nenhum verso é escrito de memória.
+- Escolha pelo dia (`versoDoDia`): percorre a lista com passo 37 (primo com 71), então todos passam
+  antes de repetir e nunca repete em dias seguidos; igual em todo aparelho.
+- "Ler o capítulo" abre uma folha e busca o capítulo na bible-api.com na hora (cache da sessão).
+  Sem internet ou com o serviço fora, mostra o aviso e o verso continua no Início. A bible-api.com é
+  um serviço gratuito sem garantia de disponibilidade e com limite de requisições por IP; o texto é
+  de domínio público, então não há licença a pagar.
+
+## Finanças → Visão geral
+
+Abas **Resumo do mês** e **Relatório** (`?vista=relatorio`; o endereço antigo `/relatorio` redireciona).
+O Resumo tem: "Pede atenção" (vencidas, recebíveis atrasados, contas a definir — ou a faixa verde
+"Nada vencido"), o saldo realizado e projetado num bloco grafite, os grupos Despesas e Recebíveis
+com o critério de cada número, os gráficos Entradas e saídas, Resultado mês a mês e Despesas por
+categoria, e os blocos Por residência. O Relatório tem o período, "Gerar PDF", a comparação com o
+período anterior e as abas Balanço, Recebíveis e pessoais e Por imóvel ou categoria.
+
+## Medicamentos
+
+Anel com "1 de 4 doses tomadas" e a próxima dose, as doses por período (Manhã, Tarde, Noite, da
+semana) e **Últimos 7 dias** (uma coluna por dia com tomadas/total; tocar abre o dia).
 
 ## Ícones
 
-**Phosphor** (`@phosphor-icons/react`): peso `regular` no geral, `bold` em ícones pequenos de
-estado e `fill` no item ativo da navegação.
+**Phosphor**: `regular` no geral, `fill` no ativo.
 
 ## Tom dos textos
 
-- Segunda pessoa, frases curtas, calor sem exagero. Sem emoji na interface.
+- Segunda pessoa, frases curtas, calor sem exagero. Sem emoji.
 - Vazio: diga o que está acontecendo e o próximo passo.
-- Confirmação: "Pronto, conta paga." em vez de "Pagamento atualizado com sucesso".
-- Respeitar o vocabulário de quem usa o app (agendamentos, Compromissos — ver `web/CLAUDE.md`).
-- Nunca o nome de uma pessoa real nos textos fixos: a saudação usa o nome da conta que entrou.
+- Respeitar o vocabulário de quem usa o app (ver `web/CLAUDE.md`).
+- Nunca o nome de uma pessoa real nos textos fixos.
 
 ## Marca
 
-Símbolo **B, "conversa resolvida"** (provisório até a escolha do nome): um balão branco de cantos
-arredondados com o canto inferior esquerdo reto (no lugar do rabinho) e um "feito" âmbar, sobre um
-quadrado azul `#1663F2` chapado (`web/public/favicon.svg`). Ícones do PWA gerados com
-`npx pwa-assets-generator` (maskable com fundo azul). Conferir a leitura em 16, 24 e 32px ao mudar
-o desenho. O nome escrito continua "Minha Assistente".
+Símbolo **B, "conversa resolvida"** (provisório): balão branco com o canto inferior esquerdo reto e
+o "feito" âmbar, sobre o quadrado grafite `#1B1D26` (`web/public/favicon.svg`). Ícones do PWA com
+`npx pwa-assets-generator` (fundo grafite). O nome escrito continua "Minha Assistente".

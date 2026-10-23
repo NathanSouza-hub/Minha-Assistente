@@ -1,4 +1,4 @@
-import { createBrowserRouter, type RouteObject } from 'react-router'
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router'
 import { Redirecionar } from '@/components/Redirecionar'
 import { LayoutApp } from '@/components/layout/LayoutApp'
 import { Carregando, RotaProtegida, RotaVisitante } from '@/app/guardas'
@@ -53,7 +53,6 @@ const detalheImovel = () =>
   import('@/paginas/imoveis/DetalheImovel').then((m) => ({ Component: m.DetalheImovel }))
 const categorias = () =>
   import('@/paginas/categorias/Categorias').then((m) => ({ Component: m.Categorias }))
-const relatorio = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Relatorio }))
 const recebiveis = () => import('@/paginas/recebiveis/Recebiveis').then((m) => ({ Component: m.Recebiveis }))
 const paginaRecebivel = () =>
   import('@/paginas/recebiveis/PaginaRecebivel').then((m) => ({ Component: m.PaginaRecebivel }))
@@ -123,7 +122,8 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'imoveis', lazy: imoveis },
           { path: 'imoveis/:id', lazy: detalheImovel },
           { path: 'categorias', lazy: categorias },
-          { path: 'relatorio', lazy: relatorio },
+          // O relatório virou a aba "Relatório" da Visão geral de Finanças; o endereço antigo leva para lá.
+          { path: 'relatorio', element: <Navigate to="/financas?vista=relatorio" replace /> },
           { path: 'conta/senha', lazy: trocarSenha },
           { path: '*', element: <NaoEncontrada /> },
         ],

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
@@ -11,6 +11,10 @@ import { montarHorarios } from './formulario'
 import { descreverHorario } from './textos'
 
 const servidor = setupServer(...handlers)
+
+// O anel mostra "1 de 4" grande e "doses tomadas" embaixo: o texto inteiro está no bloco.
+const esperarDoses = (texto: string) =>
+  waitFor(() => expect(screen.getByRole('region', { name: 'Doses do dia' })).toHaveTextContent(texto))
 
 beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 beforeEach(async () => {
@@ -41,7 +45,7 @@ function espiarEnvio(metodo: 'POST' | 'PUT', caminho: RegExp) {
 describe('doses do dia', () => {
   test('agrupa por período, só ativos e o semanal do dia, com o progresso', async () => {
     renderizarApp('/remedios')
-    expect(await screen.findByText('1 de 4 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('1 de 4 doses tomadas')
     const manha = screen.getByRole('region', { name: 'Manhã' })
     expect(within(manha).getByText('Omeprazol')).toBeInTheDocument()
     expect(within(manha).getByText('Tomado às 07:05')).toBeInTheDocument()
@@ -57,9 +61,9 @@ describe('doses do dia', () => {
     const usuario = userEvent.setup()
     renderizarApp('/remedios')
     await usuario.click(await screen.findByRole('button', { name: 'Tomei Vitamina D' }))
-    expect(await screen.findByText('2 de 4 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('2 de 4 doses tomadas')
     await usuario.click(screen.getByRole('button', { name: 'Desfazer: Vitamina D não foi tomado' }))
-    expect(await screen.findByText('1 de 4 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('1 de 4 doses tomadas')
     expect(screen.getByRole('button', { name: 'Tomei Vitamina D' })).toBeInTheDocument()
   })
 
@@ -69,7 +73,7 @@ describe('doses do dia', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Mais opções: Vitamina D' }))
     await usuario.click(screen.getByRole('button', { name: 'Não tomei' }))
     expect(await screen.findByText('Não tomado')).toBeInTheDocument()
-    expect(await screen.findByText('1 de 4 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('1 de 4 doses tomadas')
 
     await usuario.click(screen.getByRole('button', { name: 'Mais opções: Vitamina D' }))
     await usuario.click(screen.getByRole('button', { name: 'Voltar para pendente' }))
@@ -91,7 +95,7 @@ describe('doses do dia', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Tomei Vitamina D' }))
     expect(await screen.findByText('Erro inesperado no servidor.')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Tomei Vitamina D' })).toBeInTheDocument()
-    expect(screen.getByText('1 de 4 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('1 de 4 doses tomadas')
   })
 
   test('dia seguinte: sem o semanal e sem botão "Tomei" (ainda não chegou)', async () => {
@@ -99,7 +103,7 @@ describe('doses do dia', () => {
     renderizarApp('/remedios')
     await usuario.click(await screen.findByRole('button', { name: 'Próximo dia' }))
     expect(await screen.findByRole('heading', { name: 'Amanhã, 14 de outubro' })).toBeInTheDocument()
-    expect(await screen.findByText('0 de 3 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('0 de 3 doses tomadas')
     expect(screen.queryByText('Vitamina D')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Tomei/ })).not.toBeInTheDocument()
     expect(screen.getAllByText('Ainda não chegou o dia.')).toHaveLength(3)
@@ -207,7 +211,7 @@ describe('cadastro de remédio', () => {
       within(await screen.findByRole('link', { name: /Vitamina D/ })).getByText('Pausado'),
     ).toBeInTheDocument()
     await usuario.click(screen.getByRole('radio', { name: 'Doses do dia' }))
-    expect(await screen.findByText('1 de 3 doses tomadas')).toBeInTheDocument()
+    await esperarDoses('1 de 3 doses tomadas')
   })
 
   test('exclui depois de confirmar, sem aviso de "não encontrado"', async () => {

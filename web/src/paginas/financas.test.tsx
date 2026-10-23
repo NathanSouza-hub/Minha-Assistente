@@ -71,6 +71,24 @@ describe('Finanças → Visão geral', () => {
     expect(screen.queryByRole('region', { name: 'Remédios de hoje' })).not.toBeInTheDocument()
   })
 
+  test('o painel tem o que pede atenção, os gráficos e as residências; o Relatório é uma aba', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/financas')
+    expect(await screen.findByRole('region', { name: 'Pede atenção' })).toBeInTheDocument()
+    for (const titulo of ['Entradas e saídas', 'Resultado mês a mês', 'Despesas por categoria', 'Por residência'])
+      expect(await screen.findByRole('region', { name: titulo })).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Despesas por categoria' })).findByText('Outros')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('tab', { name: 'Relatório' }))
+    expect(await screen.findByRole('button', { name: /Gerar PDF/ })).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Comparação com o período anterior' })).toBeInTheDocument()
+  })
+
+  test('o endereço antigo do Relatório abre a aba Relatório da Visão geral', async () => {
+    renderizarApp('/relatorio')
+    expect(await screen.findByRole('tab', { name: 'Relatório', selected: true })).toBeInTheDocument()
+  })
+
   test('o menu da área leva às telas de Finanças', async () => {
     renderizarApp('/financas')
     const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
@@ -83,7 +101,6 @@ describe('Finanças → Visão geral', () => {
       'Residências',
       'Equipe',
       'Recebíveis',
-      'Relatório',
     ])
     // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33).
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')

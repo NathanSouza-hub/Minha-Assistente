@@ -104,3 +104,16 @@ export function rotuloDoDia(data: string, hoje = hojeISO()) {
   if (dias === 1) return `Amanhã, ${deDataISO(data).toFormat("d 'de' LLLL")}`
   return diaCurto(data)
 }
+
+/** O período do mesmo tamanho logo antes (ex.: outubro → setembro; 1º a 15 → os 15 dias antes). */
+export function periodoAnterior(periodo: { inicio: string; fim: string }) {
+  const inicio = deDataISO(periodo.inicio)
+  const fim = deDataISO(periodo.fim)
+  // Meses inteiros comparam com os meses inteiros de antes (outubro tem 31 dias, setembro 30).
+  if (inicio.day === 1 && fim.plus({ days: 1 }).day === 1) {
+    const meses = Math.round(fim.plus({ days: 1 }).diff(inicio, 'months').months)
+    return { inicio: inicio.minus({ months: meses }).toISODate()!, fim: inicio.minus({ days: 1 }).toISODate()! }
+  }
+  const dias = Math.round(fim.diff(inicio, 'days').days) + 1
+  return { inicio: inicio.minus({ days: dias }).toISODate()!, fim: inicio.minus({ days: 1 }).toISODate()! }
+}

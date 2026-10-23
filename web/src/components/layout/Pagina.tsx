@@ -46,7 +46,7 @@ export function Pagina({ titulo, cabecalho, acoes, larga, area, children }: Prop
           {cabecalho ?? (
             <div className="min-w-0">
               {rotulo && <p className="text-apoio font-semibold text-area">{rotulo}</p>}
-              <h1 className="text-[1.5rem] leading-tight font-bold tracking-[-0.02em] hyphens-auto min-[400px]:text-titulo">
+              <h1 className="text-[1.75rem] leading-[1.05] font-bold tracking-[-0.03em] hyphens-auto min-[400px]:text-[2rem] md:text-[2.25rem]">
                 {titulo}
               </h1>
             </div>
@@ -79,8 +79,8 @@ function MenuDaSecao({ larga }: { larga?: boolean }) {
   const { secao, item: atual, exato } = secaoDaTela(pathname, search)
   if (!secao || !exato || secao.itens.length < 2) return null
   return (
-    <nav aria-label={`Telas de ${secao.rotulo}`} className="mt-2 border-b border-linha md:hidden">
-      <ul className={cn('relative mx-auto flex gap-6 overflow-x-auto px-4 [scrollbar-width:none]', larga ? 'max-w-6xl' : 'max-w-3xl')}>
+    <nav aria-label={`Telas de ${secao.rotulo}`} className="mt-3 md:hidden">
+      <ul className={cn('relative mx-auto flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]', larga ? 'max-w-6xl' : 'max-w-3xl')}>
         {secao.itens.map((item) => (
           <li key={item.rota} className="shrink-0">
             <Link
@@ -89,8 +89,9 @@ function MenuDaSecao({ larga }: { larga?: boolean }) {
               // A tela atual fica à vista mesmo quando o menu rola para o lado (ex.: a última da lista).
               ref={item === atual ? mostrarNoMenu : undefined}
               className={cn(
-                'flex min-h-11 items-center text-base font-medium whitespace-nowrap text-muted-foreground hover:text-foreground',
-                item === atual && 'font-bold text-foreground shadow-[inset_0_-3px_0_var(--azul)]',
+                // Pílulas: a atual escura; as outras brancas sobre o fundo quente.
+                'flex min-h-11 items-center rounded-full bg-folha px-4 text-[0.94rem] font-semibold whitespace-nowrap text-foreground hover:bg-suave',
+                item === atual && 'bg-grafite font-bold text-folha hover:bg-grafite',
               )}
             >
               {item.rotulo}

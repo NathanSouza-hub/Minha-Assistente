@@ -156,14 +156,14 @@ describe('navegação', () => {
     renderizarApp('/')
     // A barra de baixo do celular (a lateral do computador também se chama "Principal").
     const barra = (await screen.findAllByRole('navigation', { name: 'Principal' })).find((nav) =>
-      nav.className.includes('bottom-0'),
+      nav.className.includes('fixed'),
     )!
     expect(within(barra).getAllByRole('link').map((l) => l.textContent)).toEqual([
       'Início',
       'Finanças',
       'Agenda',
-      'Saúde',
-      'Lembretes', // a área Compromissos; o nome completo não cabe na barra
+      'Remédios', // a área Medicamentos; o nome completo não cabe na barra
+      'Lembretes',
     ])
     await usuario.click(within(barra).getByRole('link', { name: 'Finanças' }))
     const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })

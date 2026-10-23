@@ -55,11 +55,21 @@ function Indicador({
   )
 }
 
-function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
+/** `destaque`: o saldo, em bloco escuro no topo, com os dois números lado a lado no computador. */
+function Grupo({ titulo, destaque, children }: { titulo: string; destaque?: boolean; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('flex flex-col gap-2', destaque && 'md:col-span-2')}>
       <h3 className="text-secao font-bold">{titulo}</h3>
-      <dl className="superficie flex flex-col divide-y divide-linha overflow-hidden">{children}</dl>
+      <dl
+        className={cn(
+          'flex flex-col overflow-hidden',
+          destaque
+            ? 'rounded-[1.5rem] bg-grafite text-white md:flex-row [&_.text-muted-foreground]:text-white/70 [&>*]:flex-1 [&_dd.text-lg]:font-heading [&_dd.text-lg]:text-[1.6rem] md:[&>*+*]:border-l md:[&>*+*]:border-white/12 max-md:[&>*+*]:border-t max-md:[&>*+*]:border-white/12 [&_.text-atraso]:text-[#ffb4a8]'
+            : 'superficie divide-y divide-linha',
+        )}
+      >
+        {children}
+      </dl>
     </div>
   )
 }
@@ -114,6 +124,20 @@ function Indicadores({
   return (
     <div className="flex flex-col gap-6">
       <div className="grid items-start gap-6 md:grid-cols-2">
+        <Grupo titulo="Saldo do mês" destaque>
+          <Indicador
+            rotulo="Saldo realizado"
+            valor={saldo.realizadoCentavos}
+            nota="Recebido no mês − pago no mês"
+            cor={saldo.realizadoCentavos < 0 ? 'text-atraso' : undefined}
+          />
+          <Indicador
+            rotulo="Saldo projetado"
+            valor={saldo.projetadoCentavos}
+            nota="Previsto a receber − despesas do mês"
+            cor={saldo.projetadoCentavos < 0 ? 'text-atraso' : undefined}
+          />
+        </Grupo>
         <Grupo titulo="Despesas">
           <Indicador rotulo="Despesas do mês" valor={s.totalCentavos} nota={`Contas que vencem em ${nomeMes}`} para={despesas} />
           <Indicador rotulo="Já pago" valor={s.pagoCentavos} nota="Dessas contas" cor="text-ok" para={`${despesas}&status=pago`} />
@@ -148,20 +172,7 @@ function Indicadores({
           />
           <Indicador rotulo="Recebido no mês" valor={e.recebidoNoPeriodoCentavos} nota="Pela data do recebimento" />
         </Grupo>
-        <Grupo titulo="Saldo do mês">
-          <Indicador
-            rotulo="Saldo realizado"
-            valor={saldo.realizadoCentavos}
-            nota="Recebido no mês − pago no mês"
-            cor={saldo.realizadoCentavos < 0 ? 'text-atraso' : undefined}
-          />
-          <Indicador
-            rotulo="Saldo projetado"
-            valor={saldo.projetadoCentavos}
-            nota="Previsto a receber − despesas do mês"
-            cor={saldo.projetadoCentavos < 0 ? 'text-atraso' : undefined}
-          />
-        </Grupo>
+
       </div>
       {s.contasADefinir > 0 && (
         <p className="text-base">

@@ -4,15 +4,17 @@ import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Lista, LinhaLink } from '@/components/Linha'
 import { NavegadorDia } from '@/components/NavegadorDia'
-import { Progresso } from '@/components/Progresso'
 import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDosesDoDia, useMedicamentos } from '@/consultas/medicamentos'
+import { agora } from '@/lib/datas'
 import { dataCurta, hojeISO } from '@/lib/datas'
+import type { DoseDoDia } from '@/lib/tipos'
 import type { PeriodoRemedio } from '@/lib/tipos'
 import { ItemDose } from './ItemDose'
 import { descreverHorario } from './textos'
+import { UltimosDias } from './UltimosDias'
 
 type Visao = 'hoje' | 'lista'
 
@@ -47,7 +49,7 @@ export function Remedios() {
 
   return (
     <Pagina
-      titulo="Remédios"
+      titulo="Medicamentos"
       acoes={
         <Button asChild variant="secondary">
           <Link to="/remedios/novo">
@@ -117,12 +119,7 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
         </EstadoVazio>
       ) : (
         <>
-          <Progresso
-            feitos={tomadas}
-            total={doses.length}
-            texto={`${tomadas} de ${doses.length} ${doses.length === 1 ? 'dose tomada' : 'doses tomadas'}`}
-            textoCompleto="Tudo tomado neste dia."
-          />
+          <DosesEmDestaque doses={doses} tomadas={tomadas} ehHoje={data === hojeISO()} />
           {GRUPOS.map(({ periodo, titulo }) => {
             const doGrupo = doses.filter((d) => d.periodo === periodo)
             if (!doGrupo.length) return null
@@ -141,7 +138,51 @@ function DosesDoDia({ data, mudarData }: { data: string; mudarData: (d: string) 
           })}
         </>
       )}
+      <UltimosDias data={data} aoEscolher={mudarData} />
     </>
+  )
+}
+
+/** O anel das doses do dia e, hoje, a próxima que falta (pelo horário). */
+function DosesEmDestaque({ doses, tomadas, ehHoje }: { doses: DoseDoDia[]; tomadas: number; ehHoje: boolean }) {
+  const r = 36
+  const volta = 2 * Math.PI * r
+  const hora = agora().toFormat('HH:mm')
+  const faltam = doses.filter((d) => d.situacao === 'pendente' && d.hora)
+  const proxima = ehHoje ? (faltam.find((d) => d.hora! >= hora) ?? null) : null
+  const tudo = tomadas === doses.length
+  return (
+    <section aria-label="Doses do dia" className="flex items-center gap-5 rounded-[1.75rem] bg-area-fundo px-5 py-4 text-area">
+      <svg width="88" height="88" viewBox="0 0 88 88" aria-hidden className="shrink-0">
+        <circle cx="44" cy="44" r={r} fill="none" stroke="currentColor" strokeOpacity={0.15} strokeWidth="11" />
+        <circle
+          cx="44"
+          cy="44"
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="11"
+          strokeLinecap="round"
+          strokeDasharray={`${(tomadas / doses.length) * volta} ${volta}`}
+          transform="rotate(-90 44 44)"
+          className="transition-[stroke-dasharray]"
+        />
+      </svg>
+      <div className="flex min-w-0 flex-col gap-0.5" aria-live="polite">
+        <p className="flex flex-col">
+          <span className="font-heading text-[1.9rem] leading-none font-bold tracking-[-0.03em] text-grafite">
+            {tomadas} de {doses.length}
+          </span>{' '}
+          <span className="font-semibold">{doses.length === 1 ? 'dose tomada' : 'doses tomadas'}</span>
+        </p>
+        {tudo && <p className="text-apoio font-semibold">Tudo tomado neste dia.</p>}
+        {proxima && (
+          <p className="text-apoio text-grafite/80">
+            Próxima: {proxima.nome} às {proxima.hora}
+          </p>
+        )}
+      </div>
+    </section>
   )
 }
 

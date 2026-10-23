@@ -8,13 +8,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useTarefasHoje } from '@/consultas/hoje'
 import { agora, dataPorExtenso, hojeISO, rotuloDoDia, saudacao, somarDias } from '@/lib/datas'
 import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
-import { cn } from '@/lib/utils'
 import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
 import { CATEGORIAS, destaqueDoDia, useMarcar } from '@/paginas/hoje/tarefas'
 import { NovaAtividade } from '@/paginas/hoje/NovaAtividade'
+import { ResumoDasAreas } from '@/paginas/hoje/ResumoDasAreas'
+import { VersoDoDia } from '@/paginas/hoje/VersoDoDia'
 
 /** Data, saudação, "+ Nova" e a conta; embaixo, a barra fina de progresso do dia aberto. */
-function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
+function CabecalhoHoje({ dia, ehHoje }: { dia: TarefasHoje | null; ehHoje: boolean }) {
+  const resumo = dia?.resumo ?? null
   const { usuario } = useSessao()
   const hoje = agora()
   const primeiroNome = usuario?.nome.trim().split(/\s+/)[0]
@@ -33,10 +35,11 @@ function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
           </Button>
         </div>
       </div>
-      <h1 className="-mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.02em] min-[380px]:text-titulo">
+      <h1 className="-mt-1 text-[1.9rem] leading-[1.02] font-bold tracking-[-0.03em] min-[380px]:text-[2.15rem] md:text-[2.6rem]">
         {saudacao(hoje.hour)}
         {primeiroNome && `, ${primeiroNome}`}
       </h1>
+      {dia && ehHoje && <FraseDoDia dia={dia} />}
       {resumo && resumo.programadas > 0 && (
         <div className="flex items-center gap-3">
           <div
@@ -45,10 +48,10 @@ function CabecalhoHoje({ resumo }: { resumo: TarefasHoje['resumo'] | null }) {
             aria-valuenow={resumo.concluidas}
             aria-valuemin={0}
             aria-valuemax={resumo.programadas}
-            className="h-1.5 flex-1 overflow-hidden rounded-full bg-contorno/70"
+            className="h-2 flex-1 overflow-hidden rounded-full bg-contorno/60"
           >
             <div
-              className="h-full rounded-full bg-primary transition-[width]"
+              className="h-full rounded-full bg-grafite transition-[width]"
               style={{ width: `${(resumo.concluidas / resumo.programadas) * 100}%` }}
             />
           </div>
@@ -69,11 +72,11 @@ export function Hoje() {
   const mudarDia = (novo: string) => setParams(novo === hojeISO() ? {} : { data: novo }, { replace: true })
 
   return (
-    <Pagina titulo="Início" cabecalho={<CabecalhoHoje resumo={consulta.data?.resumo ?? null} />}>
+    <Pagina titulo="Início" larga cabecalho={<CabecalhoHoje dia={consulta.data ?? null} ehHoje={ehHoje} />}>
       {consulta.isPending ? (
         <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-4">
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-40 rounded-[1.75rem]" />
+          <Skeleton className="h-64 rounded-[1.5rem]" />
         </div>
       ) : consulta.isError ? (
         <EstadoVazio
@@ -109,12 +112,26 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
     </ul>
   )
 
+  // Celular: Agora, o resumo das áreas e o verso, depois as listas. Computador: listas à esquerda e
+  // o resumo com o verso numa coluna à direita.
   return (
-    <div className="flex flex-col gap-6">
-      {destaque && <Agora destaque={destaque} data={dia.data} />}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-x-8">
+      {destaque && (
+        <div className="lg:col-start-1">
+          <Agora destaque={destaque} data={dia.data} />
+        </div>
+      )}
+
+      <aside
+        aria-label="Resumo do dia"
+        className="flex flex-col gap-3 lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1"
+      >
+        <ResumoDasAreas dia={dia} ehHoje={ehHoje} />
+        <VersoDoDia data={dia.data} />
+      </aside>
 
       {atrasadas.length > 0 && (
-        <section aria-labelledby="hoje-atrasadas" className="flex flex-col gap-2">
+        <section aria-labelledby="hoje-atrasadas" className="flex flex-col gap-2 lg:col-start-1">
           <h2 id="hoje-atrasadas" className="flex items-center gap-1.5 text-base font-bold text-atraso">
             <WarningCircleIcon weight="bold" className="size-5" aria-hidden />
             Atrasadas
@@ -123,7 +140,7 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
         </section>
       )}
 
-      <section aria-label={ehHoje ? 'Atividades de hoje' : 'Atividades do dia'} className="flex flex-col gap-2">
+      <section id="hoje-lista" aria-label={ehHoje ? 'Atividades de hoje' : 'Atividades do dia'} className="flex flex-col gap-2 lg:col-start-1">
         <nav aria-label="Dia" className="flex items-center justify-between gap-2">
           <h2 className="text-secao font-bold" aria-live="polite">
             {rotuloDoDia(dia.data)}
@@ -176,49 +193,94 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
   )
 }
 
-/** O único bloco em destaque da tela: o que fazer agora, com "Feito" e, embaixo, "Não fiz" e o que vem depois. */
+/**
+ * O único bloco em destaque da tela, em azul-noite com a lua âmbar: o que fazer agora, o botão de
+ * concluir em âmbar e, embaixo, "Não fiz" e o que vem depois.
+ */
 function Agora({ destaque, data }: { destaque: NonNullable<ReturnType<typeof destaqueDoDia>>; data: string }) {
   const { tarefa: t, acontecendo, depois } = destaque
   const marcarComo = useMarcar(t, data)
   const { feito, naoFeito } = CATEGORIAS[t.categoria]
   return (
-    <section aria-labelledby="hoje-agora" className="rounded-2xl bg-folha px-4 pt-4 pb-1 shadow-[var(--shadow-destaque)]">
-      <div className="flex items-center gap-3">
-        <Link to={t.link} className="min-w-0 flex-1">
-          <p id="hoje-agora" className="flex items-center gap-2 text-[0.85rem] font-semibold text-primary">
-            <span aria-hidden className="size-2 rounded-full bg-primary shadow-[0_0_0_4px_var(--azul-fundo)]" />
+    <section
+      aria-labelledby="hoje-agora"
+      className="relative overflow-hidden rounded-[1.75rem] bg-noite px-5 pt-5 pb-2 text-white shadow-[var(--shadow-destaque)]"
+    >
+      {/* Lua: um círculo âmbar recortado por outro da cor do bloco. */}
+      <span aria-hidden className="absolute -top-8 -right-6 size-30 rounded-full bg-ambar/90" />
+      <span aria-hidden className="absolute -top-11 right-0 size-28 rounded-full bg-noite" />
+      <div className="relative">
+        <Link to={t.link} className="block min-w-0 rounded-lg focus-visible:outline-white">
+          <p
+            id="hoje-agora"
+            className="inline-flex items-center rounded-full bg-white/12 px-3 py-1 text-[0.8rem] font-bold tracking-[0.04em]"
+          >
             {acontecendo ? 'Agora' : 'Próxima'} · {t.horario}
           </p>
-          <h2 className="mt-1 text-destaque font-bold break-words">{t.titulo}</h2>
-          {t.detalhe && <p className="mt-0.5 text-apoio text-muted-foreground">{t.detalhe}</p>}
+          <h2 className="mt-3 pr-16 text-[1.85rem] leading-[1.08] font-bold tracking-[-0.025em] break-words">
+            {t.titulo}
+          </h2>
+          {t.detalhe && <p className="mt-1 text-base text-noite-texto">{t.detalhe}</p>}
         </Link>
-        <Button onClick={() => marcarComo('feito')} aria-label={`${feito}: ${t.titulo}`} className="shrink-0 px-4">
-          <CheckIcon weight="bold" aria-hidden />
-          {feito}
-        </Button>
-      </div>
-      <div className={cn('mt-3 flex items-center gap-3 border-t border-linha', depois ? 'justify-between' : 'justify-start')}>
-        <button
-          type="button"
-          onClick={() => marcarComo('nao_feito')}
-          className="min-h-11 shrink-0 text-apoio font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
-        >
-          {naoFeito}
-          <span className="sr-only">: {t.titulo}</span>
-        </button>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1">
+          <Button
+            onClick={() => marcarComo('feito')}
+            aria-label={`${feito}: ${t.titulo}`}
+            className="h-12 bg-ambar px-6 text-[1.05rem] font-bold text-grafite hover:bg-[color-mix(in_oklab,var(--ambar),white_18%)]"
+          >
+            <CheckIcon weight="bold" aria-hidden />
+            {feito}
+          </Button>
+          <button
+            type="button"
+            onClick={() => marcarComo('nao_feito')}
+            className="min-h-11 shrink-0 text-base font-semibold text-noite-texto underline underline-offset-4 hover:text-white"
+          >
+            {naoFeito}
+            <span className="sr-only">: {t.titulo}</span>
+          </button>
+        </div>
         {depois && (
           <Link
             to={depois.link}
-            className="flex min-h-11 min-w-0 items-center gap-1.5 text-apoio hover:underline"
+            className="mt-3 flex min-h-11 min-w-0 items-center gap-1.5 border-t border-white/12 text-apoio hover:underline"
           >
-            <span className="shrink-0 text-muted-foreground">Depois:</span>
+            <span className="shrink-0 text-noite-texto">Depois:</span>
             <span className="truncate font-semibold">
               {depois.horario} {depois.titulo}
             </span>
-            <CaretRightIcon weight="bold" className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <CaretRightIcon weight="bold" className="size-4 shrink-0 text-noite-texto" aria-hidden />
           </Link>
         )}
       </div>
     </section>
+  )
+}
+
+/** A frase de assistente embaixo da saudação, só com o que está na lista do dia. */
+function FraseDoDia({ dia }: { dia: TarefasHoje }) {
+  const hora = agora()
+  const destaque = destaqueDoDia(dia.tarefas, hora.hour * 60 + hora.minute)
+  const atrasadas = dia.tarefas.filter((t) => t.status === 'atrasado' && t.id !== destaque?.tarefa.id).length
+  const { programadas, concluidas } = dia.resumo
+  let frase: string
+  if (programadas === 0) frase = 'Nada marcado para hoje por enquanto.'
+  else if (destaque?.acontecendo) frase = `Agora é a hora de ${destaque.tarefa.titulo}.`
+  else if (destaque) frase = `A próxima é ${destaque.tarefa.titulo}, às ${destaque.tarefa.horario}.`
+  else if (concluidas === programadas) frase = 'Tudo o que estava marcado para hoje foi feito.'
+  else frase = 'Não há mais nada com horário hoje.'
+  return (
+    <p className="max-w-[40rem] text-base leading-snug text-muted-foreground md:text-[1.1rem]">
+      {frase}
+      {atrasadas > 0 && (
+        <>
+          {' '}
+          <a href="#hoje-atrasadas" className="font-bold text-atraso underline-offset-4 hover:underline">
+            {atrasadas === 1 ? '1 ficou para trás' : `${atrasadas} ficaram para trás`}
+          </a>
+          .
+        </>
+      )}
+    </p>
   )
 }

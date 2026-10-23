@@ -70,21 +70,22 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`, fora do menu desde a decisão 34), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): só os
-  indicadores do mês (`BlocoFinancas`: despesas, recebíveis e saldo). Os totais vêm de
-  `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
-  ("Contas que vencem em outubro", "Pela data do pagamento") e, quando a lista tem o mesmo critério,
-  o cartão leva a ela no mesmo mês (despesas → `/despesas?mes=&status=`, recebíveis →
-  `/recebiveis?mes=`); "Pago/Recebido no mês" e os saldos não levam a lugar nenhum. O detalhe fica na
-  tela de cada área, em blocos de `components/Bloco.tsx` (carregando/erro/conteúdo, link opcional):
-  `ProximasContas` (pendentes até +30 dias) no topo de Contas a pagar, `ProximosRecebiveis` e o
-  previsto por origem em Recebíveis, o valor do mês em cada imóvel de Residências (`?mes=`) e
-  `ResumoPessoais` (por categoria) na Lista de despesas com `?imovel=pessoal` (vira `destino=pessoal`
-  e o título "Despesas pessoais", em abas Despesas do mês / A pagar / Por categoria e sem o filtro de
-  imóvel). Não volte a pôr esses detalhes na Visão geral.
+- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`): abas Resumo do mês
+  (padrão, com `?mes=`) e Relatório (`?vista=relatorio`; `/relatorio` redireciona para cá). O Resumo é o
+  painel do mês: "Pede atenção" (vencidas, recebíveis atrasados, contas a definir), `BlocoFinancas`
+  (saldo num bloco grafite, Despesas e Recebíveis com o critério de cada número; os que têm lista com o
+  mesmo critério levam a ela no mesmo mês), os gráficos e Por residência. Os totais vêm de
+  `GET /relatorios/financeiro` (decisão 25; um por mês nos gráficos, com a mesma chave de
+  `useRelatorioFinanceiro`) e `/relatorios/gastos` — nunca some valores no front além de pôr meses lado
+  a lado. Gráficos em `paginas/financas/graficos.tsx` (SVG à mão, sem biblioteca; cores validadas):
+  A Entradas e saídas (recebido × pago no mês, até o mês atual), C Resultado mês a mês (realizado até o
+  mês atual, projetado do mês atual em diante; não é saldo bancário) e B Despesas por categoria (barras
+  ordenadas, valor e %). Todo gráfico tem legenda (≥ 2 séries), tooltip e "Ver os números" (tabela).
+  O detalhe de cada área continua nas telas dela (`ProximasContas`, `ProximosRecebiveis`, Residências,
+  `ResumoPessoais`, explicados abaixo).
 - **Abas internas** (decisão 33): `components/Abas.tsx` (Tabs do Radix, aba em `?vista=`, a primeira
   é a padrão e não vai para a URL; `contador` opcional). Usadas em Despesas pessoais, detalhe do
-  imóvel, Equipe, Recebíveis e Relatório. O conteúdo de aba fechada não é montado: nos testes,
+  imóvel, Equipe, Recebíveis, Visão geral (`?vista=`) e Relatório (`?parte=`, para não brigar com o da Visão geral). O conteúdo de aba fechada não é montado: nos testes,
   clique na aba (`getByRole('tab')`) ou abra com `?vista=`.
 - **Ocultos do menu** (decisão 33): `CARTOES_VISIVEIS` e `CATEGORIAS_VISIVEIS` em `app/navegacao.ts`
   tiram Cartões e Categorias do menu e do "Grupo de contas"; rotas, telas e dados continuam (para
@@ -101,11 +102,12 @@ npm run lint                                  # oxlint
   mostra um cartão por imóvel (valor do mês, situação, Renomear/Excluir) e o "Novo imóvel" no cabeçalho. Os números vêm de `GET /relatorios/imoveis/:id`. Cada
   imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
-- **Relatório** (`/relatorio`): o período em cima e as abas Balanço (entradas, saídas e saldo),
-  Recebíveis e pessoais (de `GET /relatorios/financeiro`) e Por imóvel ou categoria
-  (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa `lib/relatorioPdf.ts` (jsPDF +
-  autotable, importados só ao gerar) com os dados já carregados do período — nunca recalcule; o
-  botão espera os dados do período escolhido (`isPlaceholderData`).
+- **Relatório** (`RelatorioDoPeriodo` em `paginas/Relatorio.tsx`, aba da Visão geral): o período em cima,
+  "Gerar PDF" e as abas Balanço (comparação com o período anterior — `periodoAnterior` de `lib/datas.ts`,
+  só o realizado —, entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e
+  Por imóvel ou categoria (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa
+  `lib/relatorioPdf.ts` (jsPDF + autotable, importados só ao gerar) com os dados já carregados do
+  período — nunca recalcule; o botão espera os dados do período escolhido (`isPlaceholderData`).
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
   valores a receber do mês (pela data prevista): previsto/recebido/a receber em cima e as abas Do mês,
   A receber (status ≠ recebido, inclui parcial), Recebidos e Resumo (por origem e próximos 30 dias);
@@ -117,7 +119,10 @@ npm run lint                                  # oxlint
   `entradasDoPeriodo` dele).
 - **Início = atividades do dia** (`/`, `paginas/Hoje.tsx`; atrasadas numa seção em cima, "Nova" escolhe o módulo em `hoje/NovaAtividade.tsx`; `GET /hoje?data=`, `PATCH /hoje/:id`, decisão 24 de
   `../docs/arquitetura.md`; `consultas/hoje.ts`, `paginas/Hoje.tsx`, `paginas/hoje/LinhaTarefa.tsx`):
-  saudação e barra de progresso no cabeçalho; o bloco "Agora" (a atividade com horário que começou há
+  saudação, a frase da assistente (`FraseDoDia`, só com os dados do dia) e a barra de progresso no
+  cabeçalho; o resumo das áreas (`hoje/ResumoDasAreas.tsx`: doses, próximo da agenda, lembretes, tirados
+  da mesma lista) e o **Verso do dia** (`hoje/VersoDoDia.tsx`, versos de domínio público em
+  `lib/versos.ts` — nunca escreva verso de memória; para incluir, copie da bible-api.com `almeida`); o bloco "Agora" (a atividade com horário que começou há
   menos de 1 h, senão a próxima: `destaqueDoDia` em `hoje/tarefas.ts`) com "Feito", "Não fiz" e o que
   vem depois; atrasadas numa seção em cima (sem a que está no "Agora") e a lista do dia. Cada linha tem
   o círculo de concluir e o ⋯ (folha com "Não fiz", "Voltar para pendente" e "Abrir"); os textos de
@@ -202,9 +207,11 @@ npm run lint                                  # oxlint
 ## Estrutura
 
 - **Navegação** (`src/app/navegacao.ts`, `SECOES`): 6 áreas — Início (`/`, só as atividades do dia),
-  Finanças (`/financas` e as telas de dinheiro), Agenda (só "Agendamentos"; viagens e rádio pelo "+ Novo" e no calendário, decisão 34), Saúde
-  (remédios, consultas, exames, fisioterapia, atividade física), Compromissos (lembretes que repetem,
-  lembretes do dia, compras) e Configurações. Cada seção tem `itens` (o menu interno; `rota` pode ter
+  Finanças (`/financas` e as telas de dinheiro; sem item Relatório, que virou aba da Visão geral), Agenda
+  (só "Agendamentos"; viagens, rádio, consultas, exames, fisioterapia e atividade física pelo "+ Novo"
+  e no calendário — as rotas continuam e pertencem à Agenda), Medicamentos (`/remedios`, tela única:
+  anel das doses, doses por período e "Últimos 7 dias"), Lembretes (rota `/rotina`: lembretes que
+  repetem, de uma vez, compras) e Configurações. Cada seção tem `itens` (o menu interno; `rota` pode ter
   query, ex. `/pagamentos?aba=equipe`). `secaoDaTela()` diz a seção e o item da tela aberta: a barra
   de baixo (5 áreas; Configurações abre pela engrenagem do Início) e a lateral (que abre os itens da
   área) usam ela, e `Pagina` desenha sozinha no celular a fileira "Telas de <área>" nas telas de lista.
@@ -244,21 +251,19 @@ npm run lint                                  # oxlint
 
 ## Design
 
-Público com pouca intimidade com tecnologia, uso no celular com uma mão: base de 17px, fonte
-Plus Jakarta Sans (400–700), áreas de toque ≥ 44px, linguagem simples. A identidade visual
-(paleta, estados, cor por área, tipografia, marca) está em `../docs/identidade-visual.md`;
-os tokens em `src/index.css`. Na prática:
-- Cores: fundo `bg-papel`, superfícies brancas `bg-folha` (listas em `.superficie` + `divide-y`),
-  texto `text-grafite`/`foreground`, azul `--primary` só para ação e "agora" (`bg-azul-fundo` no
-  destaque claro), `bg-ambar` com texto grafite só no "Vence hoje", `text-alerta` para "Valor a
-  definir", `--atraso` (vermelho) para vencidos, `--ok` (verde) para feito/pago. Sem gradiente.
-- **Estados**: use `MarcaEstado` (círculo da linha) e `SeloEstado` de `components/Estado.tsx`; não
-  monte a cor de estado à mão. Cor sempre com ícone ou texto junto.
-- **Cabeçalho** (`Pagina`): leve, direto no fundo — rótulo da área pequeno na cor dela, título em
-  grafite e a ação de criar à direita, sempre `variant="secondary"` ("+ Nova"). No celular, as telas
-  da área viram abas de texto sublinhadas. Barra de baixo e lateral brancas, ativo em azul.
-- **Cor por área**: `areaDaRota()` em `app/navegacao.ts` dá a área da tela; `Pagina` põe a classe
-  `area-<nome>`, e quem está dentro usa `text-area`, `bg-area`, `bg-area-fundo` ou `.selo-area`
-  (ícone num quadradinho na cor da área). Rota nova fora do menu: incluir em `outrasRotas`.
-- Ícones: Phosphor (`@phosphor-icons/react`, nomes com sufixo `Icon`; `weight="fill"` no ativo).
-  O Lucide sai aos poucos, tela a tela. Botão `variant="confirmar"` = verde ("Pagar", "Recebi").
+Público com pouca intimidade com tecnologia, uso no celular com uma mão: base de 17px, títulos em
+Bricolage Grotesque (`h1`, `h2`, `.font-heading`) e texto em Figtree, áreas de toque ≥ 44px,
+linguagem simples. A identidade ("Vivo suave": paleta, estados, cor por área, gráficos, marca) está em
+`../docs/identidade-visual.md`; os tokens em `src/index.css`. Na prática:
+- Cores: fundo quente `bg-papel`, superfícies `bg-folha` (listas em `.superficie` + `divide-y`),
+  texto e ação em grafite (`--primary`), `bg-noite` só no bloco "Agora", `bg-ambar` com texto grafite
+  no botão do "Agora", na área ativa da barra e no "Vence hoje", `--atraso` para vencidos, `--ok` para
+  feito/pago. Blocos de resumo de área com `area-<nome>` + `bg-area-fundo`/`text-area`. Sem gradiente.
+- **Estados**: `MarcaEstado` e `SeloEstado` de `components/Estado.tsx`. Cor sempre com ícone ou texto.
+- **Cabeçalho** (`Pagina`): título grande e a ação de criar à direita (`variant="secondary"`). No
+  celular, as telas da área viram pílulas. Barra de baixo: pílula grafite flutuante (área atual em
+  âmbar com o nome; as outras só ícone, com o nome em `sr-only`). Lateral em `--suave`, ativo grafite.
+- **Cor por área**: `areaDaRota()` em `app/navegacao.ts`; `Pagina` põe `area-<nome>`. Rota nova fora
+  do menu: incluir em `outrasRotas`.
+- Ícones: Phosphor (`@phosphor-icons/react`, sufixo `Icon`; `weight="fill"` no ativo). Botão
+  `variant="confirmar"` = verde ("Pagar", "Recebi"). Botões são `rounded-full`.

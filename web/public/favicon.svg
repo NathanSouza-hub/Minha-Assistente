@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Símbolo B, "conversa resolvida": balão branco com o canto reto no lugar do rabinho e o
-       "feito" âmbar, sobre o azul chapado (docs/identidade-visual.md, "Marca"). -->
-  <rect width="512" height="512" rx="120" fill="#1663f2"/>
+       "feito" âmbar, sobre a tinta escura (docs/identidade-visual.md, "Marca"). -->
+  <rect width="512" height="512" rx="120" fill="#1b1d26"/>
   <path d="M106 406V170a64 64 0 0 1 64-64h172a64 64 0 0 1 64 64v172a64 64 0 0 1-64 64z" fill="#fff"/>
-  <path d="M181 262l50 50 100-104" fill="none" stroke="#f5a524" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M181 262l50 50 100-104" fill="none" stroke="#f0b44c" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

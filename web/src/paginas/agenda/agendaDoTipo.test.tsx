@@ -56,21 +56,17 @@ describe('áreas por tipo (Programa de rádio, Atividade física, Fisioterapia)'
     expect(screen.getByRole('heading', { name: 'Programa de rádio', level: 1 })).toBeInTheDocument()
   })
 
-  test('Viagens e Rádio saíram do menu da Agenda; Fisioterapia, Consultas e Exames ficam no da Saúde', async () => {
+  test('Viagens e Rádio saíram do menu da Agenda; Medicamentos não tem fileira de telas', async () => {
     renderizarApp('/agenda')
     await screen.findByRole('heading', { name: 'Agenda', level: 1 })
     // Só "Agendamentos": a fileira de telas some (viagens e rádio nascem no "+ Novo").
     expect(screen.queryByRole('navigation', { name: 'Telas de Agenda' })).not.toBeInTheDocument()
     cleanup()
+    // Consultas, exames, fisioterapia e atividade física continuam (rotas e dados), mas saíram do menu:
+    // Medicamentos é uma tela só, sem a fileira de telas.
     renderizarApp('/remedios')
-    const saude = await screen.findByRole('navigation', { name: 'Telas de Saúde' })
-    expect(within(saude).getAllByRole('link').map((l) => l.textContent)).toEqual([
-      'Medicamentos',
-      'Consultas',
-      'Exames',
-      'Fisioterapia',
-      'Atividade física',
-    ])
+    await screen.findByRole('heading', { level: 1, name: 'Medicamentos' })
+    expect(screen.queryByRole('navigation', { name: 'Telas de Medicamentos' })).not.toBeInTheDocument()
   })
 })
 

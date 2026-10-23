@@ -13,6 +13,10 @@ const servidor = setupServer(...handlers)
 
 const relogio = (iso: string) => vi.setSystemTime(new Date(iso))
 
+// O anel mostra "1 de 4" grande e "doses tomadas" embaixo: o texto inteiro está no bloco.
+const esperarDoses = (texto: string) =>
+  waitFor(() => expect(screen.getByRole('region', { name: 'Doses do dia' })).toHaveTextContent(texto))
+
 beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 beforeEach(async () => {
   // Terça, 13/10/2026, 08h. Dados de exemplo da Maria: 4 doses (1 tomada), fisioterapia 9h e
@@ -53,6 +57,11 @@ describe('tela Hoje: tarefas do dia', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Bom dia, Maria' })).toBeInTheDocument()
     expect(screen.getByText('Terça-feira, 13 de outubro')).toBeInTheDocument()
     expect(await screen.findByText('2 de 11 feitas')).toBeInTheDocument()
+    // No lugar do antigo resumo financeiro: o Verso do dia, com a referência e a tradução.
+    const verso = screen.getByRole('region', { name: 'Verso do dia' })
+    expect(within(verso).getByText(/Almeida \(domínio público\)/)).toBeInTheDocument()
+    expect(within(verso).getByRole('button', { name: 'Ler o capítulo' })).toBeInTheDocument()
+    expect(within(screen.getByRole('complementary', { name: 'Resumo do dia' })).getByText('doses de hoje')).toBeInTheDocument()
     // Sem indicadores nem finanças no Início.
     expect(screen.queryByText('Despesas do mês')).not.toBeInTheDocument()
 
@@ -123,8 +132,8 @@ describe('tela Hoje: tarefas do dia', () => {
 
     await usuario.click(tomei)
     expect(await screen.findByText('3 de 11 feitas')).toBeInTheDocument()
-    await usuario.click(screen.getAllByRole('link', { name: /Saúde/ })[0])
-    expect(await screen.findByText('2 de 4 doses tomadas')).toBeInTheDocument()
+    await usuario.click(screen.getAllByRole('link', { name: /Remédios|Medicamentos/ })[0])
+    await esperarDoses('2 de 4 doses tomadas')
   })
 
   test('✓ na conta marca como paga; "Não paguei" (no ⋯) marca como não paga', async () => {
