@@ -18,9 +18,8 @@ import {
   GraficoCategorias,
   GraficoFluxo,
   GraficoResultado,
-  Legenda,
-  TabelaDoGrafico,
 } from '@/paginas/financas/graficos'
+import { Legenda, TabelaDoGrafico } from '@/components/grafico/pecas'
 import { mesCurto } from '@/paginas/financas/formatos'
 import { NavegadorMes } from '@/paginas/pagamentos/ResumoContas'
 import { RelatorioDoPeriodo } from '@/paginas/Relatorio'

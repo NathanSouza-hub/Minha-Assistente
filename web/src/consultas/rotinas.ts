@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { invalidarPainel } from './hoje'
+import { invalidarProdutividade } from './produtividade'
 import { agora, paraDataHoraISO } from '@/lib/datas'
 import type { ItemHistoricoRotina, Rotina, RotinaCorpo, TarefaDoDia } from '@/lib/tipos'
 
@@ -53,7 +54,7 @@ export function useConcluirTarefa(data: string) {
       if (contexto) trocar(contexto.rotinaId, (t) => ({ ...t, concluida: contexto.concluidaAntes }))
     },
     onSuccess: (atualizada) => trocar(atualizada.rotinaId, () => atualizada),
-    onSettled: () => invalidarPainel(cliente),
+    onSettled: () => Promise.all([invalidarPainel(cliente), invalidarProdutividade(cliente)]),
   })
 }
 
@@ -91,6 +92,8 @@ export function useExcluirRotina() {
       return Promise.all([
         cliente.invalidateQueries({ queryKey: chavesRotina.todos }),
         invalidarPainel(cliente),
+        // Excluir apaga as conclusões do compromisso (CASCADE): a contagem muda.
+        invalidarProdutividade(cliente),
       ])
     },
   })

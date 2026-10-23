@@ -4,6 +4,8 @@ const {
   filtrosFinanceiro,
   relatorioFinanceiro,
   relatorioImovel,
+  filtrosProdutividade,
+  relatorioProdutividade,
 } = require('./schema');
 const { respostaJson, respostasErro, parametrosQuery, paramId, ERRO_AUTH } = require('../../docs/helpers');
 
@@ -40,6 +42,24 @@ module.exports = {
         responses: {
           200: respostaJson('Relatório financeiro', relatorioFinanceiro),
           ...respostasErro({ 400: 'Parâmetros inválidos (VALIDACAO)', ...ERRO_AUTH }),
+        },
+      },
+    },
+    '/relatorios/produtividade': {
+      get: {
+        tags: ['Relatórios'],
+        summary: 'Quanto foi concluído por dia: tarefas de uma vez e compromissos que repetem',
+        description: [
+          'Conta só o que foi **concluído de fato**, pelo dia da conclusão (fuso America/Sao_Paulo):',
+          '`tarefa.concluida_em` e cada `rotina_conclusao`. Tarefa reaberta ou excluída e conclusões de',
+          'compromisso desmarcadas ou excluído não contam (o registro não existe mais); compromisso',
+          'pausado conta. Não há previsto, pendente nem taxa: a configuração atual dos compromissos não',
+          'reconstrói o passado. Todo dia do período vem na lista, com zeros. Até 366 dias.',
+        ].join(' '),
+        parameters: parametrosQuery(filtrosProdutividade),
+        responses: {
+          200: respostaJson('Concluídos por dia', relatorioProdutividade),
+          ...respostasErro({ 400: 'Parâmetros inválidos ou período longo demais (VALIDACAO)', ...ERRO_AUTH }),
         },
       },
     },

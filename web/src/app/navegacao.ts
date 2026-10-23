@@ -112,6 +112,7 @@ export const SECOES: Secao[] = [
       { rota: '/rotina', rotulo: 'Lembretes que repetem' },
       { rota: '/tarefas', rotulo: 'Lembretes de uma vez' },
       { rota: '/compras', rotulo: 'Lista de compras' },
+      { rota: '/produtividade', rotulo: 'O que foi feito' },
     ],
   },
   {
@@ -188,6 +189,7 @@ const AREAS_DAS_ROTAS: { rota: string; area: Area }[] = [
   { rota: '/rotina', area: 'compromissos' },
   { rota: '/tarefas', area: 'tarefas' },
   { rota: '/compras', area: 'compras' },
+  { rota: '/produtividade', area: 'tarefas' },
   { rota: '/notificacoes', area: 'geral' },
   { rota: '/configuracoes', area: 'geral' },
 ]

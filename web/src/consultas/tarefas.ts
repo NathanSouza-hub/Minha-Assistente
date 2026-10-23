@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import type { FiltrosTarefa, Tarefa, TarefaCorpo } from '@/lib/tipos'
 import { invalidarPainel } from './hoje'
+import { invalidarProdutividade } from './produtividade'
 
 export const chavesTarefas = {
   todas: ['tarefas'] as const,
@@ -27,7 +28,12 @@ export const useTarefa = (id: string | undefined) =>
 
 function useInvalidar() {
   const cliente = useQueryClient()
-  return () => Promise.all([cliente.invalidateQueries({ queryKey: chavesTarefas.todas }), invalidarPainel(cliente)])
+  return () =>
+    Promise.all([
+      cliente.invalidateQueries({ queryKey: chavesTarefas.todas }),
+      invalidarPainel(cliente),
+      invalidarProdutividade(cliente),
+    ])
 }
 
 export function useSalvarTarefa() {

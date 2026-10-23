@@ -41,6 +41,7 @@ GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                   
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET /relatorios/financeiro?inicio=&fim=  (visão financeira do período, decisão 25)
 GET /relatorios/imoveis/:id?inicio=&fim=  (resumo de um imóvel, decisão 27)
+GET /relatorios/produtividade?inicio=&fim=  (concluídos por dia, decisão 35)
 GET/POST /recebiveis (inicio, fim, status, origem) | GET/PUT/DELETE /recebiveis/:id  (decisão 26)
 POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebimentoId
 POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
@@ -416,6 +417,20 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     No rádio, a emissora vai em `local`; na consulta e na fisioterapia sem título, o front monta um
     ("Consulta de Cardiologia"). Viagens e Programa de rádio saíram do menu; `/viagens` e `/radio`
     continuam. Na Equipe a aba de pessoas chama "Integrantes" e Recebíveis mostra também o atrasado.
+35. **O que foi feito** (`GET /relatorios/produtividade?inicio=&fim=`, ambos obrigatórios, até 366
+    dias; sem tabela nem migration nova): conta só o que foi **concluído de fato**, pelo dia da
+    conclusão no fuso America/Sao_Paulo — `tarefa.concluida_em` (tarefas de uma vez) e cada
+    `rotina_conclusao.concluida_em` (compromissos que repetem; marcar ontem hoje conta hoje). Tarefa
+    reaberta (`concluida_em` volta a NULL) ou excluída (a linha some) e conclusão desmarcada ou de
+    compromisso excluído (CASCADE) **não contam**: o registro não existe mais. Compromisso pausado
+    continua contando o que fez. **Não há previsto, pendente nem taxa**: a configuração atual dos
+    compromissos (`ativo`, `dias_semana`) não diz o que estava previsto no passado, e reconstruir
+    com ela mudaria o histórico a cada edição. Resposta: `{ inicio, fim, total, dias, semanas }`,
+    cada um com `{ tarefas, compromissos, total }`; `dias` traz todo dia do período (zeros
+    incluídos), `semanas` vai de segunda a domingo, recortada ao período. Uma consulta só
+    (`UNION ALL` agrupado por dia, intervalo pelo instante — sargável). Medido em 2026-10-22 com
+    256 mil tarefas no banco (16 mil do usuário) e 11 mil conclusões: um ano em ~19 ms, sem índice
+    novo (a tarefa usa `(usuario_id, data)`; `rotina_conclusao` é varrida — rever se crescer muito).
 
 ## Convenções de banco
 

@@ -159,6 +159,17 @@ npm run lint                                  # oxlint
   itens comprados" no cabeçalho, o anotar rápido numa pílula (nome + "+"; quantidade e categoria
   embaixo no celular, tudo numa linha no computador), "A comprar" com cada categoria no seu bloco e
   "Já comprados" mais apagado embaixo.
+- **O que foi feito** (`/produtividade`, item do menu de Lembretes; `paginas/produtividade/`): totais e
+  colunas de `GET /relatorios/produtividade` (decisão 35), 7 dias / 30 dias / 12 semanas (`?periodo=`;
+  12 semanas começam numa segunda e usam `semanas` da API). Só o que foi concluído: nunca mostre
+  pendente nem taxa. Só o que muda a contagem invalida `chavesProdutividade` (`invalidarProdutividade`:
+  concluir/reabrir/excluir tarefa, concluir e excluir compromisso; a marcação pelo Início recarrega
+  tudo). Rótulos e agrupamento seguem o período dos **dados** (durante a troca, o anterior fica com os
+  rótulos dele). Peças comuns dos gráficos: `components/grafico/pecas.tsx` (Legenda, TabelaDoGrafico,
+  Dica, Coluna) e `lib/grafico.ts` (`escala`, `escalaInteira`, `useLargura`). Tocar numa coluna só
+  destaca (não alterna: o toque dispara `mouseenter` e `click` juntos).
+- **Relógio** (`lib/relogio.ts`, `useMinutoAtual`): "HH:mm" que avança na virada do minuto (um timer
+  só, nada com a aba escondida, limpo ao desmontar). A linha "Agora" da Agenda usa.
 - **Lembretes** (`/tarefas` e `/rotina`): anotar rápido no mesmo molde da Compras (rótulo oculto
   "Nova tarefa para hoje", botão "Anotar"); a hora (e o sino do lembrete) fica à direita, na linha do
   título. Atrasadas num bloco tingido de vermelho com "Era para …"; Próximas separadas por dia

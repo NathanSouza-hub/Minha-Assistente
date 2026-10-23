@@ -2,6 +2,7 @@ const db = require('../../config/db');
 const { ORIGENS } = require('../recebiveis/schema');
 const imoveis = require('../imoveis/service');
 const { DateTime } = require('luxon');
+const { FUSO, deISO } = require('../../lib/tempo');
 
 const SEM_IMOVEL = 'Sem imóvel';
 const CARTAO_DE_CREDITO = 'Cartão de crédito';
@@ -246,4 +247,67 @@ async function imovel(usuarioId, id, { inicio, fim }) {
   };
 }
 
-module.exports = { gastos, financeiro, imovel };
+// Produtividade: só o que foi concluído de fato, pelo dia da conclusão (no fuso de São Paulo).
+// - Tarefas de uma vez: `tarefa.concluida_em` (reabrir volta a NULL; excluir apaga a linha — não
+//   contam: o registro não existe mais).
+// - Compromissos que repetem: cada `rotina_conclusao` (desmarcar apaga a linha; excluir o
+//   compromisso apaga as conclusões em cascata). Compromisso pausado continua contando o que fez.
+// Nada de "previsto" nem de taxa: a configuração atual dos compromissos não diz o que era previsto
+// no passado. Uma consulta só, agrupada no banco; o intervalo usa o instante (sargável), não a data.
+async function produtividade(usuarioId, { inicio, fim }) {
+  const desde = deISO(inicio).startOf('day');
+  const ate = deISO(fim).plus({ days: 1 }).startOf('day');
+  const limites = [desde.toISO(), ate.toISO()];
+
+  const { rows } = await db.raw(
+    `SELECT dia::text AS dia,
+            COUNT(*) FILTER (WHERE origem = 'tarefa')::int AS tarefas,
+            COUNT(*) FILTER (WHERE origem = 'compromisso')::int AS compromissos
+       FROM (
+         SELECT (t.concluida_em AT TIME ZONE ?)::date AS dia, 'tarefa' AS origem
+           FROM tarefa t
+          WHERE t.usuario_id = ? AND t.concluida_em >= ? AND t.concluida_em < ?
+         UNION ALL
+         SELECT (c.concluida_em AT TIME ZONE ?)::date, 'compromisso'
+           FROM rotina_conclusao c
+           JOIN rotina r ON r.id = c.rotina_id
+          WHERE r.usuario_id = ? AND c.concluida_em >= ? AND c.concluida_em < ?
+       ) feitos
+      GROUP BY dia`,
+    [FUSO, usuarioId, ...limites, FUSO, usuarioId, ...limites],
+  );
+  const porDia = new Map(rows.map((l) => [l.dia, l]));
+
+  const dias = [];
+  for (let d = deISO(inicio); d <= deISO(fim); d = d.plus({ days: 1 })) {
+    const data = d.toISODate();
+    const linha = porDia.get(data);
+    const tarefas = linha?.tarefas ?? 0;
+    const compromissos = linha?.compromissos ?? 0;
+    dias.push({ data, tarefas, compromissos, total: tarefas + compromissos });
+  }
+
+  const somar = (lista) => {
+    const tarefas = lista.reduce((s, d) => s + d.tarefas, 0);
+    const compromissos = lista.reduce((s, d) => s + d.compromissos, 0);
+    return { tarefas, compromissos, total: tarefas + compromissos };
+  };
+
+  // Semanas de segunda a domingo (como o calendário do app), recortadas ao período.
+  const semanas = [];
+  for (const dia of dias) {
+    const atual = semanas.at(-1);
+    if (atual && deISO(dia.data).weekday !== 1) atual.dias.push(dia);
+    else semanas.push({ dias: [dia] });
+  }
+
+  return {
+    inicio,
+    fim,
+    total: somar(dias),
+    dias,
+    semanas: semanas.map((s) => ({ inicio: s.dias[0].data, fim: s.dias.at(-1).data, ...somar(s.dias) })),
+  };
+}
+
+module.exports = { gastos, financeiro, imovel, produtividade };

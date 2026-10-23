@@ -1,4 +1,5 @@
 const { z } = require('../../lib/zod');
+const { DateTime } = require('luxon');
 const { data, periodoValido, MENSAGEM_PERIODO } = require('../../lib/esquemas');
 const { ORIGENS } = require('../recebiveis/schema');
 
@@ -113,4 +114,55 @@ const relatorioImovel = z.object({
     .describe('Cada mês do período, mesmo sem contas (evolução)'),
 });
 
-module.exports = { filtrosGastos, relatorioGastos, filtrosFinanceiro, relatorioFinanceiro, relatorioImovel };
+// Produtividade: no máximo um ano por consulta (366 dias, para caber um ano bissexto inteiro).
+const MAX_DIAS_PRODUTIVIDADE = 366;
+// Contagem de datas em UTC: sem horário de verão no meio, a diferença é sempre um número inteiro de dias.
+const diasNoPeriodo = (v) =>
+  DateTime.fromISO(v.fim, { zone: 'utc' }).diff(DateTime.fromISO(v.inicio, { zone: 'utc' }), 'days').days + 1;
+
+const filtrosProdutividade = z
+  .object({
+    inicio: data,
+    fim: data,
+  })
+  .refine(periodoValido, MENSAGEM_PERIODO)
+  .refine((v) => !(v.inicio <= v.fim) || diasNoPeriodo(v) <= MAX_DIAS_PRODUTIVIDADE, {
+    message: `O período pode ter no máximo ${MAX_DIAS_PRODUTIVIDADE} dias.`,
+    path: ['fim'],
+  });
+
+const contagem = z.number().int();
+const concluidos = {
+  tarefas: contagem.describe('Tarefas de uma vez concluídas (tarefa.concluida_em)'),
+  compromissos: contagem.describe('Compromissos que repetem marcados como feitos (rotina_conclusao.concluida_em)'),
+  total: contagem.describe('tarefas + compromissos'),
+};
+
+const relatorioProdutividade = z.object({
+  inicio: z.iso.date(),
+  fim: z.iso.date(),
+  total: z.object(concluidos).describe('Concluídos no período inteiro'),
+  dias: z
+    .array(z.object({ data: z.iso.date(), ...concluidos }))
+    .describe('Cada dia do período, em ordem, inclusive os sem nada concluído (zeros)'),
+  semanas: z
+    .array(
+      z.object({
+        inicio: z.iso.date().describe('Segunda-feira, ou o início do período se ele começar no meio da semana'),
+        fim: z.iso.date().describe('Domingo, ou o fim do período'),
+        ...concluidos,
+      }),
+    )
+    .describe('Os mesmos dias somados por semana (segunda a domingo), recortados ao período'),
+});
+
+module.exports = {
+  filtrosGastos,
+  relatorioGastos,
+  filtrosFinanceiro,
+  relatorioFinanceiro,
+  relatorioImovel,
+  filtrosProdutividade,
+  relatorioProdutividade,
+  MAX_DIAS_PRODUTIVIDADE,
+};

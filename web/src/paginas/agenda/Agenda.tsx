@@ -16,7 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useEventos } from '@/consultas/eventos'
 import { useViagens } from '@/consultas/viagens'
 import {
-  agora,
   dataCurta,
   deDataISO,
   diasDaSemana,
@@ -30,6 +29,7 @@ import {
   somarMeses,
 } from '@/lib/datas'
 import type { Evento, Viagem } from '@/lib/tipos'
+import { useMinutoAtual } from '@/lib/relogio'
 import { cn } from '@/lib/utils'
 import { ItemEvento } from './ItemEvento'
 import { NovoNaAgenda } from './NovoNaAgenda'
@@ -301,7 +301,8 @@ export function ListaEventos({
   voltar?: string
   comAgora?: boolean
 }) {
-  const hora = agora().toFormat('HH:mm')
+  // Só a lista de hoje acompanha o relógio (os itens também recalculam "acontecendo agora").
+  const hora = useMinutoAtual(Boolean(comAgora))
   const antes = comAgora ? eventos.filter((e) => horaDe(e.inicio) <= hora).length : -1
   const itens = eventos.map((e) => <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />)
   if (antes >= 0) itens.splice(antes, 0, <MarcaAgora key="agora" hora={hora} />)

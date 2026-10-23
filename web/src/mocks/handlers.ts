@@ -9,6 +9,7 @@ import { handlersHoje } from './hoje'
 import { handlersMedicamentos } from './medicamentos'
 import { handlersNotificacoes } from './notificacoes'
 import { handlersPagamentos } from './pagamentos'
+import { handlersProdutividade } from './produtividade'
 import { handlersRecebiveis } from './recebiveis'
 import { handlersRotinas } from './rotinas'
 import { handlersTarefas } from './tarefas'
@@ -35,6 +36,7 @@ manutencao()
 export const handlers = [
   ...handlersAuth,
   ...handlersPagamentos,
+  ...handlersProdutividade,
   ...handlersRecebiveis,
   ...handlersCartoes,
   ...handlersEquipe,

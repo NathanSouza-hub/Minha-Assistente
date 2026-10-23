@@ -1,6 +1,8 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { formatarCentavos } from '@/lib/dinheiro'
 import { cn } from '@/lib/utils'
+import { Coluna, Dica } from '@/components/grafico/pecas'
+import { escala, useLargura } from '@/lib/grafico'
 import { mesCurto, reaisCompacto } from './formatos'
 
 /*
@@ -13,98 +15,6 @@ export const COR_ENTRADA = '#0f8a6a'
 export const COR_SAIDA = '#c08a1e'
 const COR_SALDO = 'var(--grafite)'
 const COR_GRADE = 'var(--linha)'
-
-/** Limite "redondo" do eixo e os 4 intervalos entre 0 e ele. */
-function escala(maximo: number) {
-  if (maximo <= 0) return { topo: 100_00, passos: [0, 25_00, 50_00, 75_00, 100_00] }
-  const bruto = maximo / 4
-  const potencia = 10 ** Math.floor(Math.log10(bruto))
-  const passo = [1, 2, 2.5, 5, 10].map((m) => m * potencia).find((p) => p >= bruto)!
-  return { topo: passo * 4, passos: [0, 1, 2, 3, 4].map((i) => i * passo) }
-}
-
-/** Largura real do contêiner, para desenhar o SVG no tamanho da tela (texto sem encolher). */
-function useLargura() {
-  const [largura, setLargura] = useState(0)
-  const ref = useCallback((no: HTMLDivElement | null) => {
-    if (!no) return
-    setLargura(no.clientWidth)
-    const obs = new ResizeObserver(([e]) => setLargura(Math.round(e.contentRect.width)))
-    obs.observe(no)
-    return () => obs.disconnect()
-  }, [])
-  return [ref, largura] as const
-}
-
-/** `linha`: a chave é um traço (séries de linha); `tracejado` para a projeção. */
-export function Legenda({ itens }: { itens: { nome: string; cor: string; linha?: boolean; tracejado?: boolean }[] }) {
-  return (
-    <ul className="flex flex-wrap gap-x-5 gap-y-1 text-apoio text-muted-foreground">
-      {itens.map((i) => (
-        <li key={i.nome} className="flex items-center gap-2">
-          {i.linha ? (
-            <svg width="18" height="8" aria-hidden>
-              <line x1="1" y1="4" x2="17" y2="4" stroke={i.cor} strokeWidth="2" strokeDasharray={i.tracejado ? '4 3' : undefined} />
-            </svg>
-          ) : (
-            <span aria-hidden className="size-3 rounded-[3px]" style={{ background: i.cor }} />
-          )}
-          {i.nome}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-/**
- * Tabela com os mesmos números do gráfico, recolhida (leitores de tela e quem prefere ler). Valores
- * nunca quebram no meio ("−R$ 6.000,00" inteiro); se não couber no celular, a tabela rola sozinha.
- */
-export function TabelaDoGrafico({ colunas, linhas }: { colunas: string[]; linhas: ReactNode[][] }) {
-  return (
-    <details className="text-apoio">
-      <summary className="min-h-11 cursor-pointer py-2 font-semibold text-muted-foreground hover:text-foreground">
-        Ver os números
-      </summary>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm tabular-nums sm:text-apoio">
-          <thead>
-            <tr className="border-b border-linha text-muted-foreground">
-              {colunas.map((c, i) => (
-                <th key={c} scope="col" className={cn('py-1.5 font-semibold', i > 0 && 'pl-2.5 text-right whitespace-nowrap')}>
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-linha">
-            {linhas.map((l, n) => (
-              <tr key={n}>
-                {l.map((v, i) => (
-                  <td key={i} className={cn('py-1.5 align-top', i > 0 && 'pl-2.5 text-right whitespace-nowrap')}>
-                    {v}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  )
-}
-
-function Dica({ x, alinhar, children }: { x: number; alinhar: 'esquerda' | 'direita'; children: ReactNode }) {
-  return (
-    <div
-      role="status"
-      className="pointer-events-none absolute top-0 z-10 min-w-44 rounded-xl bg-grafite px-3 py-2 text-apoio text-white shadow-lg"
-      style={alinhar === 'esquerda' ? { left: x } : { right: x }}
-    >
-      {children}
-    </div>
-  )
-}
 
 const LINHA_DICA = 'flex items-center justify-between gap-4'
 
@@ -168,7 +78,7 @@ export function GraficoFluxo({ pontos }: { pontos: PontoFluxo[] }) {
                   height={altura}
                   fill="transparent"
                   onMouseEnter={() => setAtivo(i)}
-                  onClick={() => setAtivo(ativo === i ? null : i)}
+                  onClick={() => setAtivo(i)}
                 />
               </g>
             )
@@ -198,18 +108,6 @@ export function GraficoFluxo({ pontos }: { pontos: PontoFluxo[] }) {
         </Dica>
       )}
     </div>
-  )
-}
-
-/** Coluna com a ponta de cima arredondada (4px) e a base reta no eixo. */
-function Coluna({ x, y, largura, altura, cor }: { x: number; y: number; largura: number; altura: number; cor: string }) {
-  if (altura <= 0) return null
-  const r = Math.min(4, altura, largura / 2)
-  return (
-    <path
-      d={`M${x},${y + altura} V${y + r} Q${x},${y} ${x + r},${y} H${x + largura - r} Q${x + largura},${y} ${x + largura},${y + r} V${y + altura} Z`}
-      fill={cor}
-    />
   )
 }
 
@@ -300,7 +198,7 @@ export function GraficoResultado({ pontos }: { pontos: PontoResultado[] }) {
                 height={altura}
                 fill="transparent"
                 onMouseEnter={() => setAtivo(i)}
-                onClick={() => setAtivo(ativo === i ? null : i)}
+                onClick={() => setAtivo(i)}
               />
             </g>
           ))}

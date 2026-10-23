@@ -12,4 +12,8 @@ async function imovel(req, res) {
   res.json(await service.imovel(req.usuario.id, req.validado.params.id, req.validado.query));
 }
 
-module.exports = { gastos, financeiro, imovel };
+async function produtividade(req, res) {
+  res.json(await service.produtividade(req.usuario.id, req.validado.query));
+}
+
+module.exports = { gastos, financeiro, imovel, produtividade };

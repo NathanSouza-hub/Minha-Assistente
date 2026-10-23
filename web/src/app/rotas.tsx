@@ -44,6 +44,8 @@ const detalheViagem = () =>
   import('@/paginas/viagens/DetalheViagem').then((m) => ({ Component: m.DetalheViagem }))
 const paginaViagem = () =>
   import('@/paginas/viagens/PaginaViagem').then((m) => ({ Component: m.PaginaViagem }))
+const produtividade = () =>
+  import('@/paginas/produtividade/Produtividade').then((m) => ({ Component: m.Produtividade }))
 const compras = () => import('@/paginas/compras/Compras').then((m) => ({ Component: m.Compras }))
 const paginaItemCompra = () =>
   import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
@@ -107,6 +109,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'configuracoes', element: <Configuracoes /> },
           { path: 'mais', element: <Redirecionar para="/configuracoes" /> },
           { path: 'rotina', lazy: rotina },
+          { path: 'produtividade', lazy: produtividade },
           { path: 'rotina/nova', lazy: paginaRotina },
           { path: 'rotina/:id', lazy: paginaRotina },
           { path: 'tarefas', lazy: tarefas },

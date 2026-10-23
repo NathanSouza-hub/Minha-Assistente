@@ -238,6 +238,19 @@ export type ValoresContas = {
   vencidoCentavos: number
 }
 
+/** Concluídos (GET /relatorios/produtividade): só o que foi feito de fato, sem previsto nem taxa. */
+export type Concluidos = { tarefas: number; compromissos: number; total: number }
+
+export type RelatorioProdutividade = {
+  inicio: string
+  fim: string
+  total: Concluidos
+  /** Todo dia do período, com zeros. */
+  dias: (Concluidos & { data: string })[]
+  /** Segunda a domingo, recortadas ao período. */
+  semanas: (Concluidos & { inicio: string; fim: string })[]
+}
+
 export type RelatorioFinanceiro = {
   inicio: string
   fim: string

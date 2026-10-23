@@ -187,6 +187,14 @@ com "Era para …" (o único bloco da tela); Hoje e Próximas (separadas por dia
 superfície. A hora fica à direita, junto do sino quando há lembrete. Sugestões como pílulas
 tracejadas pequenas. Compromissos que repetem: o mesmo desenho, com a hora à direita.
 
+## O que foi feito
+
+Item do menu de Lembretes. O total do período num bloco na cor de Lembretes (número grande em
+Bricolage, a divisão tarefas · compromissos ao lado), e as colunas por dia ou por semana na tinta
+da área (uma série só, sem legenda; a dica separa tarefas e compromissos). Dia sem nada concluído:
+traço no zero. Período sem nada: estado vazio, sem gráfico. O rodapé diz o que conta e por que não
+há "pendente".
+
 ## Compras
 
 O contador "X de Y itens comprados" no cabeçalho, o anotar rápido em pílula (roxo da área), "A
