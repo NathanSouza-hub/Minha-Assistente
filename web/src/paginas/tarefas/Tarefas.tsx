@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,7 +13,7 @@ import { Opcoes } from '@/components/Opcoes'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useConcluirTarefa, useSalvarTarefa, useTarefas } from '@/consultas/tarefas'
-import { dataCurta, deDataHoraISO, diaCurto, hojeISO } from '@/lib/datas'
+import { dataCurta, deDataHoraISO, diaCurto, hojeISO, rotuloDoDia } from '@/lib/datas'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { Tarefa } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -71,10 +72,15 @@ export function Tarefas() {
             {visao === 'afazer' && 'Escreva acima o que precisa fazer, como "Ler e-mails" ou "Ligar para o contador".'}
           </EstadoVazio>
         ) : visao === 'feitas' ? (
-          <Grupo
-            titulo="Feitas"
-            tarefas={[...lista].sort((a, b) => (b.concluidaEm ?? '').localeCompare(a.concluidaEm ?? ''))}
-          />
+          <Grupo titulo="Feitas" total={lista.length}>
+            <Lista>
+              {[...lista]
+                .sort((a, b) => (b.concluidaEm ?? '').localeCompare(a.concluidaEm ?? ''))
+                .map((t) => (
+                  <Linha key={t.id} tarefa={t} />
+                ))}
+            </Lista>
+          </Grupo>
         ) : (
           <AFazer lista={lista} />
         )}
@@ -84,51 +90,101 @@ export function Tarefas() {
   )
 }
 
-/** Atrasadas, de hoje e próximas (cada dia com o nome). */
+/**
+ * Atrasadas num bloco próprio (com "era para" e o dia), as de hoje com a hora à direita e as
+ * próximas separadas por dia. A API não tem prioridade: a ordem pelo prazo faz esse papel.
+ */
 function AFazer({ lista }: { lista: Tarefa[] }) {
   const hoje = hojeISO()
   const atrasadas = lista.filter((t) => t.data < hoje)
   const deHoje = lista.filter((t) => t.data === hoje)
   const proximas = lista.filter((t) => t.data > hoje)
+  const dias = [...new Set(proximas.map((t) => t.data))]
   return (
     <div className="flex flex-col gap-6">
-      {atrasadas.length > 0 && <Grupo titulo="Atrasadas" tarefas={atrasadas} mostrarData />}
-      {deHoje.length > 0 && <Grupo titulo="Hoje" tarefas={deHoje} />}
-      {proximas.length > 0 && <Grupo titulo="Próximas" tarefas={proximas} mostrarData />}
+      {atrasadas.length > 0 && (
+        <Grupo titulo="Atrasadas" total={atrasadas.length} atraso>
+          <ul className="flex flex-col divide-y divide-atraso/15">
+            {atrasadas.map((t) => (
+              <Linha key={t.id} tarefa={t} quando={`Era para ${diaCurto(t.data).toLowerCase()}`} />
+            ))}
+          </ul>
+        </Grupo>
+      )}
+      {deHoje.length > 0 && (
+        <Grupo titulo="Hoje" total={deHoje.length}>
+          <Lista>
+            {deHoje.map((t) => (
+              <Linha key={t.id} tarefa={t} />
+            ))}
+          </Lista>
+        </Grupo>
+      )}
+      {proximas.length > 0 && (
+        <Grupo titulo="Próximas" total={proximas.length}>
+          <div className="superficie flex flex-col overflow-hidden">
+            {dias.map((dia) => (
+              <div key={dia} className="border-t border-linha first:border-t-0">
+                <h3 className="px-4 pt-3 text-apoio font-bold text-muted-foreground">{rotuloDoDia(dia, hoje)}</h3>
+                <ul className="flex flex-col divide-y divide-linha">
+                  {proximas
+                    .filter((t) => t.data === dia)
+                    .map((t) => (
+                      <Linha key={t.id} tarefa={t} />
+                    ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Grupo>
+      )}
     </div>
   )
 }
 
-function Grupo({ titulo, tarefas, mostrarData }: { titulo: string; tarefas: Tarefa[]; mostrarData?: boolean }) {
+function Grupo({
+  titulo,
+  total,
+  atraso,
+  children,
+}: {
+  titulo: string
+  total: number
+  atraso?: boolean
+  children: ReactNode
+}) {
   const id = `grupo-${titulo.toLowerCase()}`
-  return (
+  const cabecalho = (
+    <h2 className={cn('flex items-baseline gap-2 text-secao font-bold', atraso && 'text-atraso')}>
+      {atraso && <WarningCircleIcon weight="bold" className="size-5 self-center" aria-hidden />}
+      <span id={id}>{titulo}</span>
+      <span className="text-apoio font-semibold text-muted-foreground tabular-nums">{total}</span>
+    </h2>
+  )
+  // Atrasadas: um bloco tingido só, sem cartão dentro de cartão.
+  return atraso ? (
+    <section aria-labelledby={id} className="flex flex-col gap-1 rounded-[1.4rem] bg-atraso-fundo px-2 pt-3.5 pb-1.5">
+      <div className="px-2">{cabecalho}</div>
+      {children}
+    </section>
+  ) : (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2
-        id={id}
-        className={cn(
-          'flex items-center gap-1.5 text-secao font-bold',
-          titulo === 'Atrasadas' && 'text-base text-atraso',
-        )}
-      >
-        {titulo === 'Atrasadas' && <WarningCircleIcon weight="bold" className="size-5" aria-hidden />}
-        {titulo}
-      </h2>
-      <Lista>
-        {tarefas.map((t) => (
-          <Linha key={t.id} tarefa={t} mostrarData={mostrarData} />
-        ))}
-      </Lista>
+      {cabecalho}
+      {children}
     </section>
   )
 }
 
-/** Círculo à esquerda (conclui/reabre), como no Início; o resto da linha abre a tarefa. */
-function Linha({ tarefa: t, mostrarData }: { tarefa: Tarefa; mostrarData?: boolean }) {
+/**
+ * Círculo à esquerda (conclui/reabre), como no Início; o resto da linha abre a tarefa. A hora fica
+ * à direita, na linha do título; `quando` é o prazo em texto (atrasadas).
+ */
+function Linha({ tarefa: t, quando }: { tarefa: Tarefa; quando?: string }) {
   const concluir = useConcluirTarefa()
-  const quando = [
+  const detalhe = [
     t.concluida && t.concluidaEm ? `Feita em ${dataCurta(deDataHoraISO(t.concluidaEm).toISODate()!)}` : null,
-    !t.concluida && mostrarData ? diaCurto(t.data) : null,
-    t.hora,
+    !t.concluida ? quando : null,
+    t.detalhes,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -146,17 +202,17 @@ function Linha({ tarefa: t, mostrarData }: { tarefa: Tarefa; mostrarData?: boole
           ),
       }}
       titulo={t.titulo}
-      para={`/tarefas/${t.id}`}
-      apoio={
-        (quando || t.detalhes) && (
-          <p className={cn(t.atrasada && 'font-semibold text-atraso')}>
-            {t.lembrete && !t.concluida && (
-              <BellIcon className="mr-1 mb-[0.15em] inline size-4 align-middle" aria-label="Com lembrete" />
-            )}
-            {[quando, t.detalhes].filter(Boolean).join(' · ')}
-          </p>
+      valor={
+        !t.concluida &&
+        (t.hora || t.lembrete) && (
+          <span className={cn('flex items-center gap-1 pr-2 text-apoio', t.atrasada ? 'text-atraso' : 'text-muted-foreground')}>
+            {t.lembrete && <BellIcon weight="bold" className="size-4" aria-label="Com lembrete" />}
+            {t.hora}
+          </span>
         )
       }
+      para={`/tarefas/${t.id}`}
+      apoio={detalhe && <p className={cn(t.atrasada && !t.concluida && 'font-semibold text-atraso')}>{detalhe}</p>}
     />
   )
 }
@@ -188,24 +244,37 @@ function AdicionarRapido() {
     }
   }
 
+  // Uma linha só: o campo em pílula e o "+" redondo (com o texto no computador).
   return (
     <form
       noValidate
       onSubmit={handleSubmit(enviar)}
-      className="superficie flex flex-col gap-3 p-4 sm:flex-row sm:items-end"
+      className="area-tarefas grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-[1.75rem] bg-folha p-3 shadow-[var(--shadow-folha)] sm:p-4"
     >
-      <div className="flex-1">
-        <Campo
-          rotulo="Nova tarefa para hoje"
-          placeholder="Ex.: Ler e-mails"
-          erro={errors.titulo?.message}
-          {...register('titulo')}
-        />
-      </div>
-      <Button type="submit" disabled={isSubmitting}>
-        <PlusIcon weight="bold" aria-hidden />
-        {isSubmitting ? 'Anotando…' : 'Anotar'}
+      <Campo
+        rotulo="Nova tarefa para hoje"
+        rotuloOculto
+        placeholder="Anotar uma tarefa para hoje"
+        autoComplete="off"
+        enterKeyHint="done"
+        className="h-12 rounded-full border-0 bg-suave px-5 text-[1.05rem]"
+        erro={errors.titulo?.message}
+        {...register('titulo')}
+      />
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        aria-label="Anotar"
+        className="size-12 bg-area px-0 text-white hover:bg-area/90 sm:w-auto sm:px-5"
+      >
+        <PlusIcon weight="bold" className="size-6 sm:size-5" aria-hidden />
+        <span className="hidden sm:inline">{isSubmitting ? 'Anotando…' : 'Anotar'}</span>
       </Button>
+      {errors.root && (
+        <p role="alert" className="col-span-full font-semibold text-destructive">
+          {errors.root.message}
+        </p>
+      )}
     </form>
   )
 }
@@ -216,13 +285,13 @@ function Sugestoes({ pendentes }: { pendentes: Tarefa[] }) {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes-tarefas" className="flex flex-col gap-3">
-      <h2 id="sugestoes-tarefas" className="text-secao font-bold">
+      <h2 id="sugestoes-tarefas" className="text-apoio font-bold text-muted-foreground">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">
         {faltando.map((s) => (
           <li key={s}>
-            <Button asChild variant="outline" className="border-dashed">
+            <Button asChild variant="ghost" size="sm" className="rounded-full border border-dashed border-contorno">
               <Link to={`/tarefas/nova?titulo=${encodeURIComponent(s)}`}>
                 <PlusIcon weight="bold" aria-hidden />
                 {s}

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { cleanup, screen, within } from '@testing-library/react'
+import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
@@ -26,10 +26,15 @@ afterEach(() => {
 })
 afterAll(() => servidor.close())
 
-const cartao = async (titulo: string) =>
-  (await within(await screen.findByRole('main')).findAllByRole('link', { name: new RegExp(titulo) }))[0].closest(
-    'li',
-  ) as HTMLElement
+/** Links da lista, fora dos atalhos "Agenda por tipo" (que repetem nomes como "Fisioterapia"). */
+const linksDaLista = (links: HTMLElement[]) => links.filter((l) => !l.closest('nav'))
+
+const cartao = (titulo: string) =>
+  waitFor(() => {
+    const [link] = linksDaLista(within(screen.getByRole('main')).getAllByRole('link', { name: new RegExp(titulo) }))
+    expect(link).toBeDefined()
+    return link.closest('li') as HTMLElement
+  })
 
 /** Captura o corpo enviado ao back-end, mantendo a resposta do mock. */
 function espiarEnvio(metodo: 'post' | 'put', caminho: string) {
@@ -63,6 +68,17 @@ describe('calendário da agenda', () => {
     const fisio = await cartao('Fisioterapia')
     expect(within(fisio).getByText('Clínica Movimento, sala 4')).toBeInTheDocument()
     expect(within(fisio).getByText('Toda semana')).toBeInTheDocument()
+
+    // Às 8h, a linha "Agora" vem antes de tudo (nada começou ainda).
+    const lista = screen.getByRole('list', { name: 'Agendamentos de Hoje, 13 de outubro' })
+    expect(within(lista).getAllByRole('listitem')[0]).toHaveTextContent('08:00Agora')
+  })
+
+  test('atalhos levam à agenda de cada tipo', async () => {
+    renderizarApp('/agenda')
+    const atalhos = await screen.findByRole('navigation', { name: 'Agenda por tipo' })
+    expect(within(atalhos).getByRole('link', { name: 'Consultas' })).toHaveAttribute('href', '/consultas')
+    expect(within(atalhos).getByRole('link', { name: 'Viagens' })).toHaveAttribute('href', '/viagens')
   })
 
   test('tocar num dia mostra os agendamentos e as viagens dele; volta para hoje', async () => {
@@ -271,7 +287,7 @@ describe('formulário de agendamento', () => {
     await new Promise((r) => setTimeout(r, 300))
     expect(screen.queryByText(/não encontrado/)).not.toBeInTheDocument()
     await cartao('Consulta com cardiologista')
-    expect(within(screen.getByRole('main')).queryByRole('link', { name: /Fisioterapia/ })).not.toBeInTheDocument()
+    expect(linksDaLista(within(screen.getByRole('main')).queryAllByRole('link', { name: /Fisioterapia/ }))).toEqual([])
   })
 })
 

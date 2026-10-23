@@ -117,3 +117,21 @@ export function periodoAnterior(periodo: { inicio: string; fim: string }) {
   const dias = Math.round(fim.diff(inicio, 'days').days) + 1
   return { inicio: inicio.minus({ days: dias }).toISODate()!, fim: inicio.minus({ days: 1 }).toISODate()! }
 }
+
+/**
+ * Os dois trechos que a comparação do relatório põe lado a lado. Período que ainda não terminou
+ * compara só o que já passou com o mesmo trecho do período anterior (1º a 22/10 com 1º a 22/09),
+ * senão o mês pela metade perderia para o mês inteiro. Período futuro: nada a comparar (null).
+ */
+export function trechosComparaveis(periodo: { inicio: string; fim: string }, hoje = hojeISO()) {
+  if (periodo.inicio > hoje) return null
+  const anterior = periodoAnterior(periodo)
+  if (periodo.fim <= hoje) return { atual: periodo, anterior, parcial: false }
+  const dias = Math.round(deDataISO(hoje).diff(deDataISO(periodo.inicio), 'days').days)
+  const fimAnterior = deDataISO(anterior.inicio).plus({ days: dias }).toISODate()!
+  return {
+    atual: { inicio: periodo.inicio, fim: hoje },
+    anterior: { inicio: anterior.inicio, fim: fimAnterior < anterior.fim ? fimAnterior : anterior.fim },
+    parcial: true,
+  }
+}

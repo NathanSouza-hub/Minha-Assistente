@@ -42,6 +42,10 @@ npm run lint                                  # oxlint
   `eventosDoDia` (`porDia.ts`, fim exclusivo como na API). Cadastro só pelo "+ Novo"
   (`NovoNaAgenda.tsx`, 7 opções; Viagens vai para `/viagens/nova`). Cada item (`ItemEvento`) tem o ponto na cor da área
   do tipo (rádio, atividade física, fisioterapia; o resto na cor da Agenda), como as linhas do Início.
+  Em cima das abas, os atalhos "Agenda por tipo" (Consultas, Exames, Fisioterapia, Atividade física,
+  Programa de rádio, Viagens; um `nav`, que os testes ignoram ao procurar links da lista). No
+  calendário, hoje tem o anel âmbar e o dia aberto fica em grafite; na lista de hoje (Mês e Semana),
+  `ListaEventos comAgora` põe a linha âmbar "Agora" entre o que já começou e o que vem.
   Lembretes: a API guarda minutos antes; "Na véspera às 18h" depende do horário e é convertido
   em `src/paginas/agenda/lembretes.ts`.
 - **Remédios** (decisão 31): período de uso (`dataInicio`/`dataFim`) e "Tomar a cada" — `montarHorarios`
@@ -80,7 +84,10 @@ npm run lint                                  # oxlint
   a lado. Gráficos em `paginas/financas/graficos.tsx` (SVG à mão, sem biblioteca; cores validadas):
   A Entradas e saídas (recebido × pago no mês, até o mês atual), C Resultado mês a mês (realizado até o
   mês atual, projetado do mês atual em diante; não é saldo bancário) e B Despesas por categoria (barras
-  ordenadas, valor e %). Todo gráfico tem legenda (≥ 2 séries), tooltip e "Ver os números" (tabela).
+  ordenadas, valor e %, sobre o total da API; acima de 8 categorias, "Ver todas"). Todo gráfico tem
+  legenda (≥ 2 séries), tooltip e "Ver os números" (tabela). Mês sem nada recebido nem pago aparece
+  como "sem movimento" (traço no eixo, na dica e na tabela), com os R$ 0,00 reais: nunca preencha
+  mês vazio com valor. O mês atual leva "(até hoje)" nas tabelas.
   O detalhe de cada área continua nas telas dela (`ProximasContas`, `ProximosRecebiveis`, Residências,
   `ResumoPessoais`, explicados abaixo).
 - **Abas internas** (decisão 33): `components/Abas.tsx` (Tabs do Radix, aba em `?vista=`, a primeira
@@ -103,8 +110,9 @@ npm run lint                                  # oxlint
   imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
 - **Relatório** (`RelatorioDoPeriodo` em `paginas/Relatorio.tsx`, aba da Visão geral): o período em cima,
-  "Gerar PDF" e as abas Balanço (comparação com o período anterior — `periodoAnterior` de `lib/datas.ts`,
-  só o realizado —, entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e
+  "Gerar PDF" e as abas Balanço (comparação com o período anterior — `trechosComparaveis` de
+  `lib/datas.ts`: período que ainda não terminou compara do início até hoje com o mesmo trecho do
+  anterior, nunca o mês pela metade com o mês inteiro; só o realizado —, entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e
   Por imóvel ou categoria (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa
   `lib/relatorioPdf.ts` (jsPDF + autotable, importados só ao gerar) com os dados já carregados do
   período — nunca recalcule; o botão espera os dados do período escolhido (`isPlaceholderData`).
@@ -147,7 +155,14 @@ npm run lint                                  # oxlint
   ordem do português que a API usa (collation ICU `pt-BR-x-icu` no back-end).
   Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
   que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
-  sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda.
+  sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda. Desenho: o contador "X de Y
+  itens comprados" no cabeçalho, o anotar rápido numa pílula (nome + "+"; quantidade e categoria
+  embaixo no celular, tudo numa linha no computador), "A comprar" com cada categoria no seu bloco e
+  "Já comprados" mais apagado embaixo.
+- **Lembretes** (`/tarefas` e `/rotina`): anotar rápido no mesmo molde da Compras (rótulo oculto
+  "Nova tarefa para hoje", botão "Anotar"); a hora (e o sino do lembrete) fica à direita, na linha do
+  título. Atrasadas num bloco tingido de vermelho com "Era para …"; Próximas separadas por dia
+  (`rotuloDoDia`). A API não tem prioridade: a ordem pelo prazo faz esse papel (não invente campo).
 - **Notificações (Web Push)**: tudo que fala com o navegador está em `src/lib/notificacoes.ts`
   (`lerEstado`, `ativar`, `desativar`); as telas usam `consultas/notificacoes.ts`. O push só existe
   na build (`npm run build && npx vite preview --port 5173`): em `npm run dev` não há o `sw.js` do

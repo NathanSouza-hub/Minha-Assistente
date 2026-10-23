@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useId } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PencilSimpleIcon, PlusIcon, ShoppingCartIcon } from '@phosphor-icons/react'
@@ -9,14 +9,12 @@ import { Campo } from '@/components/Campo'
 import { Confirmar } from '@/components/Confirmar'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Lista, LinhaMarcavel } from '@/components/Linha'
-import { Progresso } from '@/components/Progresso'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCompras, useLimparComprados, useMarcarComprado, useSalvarItem } from '@/consultas/compras'
 import { chaveCategoria } from '@/lib/compras'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { ItemCompra } from '@/lib/tipos'
-import { CamposExtras } from './CamposExtras'
 import {
   descreverCompra,
   esquemaItem,
@@ -32,9 +30,19 @@ export function Compras() {
   const pendentes = itens.filter((i) => !i.comprado)
   const comprados = itens.filter((i) => i.comprado)
 
+  // Quantos já foram para o carrinho, no canto do cabeçalho (sem barra: a lista já mostra o resto).
+  const contador =
+    itens.length > 0 ? (
+      <p className="pb-1 text-apoio font-semibold text-muted-foreground" aria-live="polite">
+        {comprados.length === itens.length
+          ? 'Tudo comprado.'
+          : `${comprados.length} de ${itens.length} ${itens.length === 1 ? 'item comprado' : 'itens comprados'}`}
+      </p>
+    ) : undefined
+
   return (
-    <Pagina titulo="Compras">
-      <div className="flex flex-col gap-8">
+    <Pagina titulo="Compras" acoes={contador}>
+      <div className="flex flex-col gap-6">
         <AdicionarItem categorias={sugerirCategorias(itens)} />
 
         {consulta.isPending ? (
@@ -57,13 +65,11 @@ export function Compras() {
           </EstadoVazio>
         ) : (
           <>
-            <Progresso
-              feitos={comprados.length}
-              total={itens.length}
-              texto={`${comprados.length} de ${itens.length} ${itens.length === 1 ? 'item comprado' : 'itens comprados'}`}
-              textoCompleto="Tudo comprado."
-            />
-            {pendentes.length > 0 && <Pendentes itens={pendentes} />}
+            {pendentes.length > 0 ? (
+              <Pendentes itens={pendentes} />
+            ) : (
+              <p className="rounded-[1.25rem] bg-ok-fundo px-4 py-3 font-semibold text-ok">Tudo o que estava na lista foi comprado.</p>
+            )}
             {comprados.length > 0 && <Comprados itens={comprados} />}
           </>
         )}
@@ -100,31 +106,69 @@ function AdicionarItem({ categorias }: { categorias: string[] }) {
     }
   }
 
+  const idLista = useId()
+  // Anotar rápido: o nome e o "+" numa linha; quantidade e categoria (opcionais) logo abaixo, menores.
+  // No computador, tudo numa linha só.
   return (
     <form
       noValidate
       onSubmit={handleSubmit(enviar)}
       aria-label="Adicionar item"
-      className="superficie flex flex-col gap-4 p-4"
+      className="area-compras grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-[1.75rem] bg-folha p-3 shadow-[var(--shadow-folha)] sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_auto] sm:p-4"
     >
-      <Campo
-        rotulo="O que falta comprar?"
-        placeholder="Ex.: Leite"
-        autoComplete="off"
-        enterKeyHint="done"
-        erro={errors.nome?.message}
-        {...register('nome')}
-      />
-      <CamposExtras register={register} errors={errors} categorias={categorias} />
+      <div className="col-start-1 row-start-1 min-w-0">
+        <Campo
+          rotulo="O que falta comprar?"
+          rotuloOculto
+          placeholder="O que falta comprar?"
+          autoComplete="off"
+          enterKeyHint="done"
+          className="h-12 rounded-full border-0 bg-suave px-5 text-[1.05rem]"
+          erro={errors.nome?.message}
+          {...register('nome')}
+        />
+      </div>
+      <div className="col-span-2 row-start-2 grid grid-cols-2 gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+        <Campo
+          rotulo="Quantidade"
+          rotuloOculto
+          placeholder="Quantidade"
+          autoComplete="off"
+          className="h-12 rounded-full"
+          erro={errors.quantidade?.message}
+          {...register('quantidade')}
+        />
+        <Campo
+          rotulo="Categoria"
+          rotuloOculto
+          placeholder="Categoria"
+          list={idLista}
+          autoComplete="off"
+          className="h-12 rounded-full"
+          erro={errors.categoria?.message}
+          {...register('categoria')}
+        />
+        <datalist id={idLista}>
+          {categorias.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </div>
+      {/* No celular só o "+" ao lado do nome; no computador, com o texto, no fim da linha. */}
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        aria-label="Adicionar à lista"
+        className="col-start-2 row-start-1 size-12 bg-area px-0 text-white hover:bg-area/90 sm:col-start-3 sm:w-auto sm:px-5"
+      >
+        <PlusIcon weight="bold" className="size-6 sm:size-5" aria-hidden />
+        <span className="hidden sm:inline">Adicionar</span>
+      </Button>
       {errors.root && (
-        <p role="alert" className="font-semibold text-destructive">
+        <p role="alert" className="col-span-full font-semibold text-destructive">
           {errors.root.message}
         </p>
       )}
-      <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto sm:self-start">
-        <PlusIcon weight="bold" aria-hidden />
-        {isSubmitting ? 'Adicionando…' : 'Adicionar à lista'}
-      </Button>
     </form>
   )
 }
@@ -141,19 +185,27 @@ function Pendentes({ itens }: { itens: ItemCompra[] }) {
   }
   const soUmSemCategoria = grupos.size === 1 && grupos.has('')
 
+  // Cada lugar (mercado, farmácia...) num bloco com o nome em cima: na loja, olha-se um bloco só.
+  // No computador, os blocos ficam em duas colunas.
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-secao font-bold">A comprar</h2>
-      {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
-        <div key={chave} className="flex flex-col gap-2">
-          {!soUmSemCategoria && <h3 className="text-apoio font-semibold text-area">{titulo}</h3>}
-          <Lista rotulo={soUmSemCategoria ? 'A comprar' : titulo}>
-            {doGrupo.map((i) => (
-              <LinhaItem key={i.id} item={i} />
-            ))}
-          </Lista>
-        </div>
-      ))}
+    <section aria-labelledby="a-comprar" className="flex flex-col gap-3">
+      <h2 id="a-comprar" className="text-secao font-bold">
+        A comprar <span className="font-sans text-apoio font-semibold text-muted-foreground">· {itens.length}</span>
+      </h2>
+      <div className="grid items-start gap-3 lg:grid-cols-2">
+        {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
+          <div key={chave} className="superficie overflow-hidden pt-3">
+            {!soUmSemCategoria && (
+              <h3 className="px-4 text-[0.8rem] font-bold tracking-[0.08em] text-area uppercase">{titulo}</h3>
+            )}
+            <Lista rotulo={soUmSemCategoria ? 'A comprar' : titulo} className="rounded-none shadow-none">
+              {doGrupo.map((i) => (
+                <LinhaItem key={i.id} item={i} />
+              ))}
+            </Lista>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
@@ -170,12 +222,14 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
   }
 
   return (
-    <section className="flex flex-col gap-2">
+    <section aria-labelledby="ja-comprados" className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-secao font-bold">Já comprados</h2>
+        <h2 id="ja-comprados" className="text-base font-bold text-muted-foreground">
+          Já comprados · {n}
+        </h2>
         <Confirmar
           gatilho={
-            <Button variant="outline" size="sm" disabled={limpar.isPending}>
+            <Button variant="ghost" size="sm" disabled={limpar.isPending} className="text-muted-foreground">
               {limpar.isPending ? 'Limpando…' : 'Limpar comprados'}
             </Button>
           }
@@ -185,7 +239,7 @@ function Comprados({ itens }: { itens: ItemCompra[] }) {
           aoConfirmar={tirarDaLista}
         />
       </div>
-      <Lista rotulo="Já comprados">
+      <Lista rotulo="Já comprados" className="bg-folha/60 shadow-none">
         {itens.map((i) => (
           <LinhaItem key={i.id} item={i} />
         ))}

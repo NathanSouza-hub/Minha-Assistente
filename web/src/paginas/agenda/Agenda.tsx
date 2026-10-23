@@ -16,10 +16,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useEventos } from '@/consultas/eventos'
 import { useViagens } from '@/consultas/viagens'
 import {
+  agora,
   dataCurta,
   deDataISO,
   diasDaSemana,
   hojeISO,
+  horaDe,
   inicioDaSemana,
   mesDe,
   nomeDoMes,
@@ -68,6 +70,7 @@ export function Agenda() {
   const { data, mudar } = useDia()
   return (
     <Pagina titulo="Agenda" larga acoes={<NovoNaAgenda data={data === hojeISO() ? '' : data} />}>
+      <AtalhosPorTipo />
       <Abas<Visao>
         rotulo="Formas de ver a agenda"
         parametro="visao"
@@ -78,6 +81,39 @@ export function Agenda() {
         ]}
       />
     </Pagina>
+  )
+}
+
+/** Cada tipo com tela própria (só os agendamentos dele), mais as viagens: um toque a partir da Agenda. */
+const ATALHOS = [
+  { rota: '/consultas', rotulo: 'Consultas' },
+  { rota: '/exames', rotulo: 'Exames' },
+  { rota: '/fisioterapia', rotulo: 'Fisioterapia' },
+  { rota: '/atividade-fisica', rotulo: 'Atividade física' },
+  { rota: '/radio', rotulo: 'Programa de rádio' },
+  { rota: '/viagens', rotulo: 'Viagens' },
+]
+
+function AtalhosPorTipo() {
+  return (
+    <nav aria-label="Agenda por tipo" className="-mx-4 mb-5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+        {ATALHOS.map(({ rota, rotulo }) => (
+          <li key={rota}>
+            <Link
+              to={rota}
+              className={cn(
+                `area-${areaDaRota(rota)}`,
+                'flex h-11 items-center gap-2 rounded-full bg-folha px-4 text-apoio font-semibold whitespace-nowrap shadow-[var(--shadow-folha)] hover:bg-area-fundo',
+              )}
+            >
+              <span aria-hidden className="size-2 rounded-full bg-area" />
+              {rotulo}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 
@@ -139,7 +175,9 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
         ) : (
           <div className="flex flex-col gap-3">
             {viagensDia.length > 0 && <ListaViagens viagens={viagensDia} dia={data} />}
-            {doDia.length > 0 && <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} />}
+            {doDia.length > 0 && (
+              <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(data)}`} comAgora={data === hojeISO()} />
+            )}
           </div>
         )}
       </section>
@@ -147,7 +185,10 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
   )
 }
 
-/** Grade de 6 semanas (segunda a domingo); cada dia mostra até 3 pontos na cor do que tem nele. */
+/**
+ * Grade de 6 semanas (segunda a domingo); cada dia mostra até 3 pontos na cor do que tem nele.
+ * Hoje tem o anel âmbar; o dia aberto fica em grafite.
+ */
 function Calendario({
   mes,
   primeiro,
@@ -196,12 +237,10 @@ function Calendario({
                   aria-pressed={aberto}
                   aria-label={`${rotuloDoDia(dia)}${quantos ? `, ${quantos} ${quantos === 1 ? 'compromisso' : 'compromissos'}` : ''}`}
                   className={cn(
-                    'flex h-14 w-full flex-col items-center justify-center gap-1 rounded-xl text-lg font-semibold tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-16',
-                    aberto
-                      ? 'bg-primary text-primary-foreground shadow-folha'
-                      : dia === hoje
-                        ? 'bg-secondary text-primary ring-2 ring-primary/30'
-                        : 'hover:bg-suave',
+                    'flex h-12 w-full flex-col items-center justify-center gap-1 rounded-xl text-lg font-semibold tabular-nums outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:h-16',
+                    aberto ? 'bg-primary text-primary-foreground shadow-folha' : 'hover:bg-suave',
+                    // Hoje sempre com o anel âmbar, escolhido ou não.
+                    dia === hoje && 'font-bold ring-2 ring-ambar ring-inset',
                     foraDoMes && !aberto && 'text-muted-foreground/60',
                   )}
                 >
@@ -247,18 +286,52 @@ function ListaViagens({ viagens, dia }: { viagens: Viagem[]; dia: string }) {
   )
 }
 
-export function ListaEventos({ eventos, rotulo, voltar }: { eventos: Evento[]; rotulo: string; voltar?: string }) {
+/**
+ * `comAgora` (o dia de hoje): uma linha âmbar "Agora" entre o que já começou e o que vem, para ver
+ * de relance onde se está no dia.
+ */
+export function ListaEventos({
+  eventos,
+  rotulo,
+  voltar,
+  comAgora,
+}: {
+  eventos: Evento[]
+  rotulo: string
+  voltar?: string
+  comAgora?: boolean
+}) {
+  const hora = agora().toFormat('HH:mm')
+  const antes = comAgora ? eventos.filter((e) => horaDe(e.inicio) <= hora).length : -1
+  const itens = eventos.map((e) => <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />)
+  if (antes >= 0) itens.splice(antes, 0, <MarcaAgora key="agora" hora={hora} />)
   return (
     <ul className="superficie flex flex-col divide-y divide-linha overflow-hidden" aria-label={rotulo}>
-      {eventos.map((e) => (
-        <ItemEvento key={`${e.id}-${e.inicio}`} evento={e} voltar={voltar} />
-      ))}
+      {itens}
     </ul>
   )
 }
 
+function MarcaAgora({ hora }: { hora: string }) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-1.5">
+      <span className="w-[4.25rem] shrink-0 rounded-full bg-ambar px-2 py-0.5 text-center text-sm font-bold text-grafite tabular-nums">
+        {hora}
+      </span>
+      <span className="text-sm font-bold text-muted-foreground">Agora</span>
+      <span aria-hidden className="h-0.5 flex-1 rounded-full bg-ambar" />
+    </li>
+  )
+}
+
 export function CabecalhoDia({ dia }: { dia: string }) {
-  return <h3 className="text-base font-bold">{rotuloDoDia(dia)}</h3>
+  const hoje = hojeISO()
+  return (
+    <h3 className={cn('flex items-center gap-2 text-base font-bold', dia < hoje && 'text-muted-foreground')}>
+      {dia === hoje && <span aria-hidden className="h-4 w-1.5 rounded-full bg-ambar" />}
+      {rotuloDoDia(dia)}
+    </h3>
+  )
 }
 
 function tituloSemana(segunda: string) {
@@ -298,7 +371,7 @@ function VisaoSemana({ data, mudar }: { data: string; mudar: (dia: string) => vo
           return doDia.length ? (
             <section key={dia} className="flex flex-col gap-2">
               <CabecalhoDia dia={dia} />
-              <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} />
+              <ListaEventos eventos={doDia} rotulo={`Agendamentos de ${rotuloDoDia(dia)}`} comAgora={dia === hojeISO()} />
             </section>
           ) : (
             <section key={dia} className="flex flex-wrap items-baseline justify-between gap-x-4">

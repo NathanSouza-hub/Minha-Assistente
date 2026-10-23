@@ -159,6 +159,40 @@ com o critério de cada número, os gráficos Entradas e saídas, Resultado mês
 categoria, e os blocos Por residência. O Relatório tem o período, "Gerar PDF", a comparação com o
 período anterior e as abas Balanço, Recebíveis e pessoais e Por imóvel ou categoria.
 
+### Regras dos números (auditoria de 2026-10-22)
+
+- Realizado = recebido − pago no mês (pela data do recebimento e do pagamento); projetado =
+  previsto a receber − contas que vencem no mês. Projeção só do mês atual em diante e sempre
+  tracejada; nunca somada ao realizado.
+- Comparação com o período anterior em trechos equivalentes: com o período em andamento, do início
+  até hoje contra o mesmo número de dias do anterior (`trechosComparaveis`).
+- Mês sem movimento mostra R$ 0,00 com "sem movimento" (traço no eixo, dica e tabela). Nada de
+  preencher período vazio.
+- Percentual das categorias sobre o total da API; acima de 8 categorias, as maiores e "Ver todas"
+  (sem juntar o resto num "Outras").
+- Tabelas: valores sem quebra; no celular, fonte menor. A tabela de Entradas e saídas não repete a
+  diferença (é o Realizado da tabela do Resultado).
+
+## Agenda
+
+Atalhos "Agenda por tipo" em pílulas (com o ponto da cor da área) em cima das abas Mês, Semana e
+Próximos. No calendário, **hoje tem o anel âmbar** e o dia aberto fica em grafite. Na lista de hoje,
+a linha âmbar "Agora" separa o que já começou do que vem; na Semana, hoje tem a faixa âmbar ao lado
+do nome e os dias que passaram ficam apagados.
+
+## Lembretes
+
+Anotar rápido numa pílula com o "+" redondo na cor da área (Lembretes). Atrasadas num bloco tingido
+com "Era para …" (o único bloco da tela); Hoje e Próximas (separadas por dia) como linhas numa
+superfície. A hora fica à direita, junto do sino quando há lembrete. Sugestões como pílulas
+tracejadas pequenas. Compromissos que repetem: o mesmo desenho, com a hora à direita.
+
+## Compras
+
+O contador "X de Y itens comprados" no cabeçalho, o anotar rápido em pílula (roxo da área), "A
+comprar" com cada categoria no seu bloco (título em caixa alta na cor da área) e "Já comprados" mais
+apagado embaixo, com "Limpar comprados".
+
 ## Medicamentos
 
 Anel com "1 de 4 doses tomadas" e a próxima dose, as doses por período (Manhã, Tarde, Noite, da

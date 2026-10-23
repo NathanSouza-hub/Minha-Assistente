@@ -3,7 +3,7 @@ import { useConcluirTarefa } from '@/consultas/rotinas'
 import { horaDe } from '@/lib/datas'
 import type { TarefaDoDia } from '@/lib/tipos'
 
-/** Círculo à esquerda marca e desmarca (como no Início); o texto abre o compromisso. */
+/** Círculo à esquerda marca e desmarca (como no Início); o texto abre o compromisso; a hora fica à direita. */
 export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; desabilitada: boolean }) {
   const concluir = useConcluirTarefa(t.data)
   return (
@@ -18,15 +18,8 @@ export function ItemTarefa({ tarefa: t, desabilitada }: { tarefa: TarefaDoDia; d
       }}
       titulo={t.titulo}
       para={`/rotina/${t.rotinaId}`}
-      apoio={
-        t.concluida && t.concluidaEm ? (
-          `Feito às ${horaDe(t.concluidaEm)}`
-        ) : t.hora ? (
-          <span className="font-semibold tabular-nums">Às {t.hora}</span>
-        ) : (
-          'Qualquer hora'
-        )
-      }
+      valor={t.hora && !t.concluida && <span className="pr-2 text-apoio text-muted-foreground">{t.hora}</span>}
+      apoio={t.concluida && t.concluidaEm ? `Feito às ${horaDe(t.concluidaEm)}` : !t.hora && 'Qualquer hora'}
     />
   )
 }

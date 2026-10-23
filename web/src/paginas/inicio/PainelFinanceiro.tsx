@@ -4,6 +4,7 @@ import { useQueries } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router'
 import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { chaves, useRelatorioFinanceiro, useRelatorioGastos } from '@/consultas/pagamentos'
 import { api } from '@/lib/api'
@@ -83,12 +84,14 @@ function ResumoDoMes() {
 
 /** O que precisa de ação no mês: contas vencidas, recebíveis atrasados e contas sem valor. */
 function Atencao({ r, mes }: { r: RelatorioFinanceiro; mes: string }) {
+  // Os vencidos do relatório são das contas e recebíveis DESTE mês (vencimento/data prevista nele).
+  const nomeMes = nomeDoMes(mes).split(' ')[0].toLowerCase()
   const itens: { texto: ReactNode; para: string }[] = []
   if (r.saidas.vencidoCentavos > 0)
     itens.push({
       texto: (
         <>
-          <strong>{formatarCentavos(r.saidas.vencidoCentavos)}</strong> em contas vencidas
+          <strong>{formatarCentavos(r.saidas.vencidoCentavos)}</strong> em contas de {nomeMes} já vencidas
         </>
       ),
       para: `/despesas?mes=${mes}&status=pendente`,
@@ -97,7 +100,7 @@ function Atencao({ r, mes }: { r: RelatorioFinanceiro; mes: string }) {
     itens.push({
       texto: (
         <>
-          <strong>{formatarCentavos(r.entradas.vencidoCentavos)}</strong> em recebíveis atrasados
+          <strong>{formatarCentavos(r.entradas.vencidoCentavos)}</strong> em recebíveis de {nomeMes} atrasados
         </>
       ),
       para: `/recebiveis?mes=${mes}`,
@@ -115,7 +118,7 @@ function Atencao({ r, mes }: { r: RelatorioFinanceiro; mes: string }) {
     return (
       <p className="flex items-center gap-2 rounded-[1.25rem] bg-ok-fundo px-4 py-3 font-semibold text-ok">
         <CheckCircleIcon weight="fill" className="size-5 shrink-0" aria-hidden />
-        Nada vencido nem atrasado em {nomeDoMes(mes).split(' ')[0].toLowerCase()}.
+        Nenhuma conta nem recebível de {nomeMes} vencido.
       </p>
     )
   return (
@@ -160,6 +163,21 @@ function Carregando({ rotulo }: { rotulo: string }) {
   )
 }
 
+/**
+ * Mês da tabela; o atual avisa que o realizado ainda está correndo, e o mês sem nada recebido nem
+ * pago diz isso embaixo (os R$ 0,00 são reais, não falta de dado).
+ */
+function rotuloMes(mes: string, atual: string, semMovimento = false) {
+  const nome = `${mesCurto(mes, true)}${mes === atual ? ' (até hoje)' : ''}`
+  if (!semMovimento) return nome
+  return (
+    <>
+      {nome}
+      <span className="block text-sm text-muted-foreground">sem movimento</span>
+    </>
+  )
+}
+
 /** Os relatórios de vários meses (mesma chave do `useRelatorioFinanceiro`: o mês aberto vem do cache). */
 function useMeses(meses: string[]) {
   return useQueries({
@@ -181,6 +199,7 @@ function FluxoEResultado({ mes }: { mes: string }) {
   const atual = mesDe()
   const carregando = consultas.some((c) => c.isPending)
   const erro = consultas.some((c) => c.isError)
+  const tentarDeNovo = () => consultas.filter((c) => c.isError).forEach((c) => c.refetch())
   const dados = consultas.map((c) => c.data)
 
   const historico = meses.slice(0, MESES_ANTES + 1).filter((m) => m <= atual)
@@ -188,9 +207,12 @@ function FluxoEResultado({ mes }: { mes: string }) {
     const r = dados[meses.indexOf(m)]!
     return { mes: m, entradas: r?.entradas.recebidoNoPeriodoCentavos ?? 0, saidas: r?.saidas.pagoNoPeriodoCentavos ?? 0 }
   })
+  const semMovimento = (i: number) =>
+    dados[i]?.entradas.recebidoNoPeriodoCentavos === 0 && dados[i]?.saidas.pagoNoPeriodoCentavos === 0
   const resultado = meses.map((m, i) => ({
     mes: m,
     realizado: m <= atual ? (dados[i]?.saldo.realizadoCentavos ?? null) : null,
+    semMovimento: m <= atual && semMovimento(i),
     projetado: m >= atual ? (dados[i]?.saldo.projetadoCentavos ?? null) : null,
   }))
 
@@ -198,7 +220,12 @@ function FluxoEResultado({ mes }: { mes: string }) {
     carregando ? (
       <Carregando rotulo="Carregando gráfico" />
     ) : erro ? (
-      <p className="text-muted-foreground">Não foi possível carregar os meses. Verifique a internet.</p>
+      <div className="flex flex-col items-start gap-2">
+        <p className="text-muted-foreground">Não foi possível carregar os meses. Verifique a internet.</p>
+        <Button variant="outline" size="sm" onClick={tentarDeNovo}>
+          Tentar de novo
+        </Button>
+      </div>
     ) : (
       grafico
     )
@@ -221,12 +248,12 @@ function FluxoEResultado({ mes }: { mes: string }) {
               />
               <GraficoFluxo pontos={fluxo} />
               <TabelaDoGrafico
-                colunas={['Mês', 'Recebido', 'Pago', 'Diferença']}
+                // Sem "Diferença": é o Realizado da tabela do Resultado, logo abaixo (e está na dica).
+                colunas={['Mês', 'Recebido', 'Pago']}
                 linhas={fluxo.map((p) => [
-                  mesCurto(p.mes, true),
+                  rotuloMes(p.mes, atual, p.entradas === 0 && p.saidas === 0),
                   formatarCentavos(p.entradas),
                   formatarCentavos(p.saidas),
-                  formatarCentavos(p.entradas - p.saidas),
                 ])}
               />
             </>
@@ -250,7 +277,7 @@ function FluxoEResultado({ mes }: { mes: string }) {
             <TabelaDoGrafico
               colunas={['Mês', 'Realizado', 'Projetado']}
               linhas={resultado.map((p) => [
-                mesCurto(p.mes, true),
+                rotuloMes(p.mes, atual, p.semMovimento),
                 p.realizado === null ? '—' : formatarCentavos(p.realizado),
                 p.projetado === null ? '—' : formatarCentavos(p.projetado),
               ])}
@@ -284,14 +311,19 @@ function Categorias({ mes }: { mes: string }) {
       {gastos.isPending ? (
         <Carregando rotulo="Carregando categorias" />
       ) : gastos.isError ? (
-        <p className="text-muted-foreground">Não foi possível carregar as categorias.</p>
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-muted-foreground">Não foi possível carregar as categorias.</p>
+          <Button variant="outline" size="sm" onClick={() => gastos.refetch()}>
+            Tentar de novo
+          </Button>
+        </div>
       ) : itens.every((i) => i.total === 0) ? (
         <div className="flex flex-col items-center gap-2 py-6 text-center text-muted-foreground">
           <ChartBarIcon className="size-8" aria-hidden />
           Nenhuma despesa neste mês.
         </div>
       ) : (
-        <GraficoCategorias itens={itens} />
+        <GraficoCategorias itens={itens} total={total} />
       )}
     </Cartao>
   )

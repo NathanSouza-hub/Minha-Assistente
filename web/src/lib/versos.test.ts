@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { periodoAnterior, somarDias } from '@/lib/datas'
+import { periodoAnterior, somarDias, trechosComparaveis } from '@/lib/datas'
 import { VERSOS, versoDoDia } from '@/lib/versos'
 
 describe('Verso do dia', () => {
@@ -31,5 +31,30 @@ describe('período anterior (comparação do relatório)', () => {
   })
   test('datas soltas comparam com o mesmo número de dias antes', () => {
     expect(periodoAnterior({ inicio: '2026-10-05', fim: '2026-10-14' })).toEqual({ inicio: '2026-09-25', fim: '2026-10-04' })
+  })
+})
+
+describe('trechos comparáveis (período em andamento)', () => {
+  test('período que ainda não terminou compara do início até hoje com o mesmo trecho do anterior', () => {
+    expect(trechosComparaveis({ inicio: '2026-10-01', fim: '2026-10-31' }, '2026-10-22')).toEqual({
+      atual: { inicio: '2026-10-01', fim: '2026-10-22' },
+      anterior: { inicio: '2026-09-01', fim: '2026-09-22' },
+      parcial: true,
+    })
+  })
+  test('o trecho anterior não passa do fim do período anterior (31 de março × fevereiro)', () => {
+    expect(trechosComparaveis({ inicio: '2026-03-01', fim: '2026-03-31' }, '2026-03-31')).toEqual({
+      atual: { inicio: '2026-03-01', fim: '2026-03-31' },
+      anterior: { inicio: '2026-02-01', fim: '2026-02-28' },
+      parcial: false,
+    })
+    expect(trechosComparaveis({ inicio: '2026-03-01', fim: '2026-03-31' }, '2026-03-30')?.anterior).toEqual({
+      inicio: '2026-02-01',
+      fim: '2026-02-28',
+    })
+  })
+  test('período encerrado compara inteiro; período futuro não compara', () => {
+    expect(trechosComparaveis({ inicio: '2026-09-01', fim: '2026-09-30' }, '2026-10-22')?.parcial).toBe(false)
+    expect(trechosComparaveis({ inicio: '2026-11-01', fim: '2026-11-30' }, '2026-10-22')).toBeNull()
   })
 })

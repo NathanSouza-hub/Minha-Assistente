@@ -95,7 +95,7 @@ export function LinhaMarcavel({
         </span>
       )}
       {para ? (
-        <Link to={para} className="min-w-0 flex-1 rounded-lg py-1.5 hover:bg-suave/50">
+        <Link to={para} className="flex min-h-11 min-w-0 flex-1 flex-col justify-center rounded-lg py-1.5 hover:bg-suave/50">
           {meio}
         </Link>
       ) : meioMarca && marcar ? (

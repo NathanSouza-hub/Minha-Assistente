@@ -56,29 +56,32 @@ export function Legenda({ itens }: { itens: { nome: string; cor: string; linha?:
   )
 }
 
-/** Tabela com os mesmos números do gráfico, recolhida (leitores de tela e quem prefere ler). */
-export function TabelaDoGrafico({ colunas, linhas }: { colunas: string[]; linhas: (string | number)[][] }) {
+/**
+ * Tabela com os mesmos números do gráfico, recolhida (leitores de tela e quem prefere ler). Valores
+ * nunca quebram no meio ("−R$ 6.000,00" inteiro); se não couber no celular, a tabela rola sozinha.
+ */
+export function TabelaDoGrafico({ colunas, linhas }: { colunas: string[]; linhas: ReactNode[][] }) {
   return (
     <details className="text-apoio">
       <summary className="min-h-11 cursor-pointer py-2 font-semibold text-muted-foreground hover:text-foreground">
         Ver os números
       </summary>
       <div className="overflow-x-auto">
-        <table className="w-full text-left tabular-nums">
+        <table className="w-full text-left text-sm tabular-nums sm:text-apoio">
           <thead>
             <tr className="border-b border-linha text-muted-foreground">
               {colunas.map((c, i) => (
-                <th key={c} scope="col" className={cn('py-1.5 font-semibold', i > 0 && 'text-right')}>
+                <th key={c} scope="col" className={cn('py-1.5 font-semibold', i > 0 && 'pl-2.5 text-right whitespace-nowrap')}>
                   {c}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-linha">
-            {linhas.map((l) => (
-              <tr key={String(l[0])}>
+            {linhas.map((l, n) => (
+              <tr key={n}>
                 {l.map((v, i) => (
-                  <td key={i} className={cn('py-1.5', i > 0 && 'text-right')}>
+                  <td key={i} className={cn('py-1.5 align-top', i > 0 && 'pl-2.5 text-right whitespace-nowrap')}>
                     {v}
                   </td>
                 ))}
@@ -150,6 +153,10 @@ export function GraficoFluxo({ pontos }: { pontos: PontoFluxo[] }) {
                 )}
                 <Coluna x={cx - barra - 1} y={e.y} largura={barra} altura={e.h} cor={COR_ENTRADA} />
                 <Coluna x={cx + 1} y={s.y} largura={barra} altura={s.h} cor={COR_SAIDA} />
+                {/* Mês sem nada recebido nem pago: um traço no eixo, sem inventar valor. */}
+                {p.entradas === 0 && p.saidas === 0 && (
+                  <line x1={cx - 8} x2={cx + 8} y1={y(0)} y2={y(0)} stroke="var(--muted-foreground)" strokeWidth={2} strokeLinecap="round" />
+                )}
                 <text x={cx} y={altura - 8} textAnchor="middle" className="fill-muted-foreground text-[12px]">
                   {mesCurto(p.mes, anoMuda && (i === 0 || p.mes.endsWith('-01')))}
                 </text>
@@ -175,6 +182,7 @@ export function GraficoFluxo({ pontos }: { pontos: PontoFluxo[] }) {
             : { alinhar: 'direita' as const, x: largura - (margem.esq + banda * ativo) })}
         >
           <p className="font-bold">{mesCurto(pontos[ativo].mes, true)}</p>
+          {pontos[ativo].entradas === 0 && pontos[ativo].saidas === 0 && <p>Sem movimento: nada recebido nem pago.</p>}
           <p className={LINHA_DICA}>
             <span>Entrou</span>
             <span className="tabular-nums">{formatarCentavos(pontos[ativo].entradas)}</span>
@@ -207,7 +215,13 @@ function Coluna({ x, y, largura, altura, cor }: { x: number; y: number; largura:
 
 // ---------------------------------------------------------------------------------------------
 
-export type PontoResultado = { mes: string; realizado: number | null; projetado: number | null }
+export type PontoResultado = {
+  mes: string
+  realizado: number | null
+  projetado: number | null
+  /** Nada recebido nem pago no mês (o realizado é zero de verdade, não falta de dado). */
+  semMovimento?: boolean
+}
 
 /**
  * C · Resultado mês a mês: linha cheia = realizado (recebido − pago no mês, até o mês atual);
@@ -299,6 +313,7 @@ export function GraficoResultado({ pontos }: { pontos: PontoResultado[] }) {
             : { alinhar: 'direita' as const, x: largura - x(ativo) + 12 })}
         >
           <p className="font-bold">{mesCurto(pontos[ativo].mes, true)}</p>
+          {pontos[ativo].semMovimento && <p>Sem movimento: nada recebido nem pago.</p>}
           {pontos[ativo].realizado !== null && (
             <p className={LINHA_DICA}>
               <span>Realizado</span>
@@ -325,32 +340,49 @@ export type ItemCategoria = { nome: string; total: number; pago: number }
  * B · Despesas por categoria: barras horizontais da maior para a menor, com o valor e a parte do
  * total. Uma série só (sem legenda); o título diz o que é.
  */
-export function GraficoCategorias({ itens }: { itens: ItemCategoria[] }) {
+/** `total`: o total do relatório (pago + previsto da API), base do percentual de cada categoria. */
+export function GraficoCategorias({ itens, total }: { itens: ItemCategoria[]; total: number }) {
+  const [todas, setTodas] = useState(false)
   const ordenados = [...itens].filter((i) => i.total > 0).sort((a, b) => b.total - a.total)
-  const total = ordenados.reduce((s, i) => s + i.total, 0)
+  // Muitas categorias: as maiores primeiro e o resto num toque (sem juntar valores num "Outras").
+  const visiveis = todas ? ordenados : ordenados.slice(0, MAX_CATEGORIAS)
   const maior = ordenados[0]?.total ?? 1
   return (
-    <ul className="flex flex-col gap-3.5">
-      {ordenados.map((i) => {
-        const parte = total ? Math.round((i.total / total) * 100) : 0
-        return (
-          <li key={i.nome} className="flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between gap-3 text-base">
-              <span className="min-w-0 truncate font-semibold">{i.nome}</span>
-              <span className="shrink-0 tabular-nums">
-                <span className="font-bold">{formatarCentavos(i.total)}</span>
-                <span className="text-muted-foreground"> · {parte}%</span>
-              </span>
-            </div>
-            <div className="h-3 rounded-r-[4px]" title={`${i.nome}: ${formatarCentavos(i.total)} (${parte}% do total)`}>
-              <div
-                className="h-full rounded-r-[4px]"
-                style={{ width: `${Math.max((i.total / maior) * 100, 1.5)}%`, background: COR_SAIDA }}
-              />
-            </div>
-          </li>
-        )
-      })}
-    </ul>
+    <div className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-3.5">
+        {visiveis.map((i) => {
+          const parte = total ? Math.round((i.total / total) * 100) : 0
+          return (
+            <li key={i.nome} className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between gap-3 text-base">
+                <span className="min-w-0 truncate font-semibold">{i.nome}</span>
+                <span className="shrink-0 tabular-nums">
+                  <span className="font-bold">{formatarCentavos(i.total)}</span>
+                  <span className="text-muted-foreground"> · {parte}%</span>
+                </span>
+              </div>
+              <div className="h-3 rounded-r-[4px]" title={`${i.nome}: ${formatarCentavos(i.total)} (${parte}% do total)`}>
+                <div
+                  className="h-full rounded-r-[4px]"
+                  style={{ width: `${Math.max((i.total / maior) * 100, 1.5)}%`, background: COR_SAIDA }}
+                />
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+      {ordenados.length > MAX_CATEGORIAS && (
+        <button
+          type="button"
+          onClick={() => setTodas((v) => !v)}
+          aria-expanded={todas}
+          className="min-h-11 self-start text-apoio font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          {todas ? 'Mostrar só as maiores' : `Ver todas as ${ordenados.length} categorias`}
+        </button>
+      )}
+    </div>
   )
 }
+
+const MAX_CATEGORIAS = 8

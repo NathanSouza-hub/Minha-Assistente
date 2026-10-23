@@ -10,7 +10,7 @@ import { Selecao } from '@/components/Selecao'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRelatorioFinanceiro, useRelatorioGastos } from '@/consultas/pagamentos'
-import { agora, dataCurta, intervaloDoMes, mesDe, periodoAnterior, somarMeses } from '@/lib/datas'
+import { agora, dataCurta, intervaloDoMes, mesDe, somarMeses, trechosComparaveis } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { AgruparGastosPor, RelatorioFinanceiro, RelatorioGastos } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
@@ -45,8 +45,15 @@ export function RelatorioDoPeriodo() {
   const periodoValido = Boolean(periodo.inicio && periodo.fim && periodo.inicio <= periodo.fim)
   const financeiro = useRelatorioFinanceiro(periodo, periodoValido)
   const gastos = useRelatorioGastos({ ...periodo, agruparPor }, periodoValido)
-  const anterior = periodoAnterior(periodo)
-  const financeiroAnterior = useRelatorioFinanceiro(anterior, periodoValido)
+  // Comparação: o mesmo trecho nos dois períodos (só o que já passou, se o período não terminou).
+  const trechos = periodoValido ? trechosComparaveis(periodo) : null
+  const semTrecho = { inicio: periodo.inicio, fim: periodo.fim }
+  const atualComparado = useRelatorioFinanceiro(trechos?.atual ?? semTrecho, Boolean(trechos))
+  const anteriorComparado = useRelatorioFinanceiro(trechos?.anterior ?? semTrecho, Boolean(trechos))
+  const comparacao =
+    trechos && atualComparado.data && anteriorComparado.data && !atualComparado.isPlaceholderData && !anteriorComparado.isPlaceholderData
+      ? { atual: atualComparado.data, anterior: anteriorComparado.data, parcial: trechos.parcial }
+      : undefined
   // Enquanto o período novo carrega, a tela mostra o anterior: o PDF só sai com os dados do período escolhido.
   const prontos =
     periodoValido &&
@@ -120,7 +127,7 @@ export function RelatorioDoPeriodo() {
                 rotulo: 'Balanço',
                 conteudo: (
                   <Carregado consulta={financeiro}>
-                    {(r) => <Balanco r={r} anterior={financeiroAnterior.isPlaceholderData ? undefined : financeiroAnterior.data} />}
+                    {(r) => <Balanco r={r} comparacao={comparacao} />}
                   </Carregado>
                 ),
               },
@@ -207,11 +214,13 @@ function Cartao({ titulo, children }: { titulo: string; children: ReactNode }) {
  * Entradas (recebíveis), saídas (contas) e saldo do período, com o critério de cada número escrito:
  * previsto pela data prevista/vencimento, realizado pela data do recebimento/pagamento.
  */
-function Balanco({ r, anterior }: { r: RelatorioFinanceiro; anterior?: RelatorioFinanceiro }) {
+type Comparada = { atual: RelatorioFinanceiro; anterior: RelatorioFinanceiro; parcial: boolean }
+
+function Balanco({ r, comparacao }: { r: RelatorioFinanceiro; comparacao?: Comparada }) {
   const { entradas: e, saidas: s, saldo } = r
   return (
     <div className="flex flex-col gap-5">
-      {anterior && <Comparacao atual={r} anterior={anterior} />}
+      {comparacao && <Comparacao {...comparacao} />}
       <div className="grid items-start gap-5 md:grid-cols-2">
         <Cartao titulo="Entradas (recebíveis)">
           <dl className="flex flex-col divide-y divide-linha">
@@ -385,10 +394,10 @@ function Barra({ rotulo, centavos, maximo, cor }: { rotulo: string; centavos: nu
 }
 
 /**
- * O realizado do período ao lado do mesmo realizado no período anterior (mesmo tamanho), com a
+ * O realizado do trecho comparável (`trechosComparaveis`) ao lado do mesmo trecho do período anterior, com a
  * diferença. Só o realizado: o previsto do passado já virou pago/recebido ou vencido.
  */
-function Comparacao({ atual, anterior }: { atual: RelatorioFinanceiro; anterior: RelatorioFinanceiro }) {
+function Comparacao({ atual, anterior, parcial }: Comparada) {
   const linhas = [
     { rotulo: 'Recebido', agora: atual.entradas.recebidoNoPeriodoCentavos, antes: anterior.entradas.recebidoNoPeriodoCentavos, subirEBom: true },
     { rotulo: 'Pago', agora: atual.saidas.pagoNoPeriodoCentavos, antes: anterior.saidas.pagoNoPeriodoCentavos, subirEBom: false },
@@ -400,7 +409,9 @@ function Comparacao({ atual, anterior }: { atual: RelatorioFinanceiro; anterior:
         Comparação com o período anterior
       </h2>
       <p className="text-apoio text-muted-foreground">
-        {dataCurta(anterior.inicio)} a {dataCurta(anterior.fim)}, pela data do recebimento e do pagamento.
+        {parcial
+          ? `O período ainda não terminou: compara ${dataCurta(atual.inicio)} a ${dataCurta(atual.fim)} com ${dataCurta(anterior.inicio)} a ${dataCurta(anterior.fim)}, pela data do recebimento e do pagamento.`
+          : `Comparado com ${dataCurta(anterior.inicio)} a ${dataCurta(anterior.fim)}, pela data do recebimento e do pagamento.`}
       </p>
       {/* Lista (não tabela): no celular as três colunas não cabem lado a lado. */}
       <dl className="superficie flex flex-col divide-y divide-linha">

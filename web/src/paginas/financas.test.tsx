@@ -84,6 +84,25 @@ describe('Finanças → Visão geral', () => {
     expect(await screen.findByRole('region', { name: 'Comparação com o período anterior' })).toBeInTheDocument()
   })
 
+  test('mês sem nada recebido nem pago aparece como "sem movimento"; o atual avisa que vai até hoje', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/financas')
+    const fluxo = await bloco('Entradas e saídas')
+    await usuario.click(await within(fluxo).findByText('Ver os números'))
+    const linhas = within(fluxo)
+      .getAllByRole('row')
+      .slice(1)
+      .map((l) => l.querySelector('th, td')!.textContent)
+    expect(linhas).toHaveLength(6)
+    expect(linhas.at(-1)).toMatch(/\(até hoje\)$/)
+    // Os meses vazios continuam com R$ 0,00, com o aviso; nenhum valor é inventado.
+    const vazios = within(fluxo)
+      .getAllByRole('row')
+      .filter((l) => l.textContent?.includes('sem movimento'))
+    expect(vazios.length).toBeGreaterThan(0)
+    for (const linha of vazios) expect(linha).toHaveTextContent(`${reais(0)}${reais(0)}`)
+  })
+
   test('o endereço antigo do Relatório abre a aba Relatório da Visão geral', async () => {
     renderizarApp('/relatorio')
     expect(await screen.findByRole('tab', { name: 'Relatório', selected: true })).toBeInTheDocument()

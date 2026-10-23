@@ -10,10 +10,12 @@ type Props = ComponentProps<typeof Input> & {
   dica?: string
   /** Texto fixo antes do valor, ex.: "R$". */
   prefixo?: string
+  /** Rótulo só para leitores de tela (campo de anotar rápido, com o placeholder dizendo o que é). */
+  rotuloOculto?: boolean
 }
 
 /** Campo de formulário com rótulo, dica e mensagem de erro ligados por aria-describedby. */
-export function Campo({ rotulo, erro, dica, prefixo, type, className, ...props }: Props) {
+export function Campo({ rotulo, erro, dica, prefixo, rotuloOculto, type, className, ...props }: Props) {
   const id = useId()
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const ehSenha = type === 'password'
@@ -21,7 +23,9 @@ export function Campo({ rotulo, erro, dica, prefixo, type, className, ...props }
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{rotulo}</Label>
+      <Label htmlFor={id} className={cn(rotuloOculto && 'sr-only')}>
+        {rotulo}
+      </Label>
       <div className="relative">
         {prefixo && (
           <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3 flex items-center font-semibold text-muted-foreground">

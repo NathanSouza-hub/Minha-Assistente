@@ -75,13 +75,13 @@ function Sugestoes() {
   if (faltando.length === 0) return null
   return (
     <section aria-labelledby="sugestoes" className="flex flex-col gap-3">
-      <h2 id="sugestoes" className="text-secao font-bold">
+      <h2 id="sugestoes" className="text-apoio font-bold text-muted-foreground">
         Sugestões para adicionar
       </h2>
       <ul className="flex flex-wrap gap-2">
         {faltando.map((s) => (
           <li key={s}>
-            <Button asChild variant="outline" className="border-dashed">
+            <Button asChild variant="ghost" size="sm" className="rounded-full border border-dashed border-contorno">
               <Link to={`/rotina/nova?titulo=${encodeURIComponent(s)}`}>
                 <PlusIcon weight="bold" aria-hidden />
                 {s}
