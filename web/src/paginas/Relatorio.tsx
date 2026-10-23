@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { ChartBarIcon, FilePdfIcon } from '@phosphor-icons/react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
@@ -15,10 +16,11 @@ import { agora, dataCurta, intervaloDoMes, mesDe, somarMeses } from '@/lib/datas
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { AgruparGastosPor, RelatorioFinanceiro, RelatorioGastos } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
+import { VisaoGeral } from '@/paginas/inicio/PainelFinanceiro'
 import { ORIGENS } from '@/paginas/recebiveis/formulario'
 
 type Atalho = 'este-mes' | 'mes-passado' | 'este-ano' | 'escolher'
-type AbaRelatorio = 'balanco' | 'entradas' | 'gastos'
+type AbaFinancas = 'visao' | 'balanco' | 'entradas' | 'gastos'
 
 function periodoDoAtalho(atalho: Exclude<Atalho, 'escolher'>) {
   if (atalho === 'este-mes') return intervaloDoMes(mesDe())
@@ -30,11 +32,15 @@ function periodoDoAtalho(atalho: Exclude<Atalho, 'escolher'>) {
 type Consulta<T> = { isPending: boolean; isError: boolean; data?: T; refetch: () => unknown }
 
 /**
- * /relatorio: o período em cima (vale para tudo) e as abas Balanço (entradas, saídas e saldo),
+ * /financas (o antigo /relatorio redireciona para cá): as abas Visão geral (os indicadores do mês,
+ * `inicio/PainelFinanceiro.tsx`) e as partes do relatório — Balanço (entradas, saídas e saldo),
  * Recebíveis e pessoais (por origem e as despesas sem imóvel) e Por imóvel ou categoria (gastos).
- * "Gerar PDF" leva os mesmos números do período e o "Separar por" escolhido (`lib/relatorioPdf.ts`).
+ * O período do relatório aparece em cada uma dessas três e vale para as três; "Gerar PDF" (só nelas)
+ * leva os mesmos números do período e o "Separar por" escolhido (`lib/relatorioPdf.ts`).
  */
-export function Relatorio() {
+export function Financas() {
+  const [params] = useSearchParams()
+  const noRelatorio = ['balanco', 'entradas', 'gastos'].includes(params.get('vista') ?? '')
   const [atalho, setAtalho] = useState<Atalho>('este-mes')
   const [personalizado, setPersonalizado] = useState(periodoDoAtalho('este-mes'))
   const [agruparPor, setAgruparPor] = useState<AgruparGastosPor>('imovel')
@@ -42,8 +48,9 @@ export function Relatorio() {
 
   const periodo = atalho === 'escolher' ? personalizado : periodoDoAtalho(atalho)
   const periodoValido = Boolean(periodo.inicio && periodo.fim && periodo.inicio <= periodo.fim)
-  const financeiro = useRelatorioFinanceiro(periodo, periodoValido)
-  const gastos = useRelatorioGastos({ ...periodo, agruparPor }, periodoValido)
+  // Na Visão geral o relatório não é buscado (ela tem o mês dela).
+  const financeiro = useRelatorioFinanceiro(periodo, noRelatorio && periodoValido)
+  const gastos = useRelatorioGastos({ ...periodo, agruparPor }, noRelatorio && periodoValido)
   // Enquanto o período novo carrega, a tela mostra o anterior: o PDF só sai com os dados do período escolhido.
   const prontos =
     periodoValido &&
@@ -66,87 +73,94 @@ export function Relatorio() {
     }
   }
 
-  return (
-    <Pagina
-      titulo="Relatório de gastos"
-      larga
-      acoes={
-        <Button variant="secondary" onClick={gerarPdf} disabled={!prontos || gerando}>
-          <FilePdfIcon weight="bold" aria-hidden />
-          {gerando ? 'Gerando…' : 'Gerar PDF'}
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-5">
-        <div className="grid gap-4 rounded-2xl bg-folha p-4 shadow-folha sm:grid-cols-3">
-          <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
-            <option value="este-mes">Este mês</option>
-            <option value="mes-passado">Mês passado</option>
-            <option value="este-ano">Este ano</option>
-            <option value="escolher">Escolher datas</option>
-          </Selecao>
-          {atalho === 'escolher' ? (
-            <>
-              <Campo
-                rotulo="De"
-                type="date"
-                value={personalizado.inicio}
-                onChange={(e) => setPersonalizado((p) => ({ ...p, inicio: e.target.value }))}
-              />
-              <Campo
-                rotulo="Até"
-                type="date"
-                value={personalizado.fim}
-                erro={periodoValido ? undefined : 'A data final precisa ser igual ou depois da inicial.'}
-                onChange={(e) => setPersonalizado((p) => ({ ...p, fim: e.target.value }))}
-              />
-            </>
-          ) : (
-            <p className="text-base text-muted-foreground sm:col-span-2 sm:self-end sm:pb-3">
-              De {dataCurta(periodo.inicio)} a {dataCurta(periodo.fim)}
-            </p>
-          )}
-        </div>
-
-        {periodoValido && (
-          <Abas<AbaRelatorio>
-            rotulo="Partes do relatório"
-            abas={[
-              {
-                valor: 'balanco',
-                rotulo: 'Balanço',
-                conteudo: <Carregado consulta={financeiro}>{(r) => <Balanco r={r} />}</Carregado>,
-              },
-              {
-                valor: 'entradas',
-                rotulo: 'Recebíveis e pessoais',
-                conteudo: <Carregado consulta={financeiro}>{(r) => <RecebiveisEPessoais r={r} />}</Carregado>,
-              },
-              {
-                valor: 'gastos',
-                rotulo: 'Por imóvel ou categoria',
-                conteudo: (
-                  <div className="flex flex-col gap-5">
-                    <div className="sm:max-w-sm">
-                      <Opcoes<AgruparGastosPor>
-                        rotulo="Separar por"
-                        formato="segmentos"
-                        valor={agruparPor}
-                        aoMudar={setAgruparPor}
-                        opcoes={[
-                          { valor: 'imovel', rotulo: 'Imóvel' },
-                          { valor: 'categoria', rotulo: 'Categoria' },
-                        ]}
-                      />
-                    </div>
-                    <Carregado consulta={gastos}>{(g) => <Resultado relatorio={g} />}</Carregado>
-                  </div>
-                ),
-              },
-            ]}
-          />
+  // O período (com a data inválida avisada no campo) em cima de cada parte do relatório.
+  const comPeriodo = (conteudo: ReactNode) => (
+    <div className="flex flex-col gap-5">
+      <div className="grid gap-4 rounded-2xl bg-folha p-4 shadow-folha sm:grid-cols-3">
+        <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
+          <option value="este-mes">Este mês</option>
+          <option value="mes-passado">Mês passado</option>
+          <option value="este-ano">Este ano</option>
+          <option value="escolher">Escolher datas</option>
+        </Selecao>
+        {atalho === 'escolher' ? (
+          <>
+            <Campo
+              rotulo="De"
+              type="date"
+              value={personalizado.inicio}
+              onChange={(e) => setPersonalizado((p) => ({ ...p, inicio: e.target.value }))}
+            />
+            <Campo
+              rotulo="Até"
+              type="date"
+              value={personalizado.fim}
+              erro={periodoValido ? undefined : 'A data final precisa ser igual ou depois da inicial.'}
+              onChange={(e) => setPersonalizado((p) => ({ ...p, fim: e.target.value }))}
+            />
+          </>
+        ) : (
+          <p className="text-base text-muted-foreground sm:col-span-2 sm:self-end sm:pb-3">
+            De {dataCurta(periodo.inicio)} a {dataCurta(periodo.fim)}
+          </p>
         )}
       </div>
+      {periodoValido && conteudo}
+    </div>
+  )
+
+  return (
+    <Pagina
+      titulo="Finanças"
+      larga
+      acoes={
+        noRelatorio && (
+          <Button variant="secondary" onClick={gerarPdf} disabled={!prontos || gerando}>
+            <FilePdfIcon weight="bold" aria-hidden />
+            {gerando ? 'Gerando…' : 'Gerar PDF'}
+          </Button>
+        )
+      }
+    >
+      <Abas<AbaFinancas>
+        rotulo="Partes de Finanças"
+        abas={[
+          { valor: 'visao', rotulo: 'Visão geral', conteudo: <VisaoGeral /> },
+          {
+            valor: 'balanco',
+            rotulo: 'Balanço',
+            conteudo: comPeriodo(<Carregado consulta={financeiro}>{(r) => <Balanco r={r} />}</Carregado>),
+          },
+          {
+            valor: 'entradas',
+            rotulo: 'Recebíveis e pessoais',
+            conteudo: comPeriodo(
+              <Carregado consulta={financeiro}>{(r) => <RecebiveisEPessoais r={r} />}</Carregado>,
+            ),
+          },
+          {
+            valor: 'gastos',
+            rotulo: 'Por imóvel ou categoria',
+            conteudo: comPeriodo(
+              <div className="flex flex-col gap-5">
+                <div className="sm:max-w-sm">
+                  <Opcoes<AgruparGastosPor>
+                    rotulo="Separar por"
+                    formato="segmentos"
+                    valor={agruparPor}
+                    aoMudar={setAgruparPor}
+                    opcoes={[
+                      { valor: 'imovel', rotulo: 'Imóvel' },
+                      { valor: 'categoria', rotulo: 'Categoria' },
+                    ]}
+                  />
+                </div>
+                <Carregado consulta={gastos}>{(g) => <Resultado relatorio={g} />}</Carregado>
+              </div>,
+            ),
+          },
+        ]}
+      />
     </Pagina>
   )
 }

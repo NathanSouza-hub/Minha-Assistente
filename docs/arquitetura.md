@@ -424,6 +424,10 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     a copia. O banco só garante `origem = 'outros' OR origem_descricao IS NULL`: os "outros" já
     cadastrados ficam com `null` e continuam valendo (recebem normalmente); ao editar, o formulário
     pede a descrição. O front exibe "Outros · <descrição>" na lista, nos próximos e no detalhe.
+36. **Relatório dentro da Visão geral** (só front, nenhuma rota da API mudou): o item "Relatório"
+    saiu do menu de Finanças. `/financas` tem as abas Visão geral (os indicadores do mês, como antes),
+    Balanço, Recebíveis e pessoais e Por imóvel ou categoria; o período e o "Gerar PDF" aparecem só
+    nas três do relatório. O endereço antigo `/relatorio` redireciona para a aba Balanço.
 
 ## Convenções de banco
 

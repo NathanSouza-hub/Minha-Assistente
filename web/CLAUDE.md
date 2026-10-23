@@ -70,7 +70,8 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`, fora do menu desde a decisão 34), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): só os
+- **Finanças → Visão geral** (`/financas`, primeira aba de `paginas/Relatorio.tsx`; o conteúdo é `VisaoGeral`
+  em `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`): só os
   indicadores do mês (`BlocoFinancas`: despesas, recebíveis e saldo). Os totais vêm de
   `GET /relatorios/financeiro` (decisão 25): nunca some valores no front. Cada número diz o critério
   ("Contas que vencem em outubro", "Pela data do pagamento") e, quando a lista tem o mesmo critério,
@@ -101,9 +102,10 @@ npm run lint                                  # oxlint
   mostra um cartão por imóvel (valor do mês, situação, Renomear/Excluir) e o "Novo imóvel" no cabeçalho. Os números vêm de `GET /relatorios/imoveis/:id`. Cada
   imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
-- **Relatório** (`/relatorio`): o período em cima e as abas Balanço (entradas, saídas e saldo),
-  Recebíveis e pessoais (de `GET /relatorios/financeiro`) e Por imóvel ou categoria
-  (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa `lib/relatorioPdf.ts` (jsPDF +
+- **Relatório** (decisão 36: não é mais tela nem item do menu; `/relatorio` redireciona para
+  `/financas?vista=balanco`): são as abas Balanço (entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e Por imóvel ou categoria
+  (`/relatorios/gastos`, com o "Separar por") de Finanças, depois da Visão geral. O período aparece
+  em cada uma dessas três (estado único da página) e o relatório só é buscado nelas. "Gerar PDF" (só nessas abas) usa `lib/relatorioPdf.ts` (jsPDF +
   autotable, importados só ao gerar) com os dados já carregados do período — nunca recalcule; o
   botão espera os dados do período escolhido (`isPlaceholderData`).
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):

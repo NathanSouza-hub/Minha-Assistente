@@ -354,7 +354,7 @@ describe('imóveis', () => {
 describe('relatório de gastos', () => {
   test('mostra totais do mês e separa por imóvel ou categoria', async () => {
     const usuario = userEvent.setup()
-    renderizarApp('/relatorio')
+    renderizarApp('/financas?vista=balanco')
     // Aba Balanço (a primeira): entradas, saídas e saldo.
     expect(await screen.findByRole('region', { name: 'Entradas (recebíveis)' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Saídas (contas)' })).toBeInTheDocument()
@@ -389,7 +389,7 @@ describe('PDF do relatório', () => {
       baixados.push(this.download)
     })
     const usuario = userEvent.setup()
-    renderizarApp('/relatorio')
+    renderizarApp('/financas?vista=balanco')
     const gerar = await screen.findByRole('button', { name: 'Gerar PDF' })
     await waitFor(() => expect(gerar).toBeEnabled())
     await usuario.click(gerar)

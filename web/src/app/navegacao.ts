@@ -71,7 +71,6 @@ export const SECOES: Secao[] = [
       { rota: '/pagamentos?aba=equipe', rotulo: 'Equipe', prefixos: ['/equipe'] },
       { rota: '/recebiveis', rotulo: 'Recebíveis' },
       CARTOES_VISIVEIS && { rota: '/pagamentos?aba=cartoes', rotulo: 'Cartões', prefixos: ['/cartoes'] },
-      { rota: '/relatorio', rotulo: 'Relatório' },
       CATEGORIAS_VISIVEIS && { rota: '/categorias', rotulo: 'Categorias' },
     ]),
   },

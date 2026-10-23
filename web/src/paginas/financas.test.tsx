@@ -83,10 +83,35 @@ describe('Finanças → Visão geral', () => {
       'Residências',
       'Equipe',
       'Recebíveis',
-      'Relatório',
     ])
-    // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33).
+    // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33); o Relatório virou abas daqui.
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  test('o relatório fica em abas da Visão geral; o /relatorio antigo abre o Balanço', async () => {
+    renderizarApp('/financas')
+    const abas = await screen.findByRole('tablist', { name: 'Partes de Finanças' })
+    expect(within(abas).getAllByRole('tab').map((a) => a.textContent)).toEqual([
+      'Visão geral',
+      'Balanço',
+      'Recebíveis e pessoais',
+      'Por imóvel ou categoria',
+    ])
+    // Na Visão geral não há período do relatório nem PDF.
+    expect(await bloco('Finanças do mês')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Gerar PDF' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Período')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Balanço' }))
+    expect(await screen.findByRole('region', { name: 'Entradas (recebíveis)' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Período')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Gerar PDF' })).toBeInTheDocument()
+  })
+
+  test('o endereço antigo /relatorio leva à aba Balanço', async () => {
+    renderizarApp('/relatorio')
+    expect(await screen.findByRole('tab', { name: 'Balanço', selected: true })).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Saídas (contas)' })).toBeInTheDocument()
   })
 
   test('o mês escolhido vai junto para a lista', async () => {
