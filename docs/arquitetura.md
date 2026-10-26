@@ -57,6 +57,7 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
 GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
+GET/PUT /notificacoes/whatsapp | POST /notificacoes/whatsapp/teste  (lembretes pelo WhatsApp, decisão 38)
 ```
 
 ## Decisões acordadas
@@ -443,6 +444,22 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     (`UNION ALL` agrupado por dia, intervalo pelo instante — sargável). Medido em 2026-10-22 com
     256 mil tarefas no banco (16 mil do usuário) e 11 mil conclusões: um ano em ~19 ms, sem índice
     novo (a tarefa usa `(usuario_id, data)`; `rotina_conclusao` é varrida — rever se crescer muito).
+38. **Lembretes pelo WhatsApp** (migration 32): canal `whatsapp` ao lado do `app`, pela **API
+    oficial da Meta** (WhatsApp Cloud API; bibliotecas não oficiais violam os termos e arriscam o
+    número). **Cada pessoa cadastra o próprio número** (`usuario.whatsapp`: só dígitos com o código
+    do país, CHECK `^[1-9][0-9]{9,14}$`; nulo = não recebe). Os mesmos lembretes do app, respeitando
+    "O que avisar" e o resumo da manhã; quem tem aparelho inscrito e número recebe pelos dois.
+    - `GET /notificacoes/whatsapp` → `{ disponivel, numero }` (`disponivel` = servidor com
+      `WHATSAPP_TOKEN` e `WHATSAPP_NUMERO_ID`). `PUT` com `{ numero }`: aceita como a pessoa escreve
+      ("(11) 98765-4321"); com "+" é internacional, senão 10 ou 11 dígitos ganham o 55. `null` tira o
+      número e cancela os pendentes do canal; trocar não mexe neles (o canal lê o número no envio).
+    - `POST /notificacoes/whatsapp/teste` → 204; 409 `SEM_WHATSAPP` / `WHATSAPP_RECUSOU` (número sem
+      WhatsApp, fora da lista da conta de teste); 502 `WHATSAPP_FALHOU`; 503 `WHATSAPP_DESLIGADO`.
+    - Mensagem iniciada pela empresa exige **modelo aprovado** (`WHATSAPP_MODELO`, padrão `lembrete`,
+      `pt_BR`) com `{{1}}` = título e `{{2}}` = detalhe; as variáveis vão em uma linha (a Meta recusa
+      quebra de linha). Erros do destinatário (131026, 131030, 131021) cancelam o lembrete; os outros
+      voltam a tentar (até 3). "Enviado" = a Meta aceitou; a entrega no aparelho viria por webhook,
+      que o app não usa. Configuração na Meta: `docs/deploy.md`, "WhatsApp".
 
 ## Convenções de banco
 
@@ -494,7 +511,8 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina, tarefa, resumo) para as
    próximas 24h e faz upsert em `lembrete_envio`, uma linha por canal ativo.
 2. Envia as linhas `pendente` com `agendado_para <= agora` via `canais[canal].enviar(lembrete)`.
-3. Novo canal (ex.: WhatsApp) = `src/lembretes/canais/whatsapp.js` + registro + migration do CHECK.
+3. Canais: `app` (Web Push) e `whatsapp` (decisão 38). Novo canal = um arquivo em
+   `src/lembretes/canais/` + registro + migration do CHECK.
 4. Editar/excluir a origem cancela os pendentes e regenera (o upsert devolve a `pendente` os
    cancelados que continuam valendo).
 5. Código em `src/lembretes/`: `agendador.js` (ciclo), `geradores/` (um por `origem_tipo`, com

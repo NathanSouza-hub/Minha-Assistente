@@ -209,6 +209,48 @@ $C run --rm --no-deps -T api sh -c 'tar -xzf - -C /app' \
 $C up -d
 ```
 
+## WhatsApp (lembretes, opcional)
+
+Com isto configurado, quem cadastrar o número em **Configurações → Notificações → WhatsApp** recebe
+os lembretes também no WhatsApp (os mesmos do "O que avisar"). Usa a **API oficial da Meta** (WhatsApp
+Cloud API): sem risco de bloqueio do número, mas com conta na Meta e cobrança por mensagem (preços em
+developers.facebook.com/docs/whatsapp/pricing). Sem as variáveis, nada muda.
+
+1. **App na Meta**: em developers.facebook.com crie um app do tipo **Empresa** e adicione o produto
+   **WhatsApp**. A Meta já dá um número de teste, que só envia para até 5 números cadastrados na tela
+   "Configuração da API" (fora deles o envio dá "Número não liberado na conta de teste").
+2. **Número que envia**: em WhatsApp → Configuração da API → "Adicionar número". Precisa ser um número
+   que **não** esteja em uso no aplicativo do WhatsApp (ou desinstale o app dele antes) e receber SMS ou
+   ligação para confirmar. Anote o **ID do número de telefone** (não é o número em si).
+3. **Forma de pagamento**: no Gerenciador do WhatsApp, em "Pagamentos". Sem ela a Meta para de enviar
+   depois das mensagens gratuitas.
+4. **Modelo da mensagem**: Gerenciador do WhatsApp → Modelos de mensagem → Criar.
+   - Categoria **Utilidade**, nome **`lembrete`**, idioma **Português (BR)**.
+   - Corpo exatamente com duas variáveis:
+     ```
+     *{{1}}*
+     {{2}}
+     ```
+   - Exemplos pedidos pela Meta: `Hora do remédio: Losartana` e `1 comprimido de 50 mg`.
+   - Espere a aprovação (minutos a um dia). Outro nome ou idioma: `WHATSAPP_MODELO` e
+     `WHATSAPP_MODELO_IDIOMA` no `.env`.
+5. **Token permanente** (o da tela de teste vence em 24 h): Configurações do negócio → Usuários →
+   **Usuários do sistema** → Adicionar (função Administrador) → "Atribuir ativos": o app e a conta do
+   WhatsApp, com controle total → "Gerar token": escolha o app, validade **Nunca**, permissões
+   `whatsapp_business_messaging` e `whatsapp_business_management`.
+6. **No servidor**, no `.env`:
+   ```bash
+   WHATSAPP_TOKEN=<o token do passo 5>
+   WHATSAPP_NUMERO_ID=<o ID do número do passo 2>
+   ```
+   e suba de novo: `docker compose -f docker-compose.prod.yml up -d`.
+7. **Teste**: no app, Configurações → Notificações → WhatsApp, cadastre o seu número e toque em
+   "Enviar mensagem de teste".
+
+Erros no envio ficam em `lembrete_envio.erro` (status `falhou` depois de 3 tentativas). Trocar o
+token não afeta nada além do envio; trocar o número que envia também não (os números cadastrados
+continuam).
+
 ## 7. Quando tiver um domínio
 
 1. No painel do domínio (Hostinger, Registro.br...), crie um registro **A** com o nome que

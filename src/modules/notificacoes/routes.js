@@ -13,6 +13,9 @@ function rotasNotificacoes() {
   rotas.put('/resumo', validar({ body: esquemas.resumo }), controller.salvarResumo);
   rotas.get('/avisos', controller.lerAvisos);
   rotas.put('/avisos', validar({ body: esquemas.avisosParcial }), controller.salvarAvisos);
+  rotas.get('/whatsapp', controller.lerWhatsapp);
+  rotas.put('/whatsapp', validar({ body: esquemas.whatsapp }), controller.salvarWhatsapp);
+  rotas.post('/whatsapp/teste', controller.testarWhatsapp);
   return rotas;
 }
 

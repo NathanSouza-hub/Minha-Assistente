@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 const env = require('../../config/env');
 const app = require('../../lembretes/canais/app');
+const whatsapp = require('../../lembretes/canais/whatsapp');
 const { AppError } = require('../../lib/erros');
 const { CATEGORIAS, origensDa } = require('../../lembretes/categorias');
 
@@ -80,4 +81,54 @@ async function salvarAvisos(usuarioId, mudancas) {
   });
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo, lerAvisos, salvarAvisos };
+// ——— WhatsApp (decisão 38) ———
+
+async function lerWhatsapp(usuarioId) {
+  const { whatsapp: numero } = await db('usuario').where({ id: usuarioId }).first('whatsapp');
+  return { disponivel: whatsapp.ativo(), numero };
+}
+
+// Trocar o número não mexe nos pendentes (o canal lê o número na hora de enviar); tirar cancela.
+async function salvarWhatsapp(usuarioId, { numero }) {
+  await db.transaction(async (trx) => {
+    await trx('usuario').where({ id: usuarioId }).update({ whatsapp: numero });
+    if (!numero) {
+      await trx('lembreteEnvio')
+        .where({ usuarioId, canal: 'whatsapp', status: 'pendente' })
+        .update({ status: 'cancelado', erro: 'Número de WhatsApp removido.' });
+    }
+  });
+  return lerWhatsapp(usuarioId);
+}
+
+async function testarWhatsapp(usuarioId) {
+  if (!whatsapp.ativo()) {
+    throw new AppError(503, 'WHATSAPP_DESLIGADO', 'O WhatsApp não está configurado neste servidor.');
+  }
+  const { whatsapp: numero } = await db('usuario').where({ id: usuarioId }).first('whatsapp');
+  if (!numero) throw new AppError(409, 'SEM_WHATSAPP', 'Cadastre o seu número de WhatsApp primeiro.');
+  let resultado;
+  try {
+    resultado = await whatsapp.enviarParaNumero(numero, {
+      titulo: 'Avisos ligados',
+      corpo: 'É assim que os lembretes da Minha Assistente vão chegar aqui.',
+    });
+  } catch (erro) {
+    throw new AppError(502, 'WHATSAPP_FALHOU', `O WhatsApp não aceitou a mensagem agora. ${erro.message}`);
+  }
+  if (!resultado.entregue) throw new AppError(409, 'WHATSAPP_RECUSOU', resultado.motivo);
+}
+
+module.exports = {
+  chavePublica,
+  inscrever,
+  cancelar,
+  testar,
+  lerResumo,
+  salvarResumo,
+  lerAvisos,
+  salvarAvisos,
+  lerWhatsapp,
+  salvarWhatsapp,
+  testarWhatsapp,
+};

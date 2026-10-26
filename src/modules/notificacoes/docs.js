@@ -88,5 +88,40 @@ module.exports = {
         },
       },
     },
+    '/notificacoes/whatsapp': {
+      get: {
+        tags: TAG,
+        summary: 'Número de WhatsApp que recebe os lembretes',
+        description:
+          'Com número cadastrado e o servidor configurado (`disponivel`), os lembretes chegam também pelo WhatsApp, respeitando "O que avisar". Decisão 38.',
+        responses: { 200: respostaJson('WhatsApp', esquemas.whatsappSalvo), ...respostasErro(ERRO_AUTH) },
+      },
+      put: {
+        tags: TAG,
+        summary: 'Cadastra, troca ou tira o número de WhatsApp',
+        description:
+          'Aceita o número como a pessoa escreve; 10 ou 11 dígitos ganham o 55 do Brasil. `null` tira o número e cancela os lembretes pendentes pelo WhatsApp.',
+        requestBody: corpoJson(esquemas.whatsapp),
+        responses: {
+          200: respostaJson('WhatsApp salvo', esquemas.whatsappSalvo),
+          ...respostasErro({ ...INVALIDO, ...ERRO_AUTH }),
+        },
+      },
+    },
+    '/notificacoes/whatsapp/teste': {
+      post: {
+        tags: TAG,
+        summary: 'Envia uma mensagem de teste para o WhatsApp cadastrado',
+        responses: {
+          204: respostaVazia('A Meta aceitou a mensagem'),
+          ...respostasErro({
+            ...ERRO_AUTH,
+            409: 'Sem número cadastrado (SEM_WHATSAPP) ou número recusado pela Meta (WHATSAPP_RECUSOU)',
+            502: 'A Meta não aceitou a mensagem agora (WHATSAPP_FALHOU)',
+            503: 'Servidor sem WHATSAPP_TOKEN/WHATSAPP_NUMERO_ID (WHATSAPP_DESLIGADO)',
+          }),
+        },
+      },
+    },
   },
 };

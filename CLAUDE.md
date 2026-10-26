@@ -89,7 +89,9 @@ temporária definida em `test/setup.js`), `/compras`, `/notificacoes` e os lembr
 em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes.
 
 **Lembretes** (seção "Lembretes" e decisão 17 de `docs/arquitetura.md`): sem `VAPID_*` no `.env`
-ficam desligados (gere com `npx web-push generate-vapid-keys`). Origem nova com lembrete = um
+ficam desligados (gere com `npx web-push generate-vapid-keys`). Canal `whatsapp` (decisão 38, API
+oficial da Meta): liga com `WHATSAPP_TOKEN` + `WHATSAPP_NUMERO_ID` e vai para quem cadastrou o número
+(`usuario.whatsapp`); os testes simulam a Meta com `t.mock.method(globalThis, 'fetch')`. Origem nova com lembrete = um
 gerador em `src/lembretes/geradores/` + valor no CHECK de `origem_tipo`, e o service dela cancela
 os pendentes ao editar/excluir. Os testes recebem chaves VAPID de `test/setup.js`, chamam
 `gerar`/`enviarPendentes` com um `agora` fixo e um canal falso, e simulam o push com

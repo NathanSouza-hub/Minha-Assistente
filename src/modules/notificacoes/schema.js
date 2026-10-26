@@ -53,4 +53,37 @@ const avisosParcial = avisos
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Informe pelo menos uma categoria.');
 
-module.exports = { inscricao, cancelamento, chavePublica, inscricaoSalva, resumo, avisos, avisosParcial };
+// WhatsApp de cada pessoa (usuario.whatsapp, decisão 38). Aceita como a pessoa escreve
+// ("(11) 98765-4321", "+55 11 98765-4321") e guarda só os dígitos com o código do país. Com "+" na
+// frente o número já é internacional; sem ele, 10 ou 11 dígitos são do Brasil e ganham o 55.
+const numeroWhatsapp = z
+  .string()
+  .transform((v) => {
+    const digitos = v.replace(/\D/g, '').replace(/^0+/, '');
+    const internacional = v.trim().startsWith('+');
+    return !internacional && (digitos.length === 10 || digitos.length === 11) ? `55${digitos}` : digitos;
+  })
+  .refine((v) => /^[1-9]\d{9,14}$/.test(v), 'Informe o número com DDD, ex.: (11) 98765-4321.');
+
+const whatsapp = z
+  .object({ numero: numeroWhatsapp.nullable().describe('null tira o número e para os avisos pelo WhatsApp') })
+  .meta({ example: { numero: '(11) 98765-4321' } });
+
+const whatsappSalvo = z
+  .object({
+    disponivel: z.boolean().describe('O servidor tem o WhatsApp configurado (sem isso, nada é enviado)'),
+    numero: z.string().nullable().describe('Só dígitos, com o código do país'),
+  })
+  .meta({ example: { disponivel: true, numero: '5511987654321' } });
+
+module.exports = {
+  inscricao,
+  cancelamento,
+  chavePublica,
+  inscricaoSalva,
+  resumo,
+  avisos,
+  avisosParcial,
+  whatsapp,
+  whatsappSalvo,
+};
