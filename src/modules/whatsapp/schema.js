@@ -5,13 +5,14 @@ const esquemas = require('../../lib/esquemas');
 const situacao = z
   .object({
     disponivel: z.boolean().describe('false: o servidor está sem as chaves do WhatsApp'),
+    assistente: z.boolean().describe('true: o número ligado pode lançar contas, compromissos e tarefas por mensagem'),
     numero: z.string().nullable().describe('Número do app, só dígitos com o país'),
     vinculado: z.boolean(),
     telefone: z.string().nullable().describe('Número ligado, mascarado ("•••• 4321")'),
     vinculadoEm: esquemas.instante.nullable(),
   })
   .meta({
-    example: { disponivel: true, numero: '5511999990000', vinculado: true, telefone: '•••• 4321', vinculadoEm: '2026-10-26T10:00:00-03:00' },
+    example: { disponivel: true, assistente: true, numero: '5511999990000', vinculado: true, telefone: '•••• 4321', vinculadoEm: '2026-10-26T10:00:00-03:00' },
   });
 
 const codigo = z

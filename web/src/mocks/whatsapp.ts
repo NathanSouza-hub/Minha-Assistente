@@ -27,6 +27,7 @@ export const handlersWhatsapp = [
       const v = vinculoDe(usuario.id)
       return HttpResponse.json({
         disponivel: true,
+        assistente: true,
         numero: NUMERO_DO_APP_MOCK,
         vinculado: Boolean(v.telefone),
         telefone: v.telefone ? `•••• ${v.telefone.slice(-4)}` : null,

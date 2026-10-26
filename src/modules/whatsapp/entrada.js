@@ -1,9 +1,11 @@
-// O que fazer com cada mensagem que chega pelo webhook (decisão 38). Por enquanto: ligar o número à
-// conta pelo código; quem já está ligado recebe um aviso de que o resto vem depois. Os lembretes
+// O que fazer com cada mensagem que chega pelo webhook (decisão 38): o código liga o número à conta;
+// o texto de quem já está ligado vai para o assistente (Claude), que lança no app. Os lembretes
 // saem por outro caminho (src/lembretes/canais/whatsapp.js).
 const db = require('../../config/db');
 const env = require('../../config/env');
+const claude = require('../../lib/claude');
 const whatsapp = require('../../lib/whatsapp');
+const assistente = require('./assistente');
 const service = require('./service');
 
 const TEXTOS = {
@@ -14,6 +16,9 @@ const TEXTOS = {
     'Olá! Este é o número do Minha Assistente. Para usar, abra o app em Configurações → WhatsApp e mande aqui o código de 6 dígitos.',
   emBreve: (nome) =>
     `Oi, ${nome}! Recebi sua mensagem. Por enquanto eu mando os seus lembretes por aqui; logo vou anotar contas e agendamentos também.`,
+  soTexto: 'Por enquanto eu só entendo mensagens de texto. Escreva, por exemplo: "almoço 45,90" ou "dentista dia 18 às 15h".',
+  longa: 'Essa mensagem ficou longa demais para mim. Mande em partes menores, um lançamento por vez.',
+  limite: 'Recebi muitas mensagens seguidas. Espere um pouco e mande de novo.',
 };
 
 // Quem erra o código muitas vezes para de ser atendido por um tempo (6 dígitos dá para chutar).
@@ -21,17 +26,38 @@ const TEXTOS = {
 // hora, a chance de acertar um código pendente fica perto de 1 em 30 mil por hora. Ao passar
 // dele, ninguém liga número por até 1 h (incômodo, mas não abre a conta de ninguém).
 // Também não respondemos de novo, dentro de uma hora, a quem não tem conta: cada resposta custa.
+// Cada mensagem para o assistente é uma chamada paga ao Claude: no máximo 40 por hora por número.
 const JANELA_MS = 60 * 60_000;
 const MAX_ERROS = 5;
 const MAX_ERROS_GERAL = 30;
+const MAX_CONVERSAS = 40;
+const MAX_CARACTERES = 1000;
 
 /** Contadores em memória, por número. Fábrica: cada app (e cada teste) tem os seus. */
 function criarControle() {
   const erros = new Map();
   let errosGerais = [];
   const avisados = new Map();
+  const conversas = new Map();
+  const filas = new Map();
   const vivos = (lista, agora) => (lista ?? []).filter((t) => agora - t < JANELA_MS);
   return {
+    /** Conta uma mensagem para o assistente; false se o número passou do limite da hora. */
+    podeConversar(telefone, agora) {
+      const lista = vivos(conversas.get(telefone), agora);
+      if (lista.length >= MAX_CONVERSAS) return false;
+      conversas.set(telefone, [...lista, agora]);
+      return true;
+    },
+    /** Roda `tarefa` depois das anteriores do mesmo número (a Meta pode mandar duas de uma vez). */
+    emFila(telefone, tarefa) {
+      const anterior = filas.get(telefone) ?? Promise.resolve();
+      const atual = anterior.then(tarefa, tarefa);
+      const fim = atual.catch(() => {});
+      filas.set(telefone, fim);
+      void fim.then(() => filas.get(telefone) === fim && filas.delete(telefone));
+      return atual;
+    },
     bloqueado(telefone, agora) {
       errosGerais = vivos(errosGerais, agora);
       return errosGerais.length >= MAX_ERROS_GERAL || vivos(erros.get(telefone), agora).length >= MAX_ERROS;
@@ -89,8 +115,18 @@ async function responder(mensagem, controle, agora) {
   }
 
   const usuario = await service.usuarioDoTelefone(de);
-  if (usuario) return TEXTOS.emBreve(usuario.nome);
-  return controle.jaAvisado(de, agora) ? null : TEXTOS.desconhecido;
+  if (!usuario) return controle.jaAvisado(de, agora) ? null : TEXTOS.desconhecido;
+  if (!claude.ativo()) return TEXTOS.emBreve(usuario.nome);
+  if (!controle.podeConversar(de, agora)) return controle.jaAvisado(`limite:${de}`, agora) ? null : TEXTOS.limite;
+  if (mensagem.type !== 'text') return TEXTOS.soTexto;
+  if (texto.length > MAX_CARACTERES) return TEXTOS.longa;
+  if (/^\s*desfa(z|zer)[\s.!]*$/i.test(texto)) return assistente.desfazerUltimo(usuario.id, agora);
+  try {
+    return await assistente.responder(usuario, texto.trim(), agora);
+  } catch (erro) {
+    console.error('WhatsApp: falha do assistente', erro.message);
+    return assistente.TEXTOS.falhou;
+  }
 }
 
 /**
@@ -101,8 +137,10 @@ async function processar(corpo, controle, agora = Date.now()) {
   for (const mensagem of mensagensDoCorpo(corpo)) {
     try {
       if (!(await primeiraVez(mensagem.id))) continue;
-      const resposta = await responder(mensagem, controle, agora);
-      if (resposta) await whatsapp.enviarTexto(mensagem.from, resposta);
+      await controle.emFila(mensagem.from, async () => {
+        const resposta = await responder(mensagem, controle, agora);
+        if (resposta) await whatsapp.enviarTexto(mensagem.from, resposta);
+      });
     } catch (erro) {
       console.error('WhatsApp: falha ao tratar a mensagem', mensagem.id, erro.message);
     }

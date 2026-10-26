@@ -65,6 +65,8 @@ describe('tela WhatsApp', () => {
     const usuario = userEvent.setup()
     renderizarApp('/whatsapp')
     expect(await screen.findByText(/Os lembretes chegam por lá também/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Mande mensagens como' })).toBeInTheDocument()
+    expect(screen.getByText('“almoço 45,90”')).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Enviar lembrete de teste' }))
     expect(await screen.findByText('Lembrete de teste enviado.')).toBeInTheDocument()
   })
@@ -80,7 +82,7 @@ describe('tela WhatsApp', () => {
   test('servidor sem as chaves mostra que ainda não está disponível', async () => {
     servidor.use(
       http.get(`${API_URL}/whatsapp`, () =>
-        HttpResponse.json({ disponivel: false, numero: null, vinculado: false, telefone: null, vinculadoEm: null }),
+        HttpResponse.json({ disponivel: false, assistente: false, numero: null, vinculado: false, telefone: null, vinculadoEm: null }),
       ),
     )
     renderizarApp('/whatsapp')

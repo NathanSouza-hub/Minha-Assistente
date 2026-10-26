@@ -31,6 +31,9 @@ const esquema = z.object({
   // Modelo (template) aprovado na Meta para os lembretes, com {{1}} = título e {{2}} = detalhe.
   WHATSAPP_MODELO: z.string().default('lembrete'),
   WHATSAPP_MODELO_IDIOMA: z.string().default('pt_BR'),
+  // Claude (Anthropic) entende as mensagens do WhatsApp e lança no app. Sem a chave, o número
+  // ligado só recebe os lembretes.
+  ANTHROPIC_API_KEY: z.string().default(''),
 }).refine(
   (v) => {
     const partes = [v.WHATSAPP_TOKEN, v.WHATSAPP_NUMERO_ID, v.WHATSAPP_NUMERO, v.WHATSAPP_APP_SECRET, v.WHATSAPP_VERIFY_TOKEN];

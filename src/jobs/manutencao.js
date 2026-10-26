@@ -1,9 +1,10 @@
 // Manutenção periódica no processo da API (independe das chaves de notificação): cria as contas
-// da equipe do mês atual e do seguinte para todos e apaga os ids antigos de mensagens do WhatsApp. Assim nenhuma tela precisa gravar ao ser
+// da equipe do mês atual e do seguinte para todos e apaga os ids antigos de mensagens do WhatsApp e o histórico velho do assistente. Assim nenhuma tela precisa gravar ao ser
 // aberta, e a virada do mês não depende de alguém abrir as Finanças.
 const db = require('../config/db');
 const { garantirContasDeTodos } = require('../modules/equipe/contas');
 const { limparMensagensAntigas } = require('../modules/whatsapp/entrada');
+const { limparAntigos } = require('../modules/whatsapp/assistente');
 
 const INTERVALO_MS = 6 * 60 * 60 * 1000;
 
@@ -15,6 +16,7 @@ async function executar() {
   }
   try {
     await limparMensagensAntigas(db);
+    await limparAntigos(db);
   } catch (erro) {
     console.error('Manutenção: falha ao limpar as mensagens do WhatsApp:', erro.message);
   }

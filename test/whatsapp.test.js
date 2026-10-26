@@ -98,7 +98,7 @@ test('webhook recusa corpo sem assinatura ou com assinatura errada e aceita a ce
 
 test('situação, código e vínculo pelo código; o código só vale uma vez', async (t) => {
   const antes = (await request(app).get('/whatsapp').set(ana.auth).expect(200)).body;
-  assert.deepEqual(antes, { disponivel: true, numero: '5511999990000', vinculado: false, telefone: null, vinculadoEm: null });
+  assert.deepEqual(antes, { disponivel: true, assistente: false, numero: '5511999990000', vinculado: false, telefone: null, vinculadoEm: null });
 
   const { codigo, link, expiraEm } = await gerarCodigo(ana);
   assert.match(codigo, /^\d{6}$/);

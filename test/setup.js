@@ -17,4 +17,6 @@ process.env.WHATSAPP_NUMERO_ID = '100200300';
 process.env.WHATSAPP_NUMERO = '5511999990000';
 process.env.WHATSAPP_APP_SECRET = 'segredo-de-teste';
 process.env.WHATSAPP_VERIFY_TOKEN = 'verificacao-de-teste';
+// Claude desligado, mesmo que a máquina tenha a chave: os testes ligam com t.mock.method(claude, 'ativo').
+process.env.ANTHROPIC_API_KEY = '';
 require('dotenv').config({ quiet: true });

@@ -543,6 +543,8 @@ export type PreferenciaAvisos = Record<CategoriaAviso, boolean>
 /** GET /whatsapp (decisão 38). `numero` e `telefone` vêm só com dígitos / mascarado. */
 export type SituacaoWhatsapp = {
   disponivel: boolean
+  /** O número ligado lança contas, compromissos e tarefas por mensagem (servidor com a chave do Claude). */
+  assistente: boolean
   numero: string | null
   vinculado: boolean
   telefone: string | null

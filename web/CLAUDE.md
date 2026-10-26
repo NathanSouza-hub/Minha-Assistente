@@ -175,7 +175,7 @@ npm run lint                                  # oxlint
   destaca (não alterna: o toque dispara `mouseenter` e `click` juntos).
 - **WhatsApp** (`/whatsapp`, item de Configurações, `paginas/Whatsapp.tsx`, decisão 38): passo a passo,
   "Gerar código" (mostra o código, "Abrir o WhatsApp" = link `wa.me` e relê `GET /whatsapp` a cada 3 s
-  até o número aparecer ligado), ligado (número mascarado, "Enviar lembrete de teste" = `POST /notificacoes/whatsapp/teste`, "Trocar de número", "Desligar" com
+  até o número aparecer ligado), ligado (número mascarado, exemplos de mensagem quando `assistente` vem true, "Enviar lembrete de teste" = `POST /notificacoes/whatsapp/teste`, "Trocar de número", "Desligar" com
   confirmação) e "Ainda não disponível" sem as chaves no servidor. No mock não há webhook: os testes
   ligam o número com `vincularNoMock` (`mocks/whatsapp.ts`).
 - **Relógio** (`lib/relogio.ts`, `useMinutoAtual`): "HH:mm" que avança na virada do minuto (um timer

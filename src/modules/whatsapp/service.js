@@ -3,6 +3,7 @@
 const crypto = require('node:crypto');
 const db = require('../../config/db');
 const env = require('../../config/env');
+const claude = require('../../lib/claude');
 const whatsapp = require('../../lib/whatsapp');
 const { AppError } = require('../../lib/erros');
 
@@ -25,6 +26,7 @@ async function situacao(usuarioId) {
   const vinculo = await db('whatsappVinculo').where({ usuarioId }).first('telefone', 'vinculadoEm');
   return {
     disponivel: whatsapp.ativo(),
+    assistente: whatsapp.ativo() && claude.ativo(),
     numero: whatsapp.ativo() ? env.WHATSAPP_NUMERO : null,
     vinculado: Boolean(vinculo?.telefone),
     telefone: mascarar(vinculo?.telefone),

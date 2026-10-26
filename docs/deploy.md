@@ -267,6 +267,12 @@ oficial da Meta**: sem risco de bloqueio do número, mas com conta na Meta e cob
 
 Erros dos lembretes ficam em `lembrete_envio.erro` (status `falhou` depois de 3 tentativas).
 
+**Assistente** (lançar contas, compromissos e tarefas por mensagem): em
+<https://console.anthropic.com> → API Keys, crie uma chave e ponha créditos; em Limits, defina um
+**limite de gasto mensal**. Ponha no `.env` como `ANTHROPIC_API_KEY=` e aplique
+(`docker compose -f docker-compose.prod.yml up -d api`). Usa o Claude Haiku 5.5, o mais barato; cada
+mensagem custa frações de centavo. Sem a chave, o WhatsApp só liga o número e manda os lembretes.
+
 **Número definitivo** (o chip): em API Setup → "Adicionar número de telefone". O número não pode ter
 conta no WhatsApp comum (apague a conta no celular antes) e recebe SMS ou ligação para confirmar.
 Cadastre também uma **forma de pagamento** no Gerenciador do WhatsApp ("Pagamentos"): sem ela a Meta

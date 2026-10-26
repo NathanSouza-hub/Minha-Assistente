@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils'
 
 /**
  * Configurações → WhatsApp (decisão 38): liga o número da pessoa à conta por um código de 6 dígitos
- * que ela manda para o número do app. O número ligado recebe os lembretes (os mesmos do app).
+ * que ela manda para o número do app. O número ligado recebe os lembretes (os mesmos do app) e, com
+ * o assistente ligado no servidor, lança contas, compromissos e tarefas por mensagem.
  */
 export function Whatsapp() {
   const [codigo, setCodigo] = useState<CodigoWhatsapp | null>(null)
@@ -45,7 +46,7 @@ export function Whatsapp() {
         ) : situacao.vinculado ? (
           <Ligado situacao={situacao} aoGerar={setCodigo} />
         ) : (
-          <Desligado numero={situacao.numero!} aoGerar={setCodigo} />
+          <Desligado numero={situacao.numero!} assistente={situacao.assistente} aoGerar={setCodigo} />
         )}
       </div>
     </Pagina>
@@ -83,10 +84,15 @@ function BotaoGerar({ rotulo, variant, aoGerar }: { rotulo: string; variant?: 'o
   )
 }
 
-function Desligado({ numero, aoGerar }: { numero: string; aoGerar: (c: CodigoWhatsapp) => void }) {
+function Desligado({ numero, assistente, aoGerar }: { numero: string; assistente: boolean; aoGerar: (c: CodigoWhatsapp) => void }) {
   return (
     <Cartao titulo="Ligar o seu WhatsApp" tom="apagado">
-      <p>Ligue o seu número à sua conta para receber os lembretes também pelo WhatsApp. Logo você vai poder anotar contas e agendamentos mandando mensagem.</p>
+      <p>
+        Ligue o seu número à sua conta para receber os lembretes também pelo WhatsApp
+        {assistente
+          ? ' e anotar contas, compromissos e tarefas mandando mensagem.'
+          : '. Logo você vai poder anotar contas e agendamentos mandando mensagem.'}
+      </p>
       <ol className="flex list-decimal flex-col gap-1 pl-5">
         <li>Toque em “Gerar código”.</li>
         <li>
@@ -126,6 +132,21 @@ function MandeOCodigo({ codigo, aoCancelar }: { codigo: CodigoWhatsapp; aoCancel
   )
 }
 
+function Exemplos() {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg bg-suave p-3 md:p-4">
+      <h3 className="font-semibold">Mande mensagens como</h3>
+      <ul className="flex flex-col gap-1">
+        <li>“almoço 45,90”</li>
+        <li>“conta de luz 230 vence dia 10”</li>
+        <li>“dentista dia 18 às 15h”</li>
+        <li>“ligar para o banco amanhã às 9h”</li>
+      </ul>
+      <p className="text-muted-foreground">Errou? Mande “desfazer” e o último lançamento sai.</p>
+    </div>
+  )
+}
+
 function Ligado({ situacao, aoGerar }: { situacao: SituacaoWhatsapp; aoGerar: (c: CodigoWhatsapp) => void }) {
   const desvincular = useDesvincularWhatsapp()
   const testar = useTestarWhatsapp()
@@ -134,9 +155,10 @@ function Ligado({ situacao, aoGerar }: { situacao: SituacaoWhatsapp; aoGerar: (c
       <p>
         Número {situacao.telefone}
         {situacao.vinculadoEm && `, ligado em ${dataCurta(diaDe(situacao.vinculadoEm))}`}. Os lembretes chegam por
-        lá também, os mesmos do app (Notificações → O que avisar); em breve você vai poder anotar contas e
-        agendamentos por lá.
+        lá também, os mesmos do app (Notificações → O que avisar).
+        {!situacao.assistente && ' Em breve você vai poder anotar contas e agendamentos por lá.'}
       </p>
+      {situacao.assistente && <Exemplos />}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button size="lg" disabled={testar.isPending} onClick={() => testar.mutate()}>
           {testar.isPending ? 'Enviando…' : 'Enviar lembrete de teste'}

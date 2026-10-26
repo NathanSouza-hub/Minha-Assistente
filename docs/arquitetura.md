@@ -466,9 +466,25 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
       do corpo bruto com o App Secret; montado antes do `express.json`), responde 200 na hora e trata
       depois; cada `wamid` vai para `whatsapp_mensagem` (a Meta reenvia; repetida é ignorada; a
       manutenção apaga as de mais de 7 dias). Mensagens de outro `phone_number_id` e status de
-      entrega são ignorados. O número ligado recebe "logo vou anotar contas e agendamentos por aqui";
-      número sem conta recebe as instruções (no máximo uma vez por hora). Respostas de texto só valem
-      dentro da janela de 24 h aberta pela mensagem da pessoa.
+      entrega são ignorados. Número sem conta recebe as instruções (no máximo uma vez por hora).
+      Mensagens do mesmo número são tratadas uma de cada vez. Respostas de texto só valem dentro da
+      janela de 24 h aberta pela mensagem da pessoa.
+    - **Assistente** (fase 2, migration 34, `src/modules/whatsapp/assistente.js`): com
+      `ANTHROPIC_API_KEY`, o texto de quem ligou o número vai para o **Claude Haiku 5.5**
+      (`claude-haiku-5-5`, effort `medium`), que lança por tool use (`strict`): `lancar_conta`
+      (gasto pago ou conta pendente; categoria pelo nome, senão "Outros", recriada se a pessoa
+      apagou), `criar_compromisso` (evento com aviso 1 h antes, salvo pedido), `criar_tarefa` (com
+      hora = lembrete) e `desfazer_ultimo`. Cada ferramenta valida com o esquema Zod da rota e chama o
+      service do módulo; erro de validação ou de regra volta ao Claude como `is_error` para ele
+      perguntar. No máximo 5 voltas por mensagem. O que foi lançado vai para `whatsapp_lancamento`;
+      "desfazer" (a palavra sozinha, sem chamar o Claude, ou pedido em frase) apaga o último das
+      últimas 24 h pelo `remover` do módulo. O Claude vê as últimas 10 falas de texto da última meia
+      hora (`whatsapp_conversa`; ferramentas e thinking não ficam no histórico). Limites: 40
+      mensagens por hora por número e 1000 caracteres; foto, áudio etc. recebem "só entendo texto".
+      Falha da API → "Não consegui entender agora"; recusa → resposta fixa. Sem a chave, o número
+      ligado recebe "logo vou anotar contas e agendamentos por aqui". `GET /whatsapp` traz
+      `assistente` (WhatsApp e Claude configurados). A manutenção apaga falas de mais de 1 dia e
+      lançamentos de mais de 30.
     - **Lembretes** (migration 32, canal `whatsapp` ao lado do `app`, `src/lembretes/canais/whatsapp.js`):
       os mesmos lembretes do app, respeitando "O que avisar" e o resumo da manhã; quem tem aparelho
       inscrito e número ligado recebe pelos dois. Mensagem iniciada pela empresa exige **modelo
@@ -478,8 +494,7 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
       Meta aceitou. `POST /notificacoes/whatsapp/teste` → 204; 409 `SEM_WHATSAPP` (nenhum número
       ligado) / `WHATSAPP_RECUSOU` (número sem WhatsApp, fora da lista da conta de teste); 502
       `WHATSAPP_FALHOU`. A migration 32 criou `usuario.whatsapp` (número digitado); a 33 tirou.
-    - Próximas fases: 2) lançar por texto com o Claude Haiku (tool use sobre os services) e
-      "desfazer"; 3) comprovante por foto; 5) perguntas. Configuração na Meta: `docs/deploy.md`,
+    - Próximas fases: 3) comprovante por foto; 5) perguntas. Configuração na Meta: `docs/deploy.md`,
       "WhatsApp".
 
 ## Convenções de banco
