@@ -16,21 +16,28 @@ const TEXTOS = {
 };
 
 // Quem erra o código muitas vezes para de ser atendido por um tempo (6 dígitos dá para chutar).
+// O limite geral (somando todos os números) impede chutar trocando de número: com 30 erros por
+// hora, a chance de acertar um código pendente fica perto de 1 em 30 mil por hora. Ao passar
+// dele, ninguém liga número por até 1 h (incômodo, mas não abre a conta de ninguém).
 // Também não respondemos de novo, dentro de uma hora, a quem não tem conta: cada resposta custa.
 const JANELA_MS = 60 * 60_000;
 const MAX_ERROS = 5;
+const MAX_ERROS_GERAL = 30;
 
 /** Contadores em memória, por número. Fábrica: cada app (e cada teste) tem os seus. */
 function criarControle() {
   const erros = new Map();
+  let errosGerais = [];
   const avisados = new Map();
   const vivos = (lista, agora) => (lista ?? []).filter((t) => agora - t < JANELA_MS);
   return {
     bloqueado(telefone, agora) {
-      return vivos(erros.get(telefone), agora).length >= MAX_ERROS;
+      errosGerais = vivos(errosGerais, agora);
+      return errosGerais.length >= MAX_ERROS_GERAL || vivos(erros.get(telefone), agora).length >= MAX_ERROS;
     },
     errou(telefone, agora) {
       erros.set(telefone, [...vivos(erros.get(telefone), agora), agora]);
+      errosGerais.push(agora);
     },
     jaAvisado(telefone, agora) {
       const ultimo = avisados.get(telefone);

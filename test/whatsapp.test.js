@@ -159,6 +159,20 @@ test('depois de 5 códigos errados o número para de ser atendido (nem o certo v
   assert.equal((await request(app).get('/whatsapp').set(sessao.auth)).body.vinculado, true);
 });
 
+test('30 códigos errados em 1 h, somando todos os números, param os códigos de todos', async (t) => {
+  const sessao = await criarSessao(app);
+  const controle = entrada.criarControle();
+  const { codigo } = await gerarCodigo(sessao);
+  const errado = codigo === '000000' ? '111111' : '000000';
+  const agora = Date.now();
+  for (let i = 0; i < 30; i += 1) await receber(t, corpoTexto(`55719000${String(i).padStart(5, '0')}`, errado), controle, agora);
+  assert.deepEqual(await receber(t, corpoTexto('5571800000000', codigo), controle, agora), []);
+  assert.equal((await request(app).get('/whatsapp').set(sessao.auth)).body.vinculado, false);
+  // Passada a hora, os códigos voltam a ser conferidos (este já venceu, então a resposta é "não vale").
+  const depois = await receber(t, corpoTexto('5571800000000', codigo), controle, agora + 61 * 60_000);
+  assert.deepEqual(depois.map((m) => m.texto), [entrada.TEXTOS.codigoInvalido]);
+});
+
 test('o número passa para a conta que mandou o código; desligar tira o número', async (t) => {
   const carla = await criarSessao(app, { nome: 'Carla' });
   const davi = await criarSessao(app, { nome: 'Davi' });

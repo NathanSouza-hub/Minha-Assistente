@@ -453,7 +453,8 @@ GET/POST /webhooks/whatsapp  (público: chamado pela Meta, com assinatura)
     webhook grava o `from` da Meta (só dígitos, com o país — por isso o código, e não o número
     digitado: a Meta às vezes manda o celular brasileiro sem o 9) em `whatsapp_vinculo.telefone`
     (único: se o número estava em outra conta, sai de lá). O código é guardado como sha256 e vale
-    uma vez; 5 códigos errados de um número em 1 h fazem o app ignorar os códigos dele por 1 h.
+    uma vez; 5 códigos errados de um número em 1 h fazem o app ignorar os códigos dele por 1 h, e 30
+    errados em 1 h somando todos os números param os códigos de todos (contadores em memória).
     `DELETE /whatsapp` tira o número. Webhook: `GET` = verificação (`hub.verify_token`); `POST`
     exige `X-Hub-Signature-256` (HMAC do corpo bruto com o App Secret; montado antes do
     `express.json`), responde 200 na hora e trata depois; cada `wamid` vai para `whatsapp_mensagem`
