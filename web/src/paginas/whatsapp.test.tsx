@@ -60,6 +60,15 @@ describe('tela WhatsApp', () => {
     expect(banco.whatsapp.get(MARIA_ID)?.telefone).toBeNull()
   })
 
+  test('com o número ligado, envia um lembrete de teste', async () => {
+    banco.whatsapp.set(MARIA_ID, { telefone: '5511987654321', vinculadoEm: '2026-10-26T13:00:00Z', codigo: null, expiraEm: null })
+    const usuario = userEvent.setup()
+    renderizarApp('/whatsapp')
+    expect(await screen.findByText(/Os lembretes chegam por lá também/)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Enviar lembrete de teste' }))
+    expect(await screen.findByText('Lembrete de teste enviado.')).toBeInTheDocument()
+  })
+
   test('cancelar o código volta sem ligar nada', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/whatsapp')

@@ -9,6 +9,21 @@ const comparar = (a: string, b: string) => a.localeCompare(b, 'pt-BR', { sensiti
 export const chaveCategoria = (categoria: string) =>
   categoria.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('pt-BR').trim()
 
+/**
+ * Itens por categoria, na ordem em que chegam (sem categoria no fim). Agrupa sem diferenciar
+ * maiúsculas e acentos; o título é o primeiro jeito como a categoria foi escrita.
+ */
+export function agruparPorCategoria<T extends Pick<ItemCompra, 'categoria'>>(itens: T[]) {
+  const grupos = new Map<string, { chave: string; titulo: string; itens: T[] }>()
+  for (const item of itens) {
+    const chave = item.categoria === null ? '' : chaveCategoria(item.categoria)
+    const grupo = grupos.get(chave) ?? { chave, titulo: item.categoria ?? 'Sem categoria', itens: [] }
+    grupo.itens.push(item)
+    grupos.set(chave, grupo)
+  }
+  return [...grupos.values()].sort((a, b) => (a.chave === '' ? 1 : 0) - (b.chave === '' ? 1 : 0))
+}
+
 export function ordenarCompras<T extends Pick<ItemCompra, 'nome' | 'categoria' | 'comprado' | 'compradoEm'>>(
   itens: T[],
 ): T[] {

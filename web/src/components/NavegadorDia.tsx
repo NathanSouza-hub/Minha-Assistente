@@ -1,17 +1,19 @@
+import type { ReactNode } from 'react'
 import { CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react'
+import { SeletorDia } from '@/components/SeletorPeriodo'
 import { Button } from '@/components/ui/button'
 import { hojeISO, rotuloDoDia, somarDias } from '@/lib/datas'
 
 /**
- * "Hoje, 13 de outubro" à esquerda e as setas à direita (como no Início), com "Voltar para hoje"
- * quando estiver em outro dia.
+ * "Hoje, 13 de outubro" à esquerda (toque abre o calendário para escolher o dia direto) e as setas
+ * à direita, com "Voltar para hoje" quando estiver em outro dia.
  */
 export function NavegadorDia({ data, aoMudar }: { data: string; aoMudar: (data: string) => void }) {
   return (
     <div className="flex flex-col">
       <Navegador
         rotulo="Dia"
-        titulo={rotuloDoDia(data)}
+        titulo={<SeletorDia data={data} aoMudar={aoMudar} texto={rotuloDoDia(data)} />}
         anterior={{ rotulo: 'Dia anterior', ir: () => aoMudar(somarDias(data, -1)) }}
         proximo={{ rotulo: 'Próximo dia', ir: () => aoMudar(somarDias(data, 1)) }}
       />
@@ -26,8 +28,8 @@ export function NavegadorDia({ data, aoMudar }: { data: string; aoMudar: (data: 
 
 type Passo = { rotulo: string; ir: () => void }
 
-/** Título do período e as duas setas; base do navegador de dia e de mês. */
-export function Navegador({ rotulo, titulo, anterior, proximo }: { rotulo: string; titulo: string; anterior: Passo; proximo: Passo }) {
+/** Título do período (em geral o botão do `SeletorPeriodo`) e as duas setas; base do navegador de dia e de mês. */
+export function Navegador({ rotulo, titulo, anterior, proximo }: { rotulo: string; titulo: ReactNode; anterior: Passo; proximo: Passo }) {
   return (
     <nav aria-label={rotulo} className="flex items-center justify-between gap-2">
       <h2 className="text-secao font-bold" aria-live="polite">

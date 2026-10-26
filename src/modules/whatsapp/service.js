@@ -51,8 +51,21 @@ async function gerarCodigo(usuarioId) {
   }
 }
 
+// Os lembretes pendentes pelo WhatsApp de quem fica sem número não têm para onde ir. Trocar de número
+// não mexe neles: o canal lê o número na hora de enviar.
+const cancelarLembretes = (conexao, usuarioIds) =>
+  conexao('lembreteEnvio')
+    .whereIn('usuarioId', usuarioIds)
+    .where({ canal: 'whatsapp', status: 'pendente' })
+    .update({ status: 'cancelado', erro: 'WhatsApp desligado da conta.' });
+
 async function desvincular(usuarioId) {
-  await db('whatsappVinculo').where({ usuarioId }).update({ telefone: null, vinculadoEm: null, codigoHash: null, codigoExpiraEm: null });
+  await db.transaction(async (trx) => {
+    await trx('whatsappVinculo')
+      .where({ usuarioId })
+      .update({ telefone: null, vinculadoEm: null, codigoHash: null, codigoExpiraEm: null });
+    await cancelarLembretes(trx, [usuarioId]);
+  });
 }
 
 /**
@@ -67,7 +80,12 @@ async function vincularPorCodigo(telefone, codigo, agora = new Date()) {
       .forUpdate()
       .first('id', 'usuarioId');
     if (!vinculo) return null;
-    await trx('whatsappVinculo').where({ telefone }).whereNot({ id: vinculo.id }).update({ telefone: null, vinculadoEm: null });
+    const anteriores = await trx('whatsappVinculo')
+      .where({ telefone })
+      .whereNot({ id: vinculo.id })
+      .update({ telefone: null, vinculadoEm: null })
+      .returning('usuarioId');
+    if (anteriores.length) await cancelarLembretes(trx, anteriores.map((a) => a.usuarioId));
     await trx('whatsappVinculo')
       .where({ id: vinculo.id })
       .update({ telefone, vinculadoEm: agora, codigoHash: null, codigoExpiraEm: null });

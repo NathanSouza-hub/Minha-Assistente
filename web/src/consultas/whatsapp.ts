@@ -1,4 +1,4 @@
-// WhatsApp da conta (decisão 38): situação, código para ligar o número e desligar.
+// WhatsApp da conta (decisão 38): situação, código para ligar o número, lembrete de teste e desligar.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
@@ -20,6 +20,13 @@ export const useSituacaoWhatsapp = (aguardando = false) =>
 
 export const useGerarCodigoWhatsapp = () =>
   useMutation({ mutationFn: () => api<CodigoWhatsapp>('/whatsapp/codigo', { method: 'POST' }) })
+
+/** Manda o modelo dos lembretes para o número ligado (POST /notificacoes/whatsapp/teste). */
+export const useTestarWhatsapp = () =>
+  useMutation({
+    mutationFn: () => api<void>('/notificacoes/whatsapp/teste', { method: 'POST' }),
+    onSuccess: () => toast.success('Lembrete de teste enviado.', { description: 'Ele deve chegar no WhatsApp em alguns segundos.' }),
+  })
 
 export function useDesvincularWhatsapp() {
   const cliente = useQueryClient()

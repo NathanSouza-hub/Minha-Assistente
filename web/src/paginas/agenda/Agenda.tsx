@@ -11,6 +11,7 @@ import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Navegador } from '@/components/NavegadorDia'
+import { SeletorDia, SeletorMes } from '@/components/SeletorPeriodo'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEventos } from '@/consultas/eventos'
@@ -137,7 +138,7 @@ function VisaoMes({ data, mudar }: { data: string; mudar: (dia: string) => void 
             <CaretLeftIcon className="size-7" weight="bold" aria-hidden />
           </Button>
           <h2 className="text-secao font-bold" aria-live="polite">
-            {nomeDoMes(mes)}
+            <SeletorMes mes={mes} aoMudar={irPara} />
           </h2>
           <Button variant="ghost" size="icon" onClick={() => irPara(somarMeses(mes, 1))} aria-label="Próximo mês">
             <CaretRightIcon className="size-7" weight="bold" aria-hidden />
@@ -354,7 +355,7 @@ function VisaoSemana({ data, mudar }: { data: string; mudar: (dia: string) => vo
     <div className="flex flex-col gap-5">
       <Navegador
         rotulo="Semana"
-        titulo={tituloSemana(segunda)}
+        titulo={<SeletorDia data={data} aoMudar={mudar} texto={tituloSemana(segunda)} rotulo="Escolher a semana" />}
         anterior={{ rotulo: 'Semana anterior', ir: () => mudar(somarDias(data, -7)) }}
         proximo={{ rotulo: 'Próxima semana', ir: () => mudar(somarDias(data, 7)) }}
       />

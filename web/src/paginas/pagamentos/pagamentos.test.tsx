@@ -74,6 +74,21 @@ describe('lista de pagamentos', () => {
     expect(await screen.findByText('Nenhuma despesa com esses filtros')).toBeInTheDocument()
   })
 
+  test('o nome do mês abre a grade e leva direto a um mês de outro ano', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/despesas?mes=2026-11')
+    await usuario.click(await screen.findByRole('button', { name: 'Novembro de 2026' }))
+    const grade = await screen.findByRole('dialog', { name: 'Escolher o mês' })
+    await usuario.click(within(grade).getByRole('button', { name: 'Ano anterior' }))
+    await usuario.click(within(grade).getByRole('button', { name: 'Outubro de 2025' }))
+    expect(await screen.findByRole('heading', { name: 'Outubro de 2025' })).toBeInTheDocument()
+
+    // "Este mês" volta para o mês atual, com as contas dele.
+    await usuario.click(screen.getByRole('button', { name: 'Outubro de 2025' }))
+    await usuario.click(within(await screen.findByRole('dialog', { name: 'Escolher o mês' })).getByRole('button', { name: 'Este mês' }))
+    expect(await item('Condomínio')).toBeInTheDocument()
+  })
+
   test('marcar como pago avisa e, sendo recorrente, cria a conta do mês seguinte', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/despesas')

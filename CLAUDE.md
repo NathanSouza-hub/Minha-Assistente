@@ -84,12 +84,14 @@ Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/paga
 `/cartoes` (faturas viram contas em `pagamento`; regras em `src/lib/fatura.js`, decisão 19 de
 `docs/arquitetura.md`), `/equipe` (os dias de pagamento viram contas em `pagamento`, criadas por
 `garantirContas` ao salvar a pessoa e pela manutenção do servidor em `src/jobs/manutencao.js` — consultar nunca grava; conta da equipe pode ter valor nulo = a definir; decisão 23), `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
-temporária definida em `test/setup.js`), `/compras`, `/notificacoes`, `/whatsapp` (fase 1: ligar o número por código, webhook em `/webhooks/whatsapp`; decisão 38 — os testes simulam `whatsapp.enviarTexto`, que lança erro se for chamado de verdade em teste) e os lembretes
+temporária definida em `test/setup.js`), `/compras`, `/notificacoes`, `/whatsapp` (fase 1: ligar o número por código, webhook em `/webhooks/whatsapp`; decisão 38 — os testes simulam `whatsapp.enviarTexto` ou o `fetch`; chamar a Meta sem simular lança erro em teste) e os lembretes
 (`src/lembretes/`). Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
 em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes.
 
 **Lembretes** (seção "Lembretes" e decisão 17 de `docs/arquitetura.md`): sem `VAPID_*` no `.env`
-ficam desligados (gere com `npx web-push generate-vapid-keys`). Origem nova com lembrete = um
+ficam desligados (gere com `npx web-push generate-vapid-keys`). Canal `whatsapp` (decisão 38, API
+oficial da Meta): liga com as variáveis `WHATSAPP_*` e vai para o número ligado pelo código
+(`whatsapp_vinculo`); os testes simulam a Meta com `t.mock.method(globalThis, 'fetch')`. Origem nova com lembrete = um
 gerador em `src/lembretes/geradores/` + valor no CHECK de `origem_tipo`, e o service dela cancela
 os pendentes ao editar/excluir. Os testes recebem chaves VAPID de `test/setup.js`, chamam
 `gerar`/`enviarPendentes` com um `agora` fixo e um canal falso, e simulam o push com

@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 const env = require('../../config/env');
 const app = require('../../lembretes/canais/app');
+const whatsapp = require('../../lembretes/canais/whatsapp');
 const { AppError } = require('../../lib/erros');
 const { CATEGORIAS, origensDa } = require('../../lembretes/categorias');
 
@@ -80,4 +81,35 @@ async function salvarAvisos(usuarioId, mudancas) {
   });
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo, lerAvisos, salvarAvisos };
+// ——— WhatsApp (decisão 38): o número é o ligado em /whatsapp ———
+
+async function testarWhatsapp(usuarioId) {
+  if (!whatsapp.ativo()) {
+    throw new AppError(503, 'WHATSAPP_DESLIGADO', 'O WhatsApp não está configurado neste servidor.');
+  }
+  const vinculo = await db('whatsappVinculo').where({ usuarioId }).first('telefone');
+  const numero = vinculo?.telefone;
+  if (!numero) throw new AppError(409, 'SEM_WHATSAPP', 'Ligue o seu WhatsApp à conta primeiro.');
+  let resultado;
+  try {
+    resultado = await whatsapp.enviarParaNumero(numero, {
+      titulo: 'Avisos ligados',
+      corpo: 'É assim que os lembretes da Minha Assistente vão chegar aqui.',
+    });
+  } catch (erro) {
+    throw new AppError(502, 'WHATSAPP_FALHOU', `O WhatsApp não aceitou a mensagem agora. ${erro.message}`);
+  }
+  if (!resultado.entregue) throw new AppError(409, 'WHATSAPP_RECUSOU', resultado.motivo);
+}
+
+module.exports = {
+  chavePublica,
+  inscrever,
+  cancelar,
+  testar,
+  lerResumo,
+  salvarResumo,
+  lerAvisos,
+  salvarAvisos,
+  testarWhatsapp,
+};

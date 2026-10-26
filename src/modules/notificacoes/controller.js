@@ -34,4 +34,19 @@ async function salvarAvisos(req, res) {
   res.json(await service.salvarAvisos(req.usuario.id, req.validado.body));
 }
 
-module.exports = { chavePublica, inscrever, cancelar, testar, lerResumo, salvarResumo, lerAvisos, salvarAvisos };
+async function testarWhatsapp(req, res) {
+  await service.testarWhatsapp(req.usuario.id);
+  res.status(204).end();
+}
+
+module.exports = {
+  chavePublica,
+  inscrever,
+  cancelar,
+  testar,
+  lerResumo,
+  salvarResumo,
+  lerAvisos,
+  salvarAvisos,
+  testarWhatsapp,
+};

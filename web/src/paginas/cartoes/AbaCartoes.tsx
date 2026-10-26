@@ -5,6 +5,7 @@ import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCartoes, useFatura, usePagarFatura } from '@/consultas/cartoes'
+import { SeletorMes } from '@/components/SeletorPeriodo'
 import { dataCurta, deDataISO, nomeDoMes, somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { Cartao, SituacaoFatura } from '@/lib/tipos'
@@ -88,7 +89,7 @@ function FaturaDoMes({ cartao, mes, aoMudarMes }: { cartao: Cartao; mes: string;
           <CaretLeftIcon weight="bold" className="size-7" aria-hidden />
         </Button>
         <h2 className="text-secao font-bold" aria-live="polite">
-          {nomeDoMes(mes)}
+          <SeletorMes mes={mes} aoMudar={aoMudarMes} rotulo="Escolher o mês da fatura" />
         </h2>
         <Button variant="ghost" size="icon" onClick={() => aoMudarMes(somarMeses(mes, 1))} aria-label="Próxima fatura">
           <CaretRightIcon weight="bold" className="size-7" aria-hidden />

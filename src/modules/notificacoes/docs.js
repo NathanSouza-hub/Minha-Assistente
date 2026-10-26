@@ -88,5 +88,21 @@ module.exports = {
         },
       },
     },
+    '/notificacoes/whatsapp/teste': {
+      post: {
+        tags: TAG,
+        summary: 'Envia um lembrete de teste para o WhatsApp ligado à conta',
+        description: 'Usa o mesmo modelo aprovado dos lembretes. O número é o ligado em `/whatsapp` (decisão 38).',
+        responses: {
+          204: respostaVazia('A Meta aceitou a mensagem'),
+          ...respostasErro({
+            ...ERRO_AUTH,
+            409: 'Sem WhatsApp ligado (SEM_WHATSAPP) ou número recusado pela Meta (WHATSAPP_RECUSOU)',
+            502: 'A Meta não aceitou a mensagem agora (WHATSAPP_FALHOU)',
+            503: 'Servidor sem as variáveis WHATSAPP_* (WHATSAPP_DESLIGADO)',
+          }),
+        },
+      },
+    },
   },
 };

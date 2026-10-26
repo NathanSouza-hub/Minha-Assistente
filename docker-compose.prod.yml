@@ -40,11 +40,14 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # WhatsApp (API oficial da Meta). Vazios = desligado. Passo a passo em docs/deploy.md.
       WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
       WHATSAPP_NUMERO_ID: ${WHATSAPP_NUMERO_ID:-}
       WHATSAPP_NUMERO: ${WHATSAPP_NUMERO:-}
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_MODELO: ${WHATSAPP_MODELO:-lembrete}
+      WHATSAPP_MODELO_IDIOMA: ${WHATSAPP_MODELO_IDIOMA:-pt_BR}
       # Contas novas só pelo comando do administrador (docs/deploy.md). "true" reabre o cadastro.
       CADASTRO_ABERTO: ${CADASTRO_ABERTO:-false}
     volumes:

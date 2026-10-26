@@ -5,26 +5,24 @@ import { toast } from 'sonner'
 import { Abas } from '@/components/Abas'
 import { Pagina } from '@/components/layout/Pagina'
 import { SeloEstado } from '@/components/Estado'
-import { Campo } from '@/components/Campo'
+import { CampoData, CampoMes } from '@/components/SeletorPeriodo'
 import { EstadoVazio } from '@/components/EstadoVazio'
 import { Opcoes } from '@/components/Opcoes'
 import { Selecao } from '@/components/Selecao'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRelatorioFinanceiro, useRelatorioGastos } from '@/consultas/pagamentos'
-import { agora, dataCurta, intervaloDoMes, mesDe, somarMeses, trechosComparaveis } from '@/lib/datas'
+import { agora, dataCurta, intervaloDoMes, mesDe, trechosComparaveis } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { AgruparGastosPor, RelatorioFinanceiro, RelatorioGastos } from '@/lib/tipos'
 import { cn } from '@/lib/utils'
 import { VisaoGeral } from '@/paginas/inicio/PainelFinanceiro'
 import { ORIGENS } from '@/paginas/recebiveis/formulario'
 
-type Atalho = 'este-mes' | 'mes-passado' | 'este-ano' | 'escolher'
+type Atalho = 'mes' | 'este-ano' | 'escolher'
 type AbaFinancas = 'visao' | 'balanco' | 'entradas' | 'gastos'
 
-function periodoDoAtalho(atalho: Exclude<Atalho, 'escolher'>) {
-  if (atalho === 'este-mes') return intervaloDoMes(mesDe())
-  if (atalho === 'mes-passado') return intervaloDoMes(somarMeses(mesDe(), -1))
+function esteAno() {
   const ano = agora().year
   return { inicio: `${ano}-01-01`, fim: `${ano}-12-31` }
 }
@@ -42,12 +40,13 @@ type Consulta<T> = { isPending: boolean; isError: boolean; data?: T; refetch: ()
 export function Financas() {
   const [params] = useSearchParams()
   const noRelatorio = ['balanco', 'entradas', 'gastos'].includes(params.get('vista') ?? '')
-  const [atalho, setAtalho] = useState<Atalho>('este-mes')
-  const [personalizado, setPersonalizado] = useState(periodoDoAtalho('este-mes'))
+  const [atalho, setAtalho] = useState<Atalho>('mes')
+  const [mesEscolhido, setMesEscolhido] = useState(mesDe())
+  const [personalizado, setPersonalizado] = useState(intervaloDoMes(mesDe()))
   const [agruparPor, setAgruparPor] = useState<AgruparGastosPor>('imovel')
   const [gerando, setGerando] = useState(false)
 
-  const periodo = atalho === 'escolher' ? personalizado : periodoDoAtalho(atalho)
+  const periodo = atalho === 'escolher' ? personalizado : atalho === 'mes' ? intervaloDoMes(mesEscolhido) : esteAno()
   const periodoValido = Boolean(periodo.inicio && periodo.fim && periodo.inicio <= periodo.fim)
   // Na Visão geral o relatório não é buscado (ela tem o mês dela).
   const financeiro = useRelatorioFinanceiro(periodo, noRelatorio && periodoValido)
@@ -88,26 +87,33 @@ export function Financas() {
     <div className="flex flex-col gap-5">
       <div className="grid gap-4 superficie p-4 md:p-5 sm:grid-cols-3">
         <Selecao rotulo="Período" value={atalho} onChange={(e) => setAtalho(e.target.value as Atalho)}>
-          <option value="este-mes">Este mês</option>
-          <option value="mes-passado">Mês passado</option>
+          <option value="mes">Um mês</option>
           <option value="este-ano">Este ano</option>
           <option value="escolher">Escolher datas</option>
         </Selecao>
         {atalho === 'escolher' ? (
           <>
-            <Campo
+            {/* Um limita o outro: o início não passa do fim, nem o fim fica antes do início. */}
+            <CampoData
               rotulo="De"
-              type="date"
-              value={personalizado.inicio}
-              onChange={(e) => setPersonalizado((p) => ({ ...p, inicio: e.target.value }))}
+              data={personalizado.inicio}
+              max={personalizado.fim}
+              aoMudar={(inicio) => setPersonalizado((p) => ({ ...p, inicio }))}
             />
-            <Campo
+            <CampoData
               rotulo="Até"
-              type="date"
-              value={personalizado.fim}
+              data={personalizado.fim}
+              min={personalizado.inicio}
               erro={periodoValido ? undefined : 'A data final precisa ser igual ou depois da inicial.'}
-              onChange={(e) => setPersonalizado((p) => ({ ...p, fim: e.target.value }))}
+              aoMudar={(fim) => setPersonalizado((p) => ({ ...p, fim }))}
             />
+          </>
+        ) : atalho === 'mes' ? (
+          <>
+            <CampoMes rotulo="Mês" mes={mesEscolhido} aoMudar={setMesEscolhido} />
+            <p className="text-base text-muted-foreground sm:self-end sm:pb-3">
+              De {dataCurta(periodo.inicio)} a {dataCurta(periodo.fim)}
+            </p>
           </>
         ) : (
           <p className="text-base text-muted-foreground sm:col-span-2 sm:self-end sm:pb-3">

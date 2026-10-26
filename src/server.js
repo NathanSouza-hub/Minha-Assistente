@@ -13,7 +13,9 @@ const servidor = criarApp().listen(env.PORT, () => {
 // também não duplicam, mas geram trabalho em dobro).
 const pararLembretes = canaisAtivos().length ? iniciarAgendador() : null;
 const pararManutencao = iniciarManutencao();
-if (!pararLembretes) console.log('Lembretes desligados: defina VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT.');
+if (!pararLembretes) {
+  console.log('Lembretes desligados: defina as chaves VAPID_* (app) ou as WHATSAPP_* (WhatsApp).');
+}
 
 function encerrar(sinal) {
   console.log(`${sinal} recebido, encerrando...`);

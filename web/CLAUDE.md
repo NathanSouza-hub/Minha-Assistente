@@ -155,7 +155,10 @@ npm run lint                                  # oxlint
 - **Compras**: tudo numa tela (`/compras`); a edição (`/compras/:id`) pega o item da lista (não
   existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), na mesma
   ordem do português que a API usa (collation ICU `pt-BR-x-icu` no back-end).
-  Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
+  Categorias são agrupadas sem diferenciar maiúsculas/acentos (`agruparPorCategoria`, usado na tela e
+  no PDF). O "PDF" do cabeçalho (`paginas/compras/GerarPdfCompras.tsx`) abre uma folha para ajustar
+  título, "A comprar"/"Tudo" e desmarcar itens (só no papel; a lista não muda) e gera com
+  `lib/comprasPdf.ts` (jsPDF importado só ao gerar; quadradinho para riscar, comprado sai marcado). Telas de edição
   que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
   sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda. Desenho: o contador "X de Y
   itens comprados" no cabeçalho, o anotar rápido numa pílula (nome + "+"; quantidade e categoria
@@ -172,7 +175,7 @@ npm run lint                                  # oxlint
   destaca (não alterna: o toque dispara `mouseenter` e `click` juntos).
 - **WhatsApp** (`/whatsapp`, item de Configurações, `paginas/Whatsapp.tsx`, decisão 38): passo a passo,
   "Gerar código" (mostra o código, "Abrir o WhatsApp" = link `wa.me` e relê `GET /whatsapp` a cada 3 s
-  até o número aparecer ligado), ligado (número mascarado, "Trocar de número", "Desligar" com
+  até o número aparecer ligado), ligado (número mascarado, "Enviar lembrete de teste" = `POST /notificacoes/whatsapp/teste`, "Trocar de número", "Desligar" com
   confirmação) e "Ainda não disponível" sem as chaves no servidor. No mock não há webhook: os testes
   ligam o número com `vincularNoMock` (`mocks/whatsapp.ts`).
 - **Relógio** (`lib/relogio.ts`, `useMinutoAtual`): "HH:mm" que avança na virada do minuto (um timer
@@ -276,6 +279,14 @@ npm run lint                                  # oxlint
   `vi.useFakeTimers({ toFake: ['Date'] })` + `resetarBancoMock()` no `beforeEach` (só `Date`: o
   userEvent precisa de timers reais). `src/test/setup.ts` tem os substitutos de APIs do navegador
   que o Radix usa no jsdom.
+- **Filtros de data** (todos por `components/SeletorPeriodo.tsx`; não crie outro): o título do período é
+  um botão que abre a janela de escolha — `SeletorMes` (ano com setas + grade de 12 meses, "Este mês") e
+  `SeletorDia` (calendário seg→dom; o nome do mês abre a grade de meses; "Hoje"), com `min`/`max` e
+  `gatilho` para outro botão (ex.: o calendário do cabeçalho do Início). `NavegadorMes` (Visão geral,
+  Contas a pagar, Lista de despesas, Pessoais, Equipe, Recebíveis, Residências) e `NavegadorDia`
+  (Remédios, Compromissos) já usam; Agenda (Mês e Semana) e a fatura do cartão também. As setas do lado
+  continuam para o período vizinho. No relatório: "Um mês" (`CampoMes`), "Este ano" ou "Escolher datas"
+  (`CampoData` De/Até, um limitando o outro). Campos de data de cadastro (formulários) continuam nativos.
 - Componentes de formulário: `Campo` (com `prefixo`, ex. "R$"), `Selecao` (`<select>` nativo, de
   propósito), `Opcoes` (escolha única em cartões ou segmentos), `Confirmar` (antes de excluir;
   botão `variant="perigo"`).

@@ -53,6 +53,17 @@ export const handlersWhatsapp = [
     }),
   ),
 
+  http.post(
+    `${API_URL}/notificacoes/whatsapp/teste`,
+    autenticado((_, usuario) => {
+      if (vinculoDe(usuario.id).telefone) return new HttpResponse(null, { status: 204 })
+      return HttpResponse.json(
+        { erro: { codigo: 'SEM_WHATSAPP', mensagem: 'Ligue o seu WhatsApp à conta primeiro.' } },
+        { status: 409 },
+      )
+    }),
+  ),
+
   http.delete(
     `${API_URL}/whatsapp`,
     autenticado((_, usuario) => {

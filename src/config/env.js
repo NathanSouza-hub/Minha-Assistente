@@ -28,6 +28,9 @@ const esquema = z.object({
   WHATSAPP_APP_SECRET: z.string().default(''),
   WHATSAPP_VERIFY_TOKEN: z.string().default(''),
   WHATSAPP_API_VERSAO: z.string().regex(/^v\d+\.\d+$/, 'use o formato v26.0').default('v26.0'),
+  // Modelo (template) aprovado na Meta para os lembretes, com {{1}} = título e {{2}} = detalhe.
+  WHATSAPP_MODELO: z.string().default('lembrete'),
+  WHATSAPP_MODELO_IDIOMA: z.string().default('pt_BR'),
 }).refine(
   (v) => {
     const partes = [v.WHATSAPP_TOKEN, v.WHATSAPP_NUMERO_ID, v.WHATSAPP_NUMERO, v.WHATSAPP_APP_SECRET, v.WHATSAPP_VERIFY_TOKEN];

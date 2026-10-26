@@ -59,6 +59,7 @@ GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
 GET/DELETE /whatsapp | POST /whatsapp/codigo  (número da conta, decisão 38)
 GET/POST /webhooks/whatsapp  (público: chamado pela Meta, com assinatura)
+POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38)
 ```
 
 ## Decisões acordadas
@@ -445,26 +446,41 @@ GET/POST /webhooks/whatsapp  (público: chamado pela Meta, com assinatura)
     (`UNION ALL` agrupado por dia, intervalo pelo instante — sargável). Medido em 2026-10-22 com
     256 mil tarefas no banco (16 mil do usuário) e 11 mil conclusões: um ano em ~19 ms, sem índice
     novo (a tarefa usa `(usuario_id, data)`; `rotina_conclusao` é varrida — rever se crescer muito).
-38. **WhatsApp — fase 1: ligar o número** (migration 32; Cloud API oficial da Meta). Sem as cinco
-    variáveis `WHATSAPP_*` o WhatsApp fica desligado (`GET /whatsapp` traz `disponivel: false`,
-    `POST /whatsapp/codigo` → `503 WHATSAPP_DESLIGADO`, o webhook responde 404). Vínculo:
-    `POST /whatsapp/codigo` dá um código de 6 dígitos (10 min; o anterior deixa de valer; 10 por hora
-    por IP) e o link `wa.me` com ele escrito; a pessoa manda o código para o número do app e o
-    webhook grava o `from` da Meta (só dígitos, com o país — por isso o código, e não o número
-    digitado: a Meta às vezes manda o celular brasileiro sem o 9) em `whatsapp_vinculo.telefone`
-    (único: se o número estava em outra conta, sai de lá). O código é guardado como sha256 e vale
-    uma vez; 5 códigos errados de um número em 1 h fazem o app ignorar os códigos dele por 1 h, e 30
-    errados em 1 h somando todos os números param os códigos de todos (contadores em memória).
-    `DELETE /whatsapp` tira o número. Webhook: `GET` = verificação (`hub.verify_token`); `POST`
-    exige `X-Hub-Signature-256` (HMAC do corpo bruto com o App Secret; montado antes do
-    `express.json`), responde 200 na hora e trata depois; cada `wamid` vai para `whatsapp_mensagem`
-    (a Meta reenvia; repetida é ignorada; a manutenção apaga as de mais de 7 dias). Mensagens de
-    outro `phone_number_id` e status de entrega são ignorados. Nesta fase o número ligado recebe
-    "logo vou anotar contas e agendamentos por aqui"; número sem conta recebe as instruções (no
-    máximo uma vez por hora). Respostas só dentro da janela de 24 h aberta pela mensagem da pessoa
-    (avisos fora dela exigirão templates, fase 4). Próximas fases: 2) lançar por texto com o Claude
-    Haiku (tool use sobre os services) e "desfazer"; 3) comprovante por foto; 4) avisos pelo WhatsApp
-    (canal novo em `src/lembretes/canais/`); 5) perguntas.
+38. **WhatsApp** (Cloud API oficial da Meta; bibliotecas não oficiais violam os termos e arriscam o
+    número). Sem as cinco variáveis `WHATSAPP_*` (token, ID e número do app, App Secret, verify
+    token) fica desligado: `GET /whatsapp` traz `disponivel: false`, `POST /whatsapp/codigo` e
+    `POST /notificacoes/whatsapp/teste` → `503 WHATSAPP_DESLIGADO`, o webhook responde 404 e o canal
+    de lembretes não liga. Junta duas frentes feitas em paralelo em 2026-10-26 (lembretes do Nathan,
+    vínculo do Isaque): o número dos lembretes é o ligado pelo código, nunca um número digitado.
+    - **Ligar o número** (migration 33): `POST /whatsapp/codigo` dá um código de 6 dígitos (10 min;
+      o anterior deixa de valer; 10 por hora por IP) e o link `wa.me` com ele escrito; a pessoa manda
+      o código para o número do app e o webhook grava o `from` da Meta (só dígitos, com o país — por
+      isso o código, e não o número digitado: prova que o número é da pessoa, e a Meta às vezes manda
+      o celular brasileiro sem o 9) em `whatsapp_vinculo.telefone` (único: se o número estava em
+      outra conta, sai de lá). O código é guardado como sha256 e vale uma vez; 5 códigos errados de
+      um número em 1 h fazem o app ignorar os códigos dele por 1 h, e 30 errados em 1 h somando todos
+      os números param os códigos de todos (contadores em memória). `DELETE /whatsapp` tira o número.
+      Quem fica sem número (desligou ou o número foi para outra conta) tem os lembretes pendentes do
+      canal cancelados; trocar de número não mexe neles (o canal lê o número no envio).
+    - **Webhook**: `GET` = verificação (`hub.verify_token`); `POST` exige `X-Hub-Signature-256` (HMAC
+      do corpo bruto com o App Secret; montado antes do `express.json`), responde 200 na hora e trata
+      depois; cada `wamid` vai para `whatsapp_mensagem` (a Meta reenvia; repetida é ignorada; a
+      manutenção apaga as de mais de 7 dias). Mensagens de outro `phone_number_id` e status de
+      entrega são ignorados. O número ligado recebe "logo vou anotar contas e agendamentos por aqui";
+      número sem conta recebe as instruções (no máximo uma vez por hora). Respostas de texto só valem
+      dentro da janela de 24 h aberta pela mensagem da pessoa.
+    - **Lembretes** (migration 32, canal `whatsapp` ao lado do `app`, `src/lembretes/canais/whatsapp.js`):
+      os mesmos lembretes do app, respeitando "O que avisar" e o resumo da manhã; quem tem aparelho
+      inscrito e número ligado recebe pelos dois. Mensagem iniciada pela empresa exige **modelo
+      aprovado** (`WHATSAPP_MODELO`, padrão `lembrete`, `pt_BR`) com `{{1}}` = título e `{{2}}` =
+      detalhe; as variáveis vão em uma linha (a Meta recusa quebra de linha). Erros do destinatário
+      (131026, 131030, 131021) cancelam o lembrete; os outros voltam a tentar (até 3). "Enviado" = a
+      Meta aceitou. `POST /notificacoes/whatsapp/teste` → 204; 409 `SEM_WHATSAPP` (nenhum número
+      ligado) / `WHATSAPP_RECUSOU` (número sem WhatsApp, fora da lista da conta de teste); 502
+      `WHATSAPP_FALHOU`. A migration 32 criou `usuario.whatsapp` (número digitado); a 33 tirou.
+    - Próximas fases: 2) lançar por texto com o Claude Haiku (tool use sobre os services) e
+      "desfazer"; 3) comprovante por foto; 5) perguntas. Configuração na Meta: `docs/deploy.md`,
+      "WhatsApp".
 
 ## Convenções de banco
 
@@ -516,7 +532,8 @@ GET/POST /webhooks/whatsapp  (público: chamado pela Meta, com assinatura)
 1. Agendador (a cada minuto) roda os geradores (evento, medicamento, pagamento, rotina, tarefa, resumo) para as
    próximas 24h e faz upsert em `lembrete_envio`, uma linha por canal ativo.
 2. Envia as linhas `pendente` com `agendado_para <= agora` via `canais[canal].enviar(lembrete)`.
-3. Novo canal (ex.: WhatsApp) = `src/lembretes/canais/whatsapp.js` + registro + migration do CHECK.
+3. Canais: `app` (Web Push) e `whatsapp` (decisão 38). Novo canal = um arquivo em
+   `src/lembretes/canais/` + registro + migration do CHECK.
 4. Editar/excluir a origem cancela os pendentes e regenera (o upsert devolve a `pendente` os
    cancelados que continuam valendo).
 5. Código em `src/lembretes/`: `agendador.js` (ciclo), `geradores/` (um por `origem_tipo`, com

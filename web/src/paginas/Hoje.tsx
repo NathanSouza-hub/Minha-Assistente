@@ -1,4 +1,4 @@
-import { CaretLeftIcon, CaretRightIcon, CheckIcon, GearSixIcon, SunIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { CalendarBlankIcon, CaretLeftIcon, CaretRightIcon, CheckIcon, GearSixIcon, SunIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router'
 import { useSessao } from '@/app/useSessao'
 import { Pagina } from '@/components/layout/Pagina'
@@ -6,7 +6,8 @@ import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTarefasHoje } from '@/consultas/hoje'
-import { agora, dataPorExtenso, hojeISO, rotuloDoDia, saudacao, somarDias } from '@/lib/datas'
+import { SeletorDia } from '@/components/SeletorPeriodo'
+import { agora, dataCurta, dataPorExtenso, hojeISO, rotuloDoDia, saudacao, somarDias } from '@/lib/datas'
 import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
 import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
 import { CATEGORIAS, destaqueDoDia, useMarcar } from '@/paginas/hoje/tarefas'
@@ -14,8 +15,18 @@ import { NovaAtividade } from '@/paginas/hoje/NovaAtividade'
 import { ResumoDasAreas } from '@/paginas/hoje/ResumoDasAreas'
 import { VersoDoDia } from '@/paginas/hoje/VersoDoDia'
 
-/** Data, saudação, "+ Nova" e a conta; embaixo, a barra fina de progresso do dia aberto. */
-function CabecalhoHoje({ dia, ehHoje }: { dia: TarefasHoje | null; ehHoje: boolean }) {
+/** Data, saudação, "Ir para o dia", "+ Nova" e a conta; embaixo, a barra fina de progresso do dia aberto. */
+function CabecalhoHoje({
+  dia,
+  data,
+  ehHoje,
+  aoMudarDia,
+}: {
+  dia: TarefasHoje | null
+  data: string
+  ehHoje: boolean
+  aoMudarDia: (data: string) => void
+}) {
   const resumo = dia?.resumo ?? null
   const { usuario } = useSessao()
   const hoje = agora()
@@ -26,6 +37,18 @@ function CabecalhoHoje({ dia, ehHoje }: { dia: TarefasHoje | null; ehHoje: boole
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 text-apoio font-medium text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
         <div className="flex shrink-0 items-center gap-2">
+          {/* "Ir para o dia": no celular só o calendário (a data escrita não cabe ao lado do "+ Nova"). */}
+          <SeletorDia
+            data={data}
+            aoMudar={aoMudarDia}
+            rotulo="Ir para o dia"
+            gatilho={
+              <Button variant="outline" aria-label={`Ir para o dia (${dataCurta(data)})`} className="size-12 rounded-full px-0 sm:w-auto sm:px-4">
+                <CalendarBlankIcon className="size-6 sm:size-5" aria-hidden />
+                <span className="hidden sm:inline">{dataCurta(data)}</span>
+              </Button>
+            }
+          />
           <NovaAtividade />
           {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
           <Button asChild variant="outline" size="icon" aria-label="Configurações" className="rounded-full md:hidden">
@@ -72,7 +95,8 @@ export function Hoje() {
   const mudarDia = (novo: string) => setParams(novo === hojeISO() ? {} : { data: novo }, { replace: true })
 
   return (
-    <Pagina titulo="Início" larga cabecalho={<CabecalhoHoje dia={consulta.data ?? null} ehHoje={ehHoje} />}>
+    <Pagina titulo="Início" larga cabecalho={<CabecalhoHoje dia={consulta.data ?? null} data={data} ehHoje={ehHoje} aoMudarDia={mudarDia} />}
+    >
       {consulta.isPending ? (
         <div role="status" aria-label="Carregando o dia" className="flex flex-col gap-4">
           <Skeleton className="h-40 rounded-[1.75rem]" />
@@ -178,16 +202,6 @@ function TarefasDoDia({ dia, ehHoje, aoMudarDia }: { dia: TarefasHoje; ehHoje: b
             )}
           </>
         )}
-
-        <label className="mt-2 flex items-center gap-3 text-apoio text-muted-foreground">
-          Ir para o dia
-          <input
-            type="date"
-            value={dia.data}
-            onChange={(e) => e.target.value && aoMudarDia(e.target.value)}
-            className="min-h-11 rounded-lg border border-input bg-folha px-3 text-base text-foreground"
-          />
-        </label>
       </section>
     </div>
   )

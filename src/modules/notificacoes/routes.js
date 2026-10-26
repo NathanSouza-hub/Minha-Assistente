@@ -13,6 +13,7 @@ function rotasNotificacoes() {
   rotas.put('/resumo', validar({ body: esquemas.resumo }), controller.salvarResumo);
   rotas.get('/avisos', controller.lerAvisos);
   rotas.put('/avisos', validar({ body: esquemas.avisosParcial }), controller.salvarAvisos);
+  rotas.post('/whatsapp/teste', controller.testarWhatsapp);
   return rotas;
 }
 

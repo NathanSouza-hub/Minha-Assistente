@@ -108,13 +108,13 @@ describe('Finanças → Visão geral', () => {
     const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
     const links = within(menu).getAllByRole('link').map((l) => l.textContent)
     expect(links).toEqual([
-      'Visão geral',
       'Contas a pagar',
       'Lista de despesas',
       'Pessoais',
       'Residências',
       'Equipe',
       'Recebíveis',
+      'Visão geral',
     ])
     // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33); o Relatório virou abas daqui.
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
@@ -144,6 +144,28 @@ describe('Finanças → Visão geral', () => {
     renderizarApp('/relatorio')
     expect(await screen.findByRole('tab', { name: 'Balanço', selected: true })).toBeInTheDocument()
     expect(await screen.findByRole('region', { name: 'Saídas (contas)' })).toBeInTheDocument()
+  })
+
+  test('período do relatório: qualquer mês pela grade e o intervalo personalizado, um limitando o outro', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/financas?vista=balanco')
+    expect(await screen.findByText('De 01/10/2026 a 31/10/2026')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Mês' }))
+    const grade = await screen.findByRole('dialog', { name: 'Mês' })
+    await usuario.click(within(grade).getByRole('button', { name: 'Ano anterior' }))
+    await usuario.click(within(grade).getByRole('button', { name: 'Fevereiro de 2025' }))
+    expect(await screen.findByText('De 01/02/2025 a 28/02/2025')).toBeInTheDocument()
+
+    await usuario.selectOptions(screen.getByLabelText('Período'), 'escolher')
+    expect(screen.getByRole('button', { name: 'De' })).toHaveTextContent('01/10/2026')
+    await usuario.click(screen.getByRole('button', { name: 'Até' }))
+    const ate = await screen.findByRole('dialog', { name: 'Até' })
+    // O fim não pode ficar antes do início.
+    expect(within(ate).getByRole('button', { name: /30 de setembro/ })).toBeDisabled()
+    await usuario.click(within(ate).getByRole('button', { name: /15 de outubro/ }))
+    expect(screen.getByRole('button', { name: 'Até' })).toHaveTextContent('15/10/2026')
+    expect(await screen.findByRole('region', { name: 'Entradas (recebíveis)' })).toBeInTheDocument()
   })
 
   test('o mês escolhido vai junto para a lista', async () => {

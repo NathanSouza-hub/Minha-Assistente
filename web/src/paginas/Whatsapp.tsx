@@ -5,7 +5,7 @@ import { Pagina } from '@/components/layout/Pagina'
 import { Confirmar } from '@/components/Confirmar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useDesvincularWhatsapp, useGerarCodigoWhatsapp, useSituacaoWhatsapp } from '@/consultas/whatsapp'
+import { useDesvincularWhatsapp, useGerarCodigoWhatsapp, useSituacaoWhatsapp, useTestarWhatsapp } from '@/consultas/whatsapp'
 import { dataCurta, diaDe, horaDe } from '@/lib/datas'
 import { formatarTelefone } from '@/lib/telefone'
 import type { CodigoWhatsapp, SituacaoWhatsapp } from '@/lib/tipos'
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * Configurações → WhatsApp (decisão 38): liga o número da pessoa à conta por um código de 6 dígitos
- * que ela manda para o número do app. Por enquanto (fase 1) só liga e desliga.
+ * que ela manda para o número do app. O número ligado recebe os lembretes (os mesmos do app).
  */
 export function Whatsapp() {
   const [codigo, setCodigo] = useState<CodigoWhatsapp | null>(null)
@@ -86,7 +86,7 @@ function BotaoGerar({ rotulo, variant, aoGerar }: { rotulo: string; variant?: 'o
 function Desligado({ numero, aoGerar }: { numero: string; aoGerar: (c: CodigoWhatsapp) => void }) {
   return (
     <Cartao titulo="Ligar o seu WhatsApp" tom="apagado">
-      <p>Ligue o seu número à sua conta. Logo você vai poder anotar contas e agendamentos mandando mensagem.</p>
+      <p>Ligue o seu número à sua conta para receber os lembretes também pelo WhatsApp. Logo você vai poder anotar contas e agendamentos mandando mensagem.</p>
       <ol className="flex list-decimal flex-col gap-1 pl-5">
         <li>Toque em “Gerar código”.</li>
         <li>
@@ -128,14 +128,19 @@ function MandeOCodigo({ codigo, aoCancelar }: { codigo: CodigoWhatsapp; aoCancel
 
 function Ligado({ situacao, aoGerar }: { situacao: SituacaoWhatsapp; aoGerar: (c: CodigoWhatsapp) => void }) {
   const desvincular = useDesvincularWhatsapp()
+  const testar = useTestarWhatsapp()
   return (
     <Cartao titulo="WhatsApp ligado" tom="ok" icone={CheckCircleIcon}>
       <p>
         Número {situacao.telefone}
-        {situacao.vinculadoEm && `, ligado em ${dataCurta(diaDe(situacao.vinculadoEm))}`}. Por enquanto ele só fica
-        ligado à sua conta; em breve você vai poder anotar contas e agendamentos por lá.
+        {situacao.vinculadoEm && `, ligado em ${dataCurta(diaDe(situacao.vinculadoEm))}`}. Os lembretes chegam por
+        lá também, os mesmos do app (Notificações → O que avisar); em breve você vai poder anotar contas e
+        agendamentos por lá.
       </p>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <Button size="lg" disabled={testar.isPending} onClick={() => testar.mutate()}>
+          {testar.isPending ? 'Enviando…' : 'Enviar lembrete de teste'}
+        </Button>
         <BotaoGerar rotulo="Trocar de número" variant="outline" aoGerar={aoGerar} />
         <Confirmar
           gatilho={

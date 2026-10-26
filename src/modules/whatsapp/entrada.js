@@ -1,5 +1,6 @@
-// O que fazer com cada mensagem que chega pelo webhook (decisão 38). Fase 1: ligar o número à
-// conta pelo código; quem já está ligado recebe um aviso de que o resto vem depois.
+// O que fazer com cada mensagem que chega pelo webhook (decisão 38). Por enquanto: ligar o número à
+// conta pelo código; quem já está ligado recebe um aviso de que o resto vem depois. Os lembretes
+// saem por outro caminho (src/lembretes/canais/whatsapp.js).
 const db = require('../../config/db');
 const env = require('../../config/env');
 const whatsapp = require('../../lib/whatsapp');
@@ -12,7 +13,7 @@ const TEXTOS = {
   desconhecido:
     'Olá! Este é o número do Minha Assistente. Para usar, abra o app em Configurações → WhatsApp e mande aqui o código de 6 dígitos.',
   emBreve: (nome) =>
-    `Oi, ${nome}! Recebi sua mensagem. Por enquanto eu só sei ligar este número à sua conta; logo vou anotar contas e agendamentos por aqui.`,
+    `Oi, ${nome}! Recebi sua mensagem. Por enquanto eu mando os seus lembretes por aqui; logo vou anotar contas e agendamentos também.`,
 };
 
 // Quem erra o código muitas vezes para de ser atendido por um tempo (6 dígitos dá para chutar).
