@@ -9,6 +9,10 @@ import { API_URL } from '@/lib/api'
 import { entrarComoMaria, renderizarApp } from '@/test/renderizarApp'
 import { descreverCompra, sugerirCategorias } from './formulario'
 
+// O PDF em si é testado em lib/comprasPdf.test.ts; aqui só o que a tela manda gerar.
+const { baixarPdf } = vi.hoisted(() => ({ baixarPdf: vi.fn() }))
+vi.mock('@/lib/comprasPdf', () => ({ baixarListaComprasPdf: baixarPdf }))
+
 const servidor = setupServer(...handlers)
 
 const idDe = (nome: string) => banco.compras.find((i) => i.nome === nome)!.id
@@ -163,6 +167,52 @@ describe('adicionar e editar', () => {
   test('item que não existe', async () => {
     renderizarApp('/compras/00000000-0000-4000-8000-000000000000')
     expect(await screen.findByText('Este item não existe mais ou foi tirado da lista.')).toBeInTheDocument()
+  })
+})
+
+describe('PDF', () => {
+  test('ajusta título e itens antes de gerar; a lista não muda', async () => {
+    baixarPdf.mockClear()
+    const usuario = userEvent.setup()
+    renderizarApp('/compras')
+    await usuario.click(await screen.findByRole('button', { name: 'PDF' }))
+    const folha = await screen.findByRole('dialog', { name: 'Gerar PDF da lista' })
+
+    // Começa com o que falta comprar, tudo marcado.
+    expect(within(folha).getAllByRole('checkbox', { checked: true })).toHaveLength(5)
+    expect(within(folha).queryByRole('checkbox', { name: /Pão de forma/ })).not.toBeInTheDocument()
+
+    const titulo = within(folha).getByLabelText('Título')
+    await usuario.clear(titulo)
+    await usuario.type(titulo, 'Mercado de sábado')
+    await usuario.click(within(folha).getByRole('checkbox', { name: /Pilhas AA/ }))
+    await usuario.click(within(folha).getByRole('radio', { name: 'Tudo' }))
+    expect(within(folha).getByRole('checkbox', { name: /Pão de forma/ })).toBeChecked()
+    await usuario.click(within(folha).getByRole('button', { name: 'Baixar PDF' }))
+
+    expect(baixarPdf).toHaveBeenCalledTimes(1)
+    const { titulo: tituloPdf, itens } = baixarPdf.mock.calls[0][0]
+    expect(tituloPdf).toBe('Mercado de sábado')
+    expect(itens.map((i: { nome: string }) => i.nome)).toEqual([
+      'Protetor solar',
+      'Bananas',
+      'Arroz',
+      'Leite integral',
+      'Pão de forma',
+    ])
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(banco.compras).toHaveLength(6)
+  })
+
+  test('sem item escolhido não gera', async () => {
+    baixarPdf.mockClear()
+    const usuario = userEvent.setup()
+    renderizarApp('/compras')
+    await usuario.click(await screen.findByRole('button', { name: 'PDF' }))
+    const folha = await screen.findByRole('dialog', { name: 'Gerar PDF da lista' })
+    for (const caixa of within(folha).getAllByRole('checkbox')) await usuario.click(caixa)
+    expect(within(folha).getByRole('button', { name: /Escolha ao menos 1 item/ })).toBeDisabled()
+    expect(baixarPdf).not.toHaveBeenCalled()
   })
 })
 

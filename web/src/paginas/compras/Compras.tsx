@@ -12,7 +12,7 @@ import { Lista, LinhaMarcavel } from '@/components/Linha'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCompras, useLimparComprados, useMarcarComprado, useSalvarItem } from '@/consultas/compras'
-import { chaveCategoria } from '@/lib/compras'
+import { agruparPorCategoria } from '@/lib/compras'
 import { aplicarErroApi } from '@/lib/formulario'
 import type { ItemCompra } from '@/lib/tipos'
 import {
@@ -23,6 +23,7 @@ import {
   valoresIniciais,
   type DadosItem,
 } from './formulario'
+import { GerarPdfCompras } from './GerarPdfCompras'
 
 export function Compras() {
   const consulta = useCompras()
@@ -30,18 +31,22 @@ export function Compras() {
   const pendentes = itens.filter((i) => !i.comprado)
   const comprados = itens.filter((i) => i.comprado)
 
-  // Quantos já foram para o carrinho, no canto do cabeçalho (sem barra: a lista já mostra o resto).
-  const contador =
+  // Quantos já foram para o carrinho, no canto do cabeçalho (sem barra: a lista já mostra o resto),
+  // e o PDF da lista.
+  const acoes =
     itens.length > 0 ? (
-      <p className="pb-1 text-apoio font-semibold text-muted-foreground" aria-live="polite">
-        {comprados.length === itens.length
-          ? 'Tudo comprado.'
-          : `${comprados.length} de ${itens.length} ${itens.length === 1 ? 'item comprado' : 'itens comprados'}`}
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="text-apoio font-semibold text-muted-foreground" aria-live="polite">
+          {comprados.length === itens.length
+            ? 'Tudo comprado.'
+            : `${comprados.length} de ${itens.length} ${itens.length === 1 ? 'item comprado' : 'itens comprados'}`}
+        </p>
+        <GerarPdfCompras itens={itens} />
+      </div>
     ) : undefined
 
   return (
-    <Pagina titulo="Compras" acoes={contador}>
+    <Pagina titulo="Compras" acoes={acoes}>
       <div className="flex flex-col gap-6">
         <AdicionarItem categorias={sugerirCategorias(itens)} />
 
@@ -175,15 +180,8 @@ function AdicionarItem({ categorias }: { categorias: string[] }) {
 
 /** Pendentes agrupados por categoria, na ordem da API (sem categoria no fim). */
 function Pendentes({ itens }: { itens: ItemCompra[] }) {
-  // Agrupa sem diferenciar maiúsculas e acentos; o título é o primeiro jeito como foi escrita.
-  const grupos = new Map<string, { titulo: string; itens: ItemCompra[] }>()
-  for (const item of itens) {
-    const chave = item.categoria === null ? '' : chaveCategoria(item.categoria)
-    const grupo = grupos.get(chave) ?? { titulo: item.categoria ?? 'Sem categoria', itens: [] }
-    grupo.itens.push(item)
-    grupos.set(chave, grupo)
-  }
-  const soUmSemCategoria = grupos.size === 1 && grupos.has('')
+  const grupos = agruparPorCategoria(itens)
+  const soUmSemCategoria = grupos.length === 1 && grupos[0].chave === ''
 
   // Cada lugar (mercado, farmácia...) num bloco com o nome em cima: na loja, olha-se um bloco só.
   // No computador, os blocos ficam em duas colunas.
@@ -193,7 +191,7 @@ function Pendentes({ itens }: { itens: ItemCompra[] }) {
         A comprar <span className="font-sans text-apoio font-semibold text-muted-foreground">· {itens.length}</span>
       </h2>
       <div className="grid items-start gap-3 lg:grid-cols-2">
-        {[...grupos].map(([chave, { titulo, itens: doGrupo }]) => (
+        {grupos.map(({ chave, titulo, itens: doGrupo }) => (
           <div key={chave} className="superficie overflow-hidden pt-3">
             {!soUmSemCategoria && (
               <h3 className="px-4 text-[0.8rem] font-bold tracking-[0.08em] text-area uppercase">{titulo}</h3>

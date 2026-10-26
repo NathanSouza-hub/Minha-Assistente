@@ -155,7 +155,10 @@ npm run lint                                  # oxlint
 - **Compras**: tudo numa tela (`/compras`); a edição (`/compras/:id`) pega o item da lista (não
   existe `GET /compras/:id`). A tela sempre ordena com `ordenarCompras` (`src/lib/compras.ts`), na mesma
   ordem do português que a API usa (collation ICU `pt-BR-x-icu` no back-end).
-  Categorias são agrupadas sem diferenciar maiúsculas/acentos (`chaveCategoria`). Telas de edição
+  Categorias são agrupadas sem diferenciar maiúsculas/acentos (`agruparPorCategoria`, usado na tela e
+  no PDF). O "PDF" do cabeçalho (`paginas/compras/GerarPdfCompras.tsx`) abre uma folha para ajustar
+  título, "A comprar"/"Tudo" e desmarcar itens (só no papel; a lista não muda) e gera com
+  `lib/comprasPdf.ts` (jsPDF importado só ao gerar; quadradinho para riscar, comprado sai marcado). Telas de edição
   que leem o item da lista (Rotina, Compras) navegam **antes** de a exclusão terminar: senão o item
   sai do cache, a tela desmonta e o `onSuccess` do `mutate` não roda. Desenho: o contador "X de Y
   itens comprados" no cabeçalho, o anotar rápido numa pílula (nome + "+"; quantidade e categoria
