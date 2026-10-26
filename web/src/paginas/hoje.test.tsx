@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
@@ -178,6 +178,14 @@ describe('tela Hoje: tarefas do dia', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Voltar para hoje' }))
     expect(await linhaDe('Condomínio')).toBeInTheDocument()
+
+    // O "Ir para o dia" fica no cabeçalho, ao lado do "+ Nova", e acompanha as setas.
+    const campo = screen.getByLabelText('Ir para o dia')
+    expect(campo).toHaveValue('2026-10-13')
+    fireEvent.change(campo, { target: { value: '2026-10-20' } })
+    expect(await screen.findByText(/20 de outubro/)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Dia anterior' }))
+    await waitFor(() => expect(screen.getByLabelText('Ir para o dia')).toHaveValue('2026-10-19'))
   })
 })
 
