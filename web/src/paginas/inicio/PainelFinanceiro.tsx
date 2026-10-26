@@ -2,8 +2,6 @@ import type { ReactNode } from 'react'
 import { CaretRightIcon, ChartBarIcon, CheckCircleIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { useQueries } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router'
-import { Abas } from '@/components/Abas'
-import { Pagina } from '@/components/layout/Pagina'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { chaves, useRelatorioFinanceiro, useRelatorioGastos } from '@/consultas/pagamentos'
@@ -22,7 +20,6 @@ import {
 import { Legenda, TabelaDoGrafico } from '@/components/grafico/pecas'
 import { mesCurto } from '@/paginas/financas/formatos'
 import { NavegadorMes } from '@/paginas/pagamentos/ResumoContas'
-import { RelatorioDoPeriodo } from '@/paginas/Relatorio'
 import { BlocoFinancas } from './blocosFinanceiros'
 
 /** Meses do histórico (até o escolhido) e da projeção (depois dele) nos gráficos. */
@@ -30,27 +27,14 @@ const MESES_ANTES = 5
 const MESES_DEPOIS = 2
 
 /**
- * Finanças → Visão geral (`/financas`): as abas Resumo (padrão) e Relatório (`?vista=relatorio`).
- * O Resumo é o painel do mês escolhido (`?mes=`): saldo, o que pede atenção, os números com o
- * critério de cada um, os gráficos e as residências. Só lê: todo número vem de
+/**
+ * Aba "Visão geral" de Finanças (`/financas`, a primeira; as outras são o relatório em
+ * `paginas/Relatorio.tsx`): o painel do mês escolhido (`?mes=`) — o que pede atenção, os números com
+ * o critério de cada um, os gráficos e as residências. Só lê: todo número vem de
  * GET /relatorios/financeiro (um por mês, nos gráficos) e /relatorios/gastos — nada é somado aqui
  * além de juntar os meses lado a lado.
  */
-export function PainelFinanceiro() {
-  return (
-    <Pagina titulo="Finanças" larga>
-      <Abas<'resumo' | 'relatorio'>
-        rotulo="Visão geral"
-        abas={[
-          { valor: 'resumo', rotulo: 'Resumo do mês', conteudo: <ResumoDoMes /> },
-          { valor: 'relatorio', rotulo: 'Relatório', conteudo: <RelatorioDoPeriodo /> },
-        ]}
-      />
-    </Pagina>
-  )
-}
-
-function ResumoDoMes() {
+export function VisaoGeral() {
   const [params, setParams] = useSearchParams()
   const mes = /^\d{4}-\d{2}$/.test(params.get('mes') ?? '') ? params.get('mes')! : mesDe()
   const financeiro = useRelatorioFinanceiro(intervaloDoMes(mes))

@@ -79,7 +79,7 @@ fábricas, chamadas ao montar as rotas (cada app de teste tem contadores novos).
 
 ## Próximas etapas
 
-Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`, `/relatorios/financeiro` (painel; decisão 25), `/relatorios/produtividade` (concluídos por dia; decisão 35), `/recebiveis` (decisão 26), `/tarefas` (decisão 28),
+Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/pagamentos`, `/relatorios/gastos`, `/relatorios/financeiro` (painel; decisão 25), `/relatorios/produtividade` (concluídos por dia; decisão 37), `/recebiveis` (decisão 26), `/tarefas` (decisão 28),
 `/eventos`, `/medicamentos`, `/rotinas`, `/hoje` (agrega os services dos outros módulos),
 `/cartoes` (faturas viram contas em `pagamento`; regras em `src/lib/fatura.js`, decisão 19 de
 `docs/arquitetura.md`), `/equipe` (os dias de pagamento viram contas em `pagamento`, criadas por

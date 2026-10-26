@@ -91,7 +91,7 @@ test('dividendo variável: recebe menos e encerra; recebe mais que o previsto se
 });
 
 test('valores acima do antigo teto de integer são aceitos (bigint)', async () => {
-  const grande = await novo(ana, { descricao: 'Venda de imóvel', origem: 'outros', valorPrevistoCentavos: 50_000_000_00 });
+  const grande = await novo(ana, { descricao: 'Venda de imóvel', origem: 'outros', origemDescricao: 'Venda de imóvel', valorPrevistoCentavos: 50_000_000_00 });
   assert.equal(grande.valorPrevistoCentavos, 50_000_000_00);
   const [categoria] = (await request(app).get('/categorias-pagamento').set(ana.auth)).body;
   const pagamento = await request(app)
@@ -144,7 +144,7 @@ test('recorrente: ao receber cria a próxima (só uma), a partir do início da s
 });
 
 test('sem recorrência configurada não cria próxima', async () => {
-  const r = await novo(ana, { descricao: 'Bônus único', origem: 'outros', dataPrevista: '2099-07-01' });
+  const r = await novo(ana, { descricao: 'Bônus único', origem: 'outros', origemDescricao: 'Bônus', dataPrevista: '2099-07-01' });
   await receber(ana, r.id, { valorCentavos: 300000 });
   assert.equal((await db('recebivel').where({ recorrenciaOrigemId: r.id })).length, 0);
 });
@@ -192,11 +192,52 @@ test('isolamento: recebível de outra pessoa responde 404 em tudo', async () => 
   await request(app)
     .put(`/recebiveis/${r.id}`)
     .set(bia.auth)
-    .send({ descricao: 'x', origem: 'outros', valorPrevistoCentavos: 1, dataPrevista: '2099-01-01' })
+    .send({ descricao: 'x', origem: 'outros', origemDescricao: 'x', valorPrevistoCentavos: 1, dataPrevista: '2099-01-01' })
     .expect(404);
   await receber(bia, r.id, { valorCentavos: 1 }, 404);
   await request(app).delete(`/recebiveis/${r.id}`).set(bia.auth).expect(404);
   assert.ok((await listar(bia)).every((x) => x.id !== r.id));
+});
+
+test('origem "outros" exige a descrição, guarda junto e copia para a próxima da série', async () => {
+  const semDescricao = await request(app)
+    .post('/recebiveis')
+    .set(ana.auth)
+    .send({ descricao: 'x', origem: 'outros', origemDescricao: '   ', valorPrevistoCentavos: 10, dataPrevista: '2099-01-01' })
+    .expect(400);
+  assert.equal(semDescricao.body.erro.codigo, 'VALIDACAO');
+  assert.match(semDescricao.body.erro.mensagem, /Especifique a origem/);
+
+  const r = await novo(ana, {
+    descricao: 'Juros do empréstimo ao João',
+    origem: 'outros',
+    origemDescricao: ' Juros de empréstimo ',
+    recorrencia: 'mensal',
+    dataPrevista: '2099-08-10',
+  });
+  assert.equal(r.origem, 'outros');
+  assert.equal(r.origemDescricao, 'Juros de empréstimo');
+  assert.equal((await listar(ana, { origem: 'outros' })).find((x) => x.id === r.id).origemDescricao, 'Juros de empréstimo');
+
+  await receber(ana, r.id, { valorCentavos: 300000 });
+  const [proxima] = await db('recebivel').where({ recorrenciaOrigemId: r.id });
+  assert.equal(proxima.origemDescricao, 'Juros de empréstimo');
+
+  // Trocar para outra origem apaga a descrição; outras origens ignoram a enviada.
+  const { body: editado } = await request(app)
+    .put(`/recebiveis/${proxima.id}`)
+    .set(ana.auth)
+    .send({ descricao: 'Aluguel', origem: 'aluguel', origemDescricao: 'sobrou', valorPrevistoCentavos: 300000, dataPrevista: '2099-09-10' })
+    .expect(200);
+  assert.equal(editado.origemDescricao, null);
+
+  // Cadastro antigo (de antes da descrição) continua aparecendo e recebendo normalmente.
+  const [{ id: antigo }] = await db('recebivel')
+    .insert({ usuarioId: ana.usuario.id, descricao: 'Antigo', origem: 'outros', valorPrevistoCentavos: 100, dataPrevista: '2099-10-01' })
+    .returning('id');
+  const { body: detalheAntigo } = await request(app).get(`/recebiveis/${antigo}`).set(ana.auth).expect(200);
+  assert.equal(detalheAntigo.origemDescricao, null);
+  await receber(ana, antigo, { valorCentavos: 100 });
 });
 
 test('validações', async () => {

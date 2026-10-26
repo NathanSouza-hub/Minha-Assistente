@@ -8,8 +8,8 @@ import type { TipoEvento } from '@/lib/tipos'
 
 // Telas com formulário (Zod + React Hook Form) e as maiores são baixadas só quando abertas,
 // para o app abrir rápido no celular.
-const financas = () =>
-  import('@/paginas/inicio/PainelFinanceiro').then((m) => ({ Component: m.PainelFinanceiro }))
+// Finanças = Visão geral + as partes do relatório, em abas (o /relatorio antigo redireciona).
+const financas = () => import('@/paginas/Relatorio').then((m) => ({ Component: m.Financas }))
 const hoje = () => import('@/paginas/Hoje').then((m) => ({ Component: m.Hoje }))
 const entrar = () => import('@/paginas/Entrar').then((m) => ({ Component: m.Entrar }))
 const cadastro = () => import('@/paginas/Cadastro').then((m) => ({ Component: m.Cadastro }))
@@ -125,8 +125,8 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'imoveis', lazy: imoveis },
           { path: 'imoveis/:id', lazy: detalheImovel },
           { path: 'categorias', lazy: categorias },
-          // O relatório virou a aba "Relatório" da Visão geral de Finanças; o endereço antigo leva para lá.
-          { path: 'relatorio', element: <Navigate to="/financas?vista=relatorio" replace /> },
+          // O relatório virou as abas Balanço, Recebíveis e pessoais e Por imóvel ou categoria de Finanças.
+          { path: 'relatorio', element: <Navigate to="/financas?vista=balanco" replace /> },
           { path: 'conta/senha', lazy: trocarSenha },
           { path: '*', element: <NaoEncontrada /> },
         ],

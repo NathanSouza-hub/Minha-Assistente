@@ -41,7 +41,7 @@ GET/POST /equipe | GET/PUT/DELETE /equipe/:id                                   
 GET /relatorios/gastos?inicio=&fim=&agruparPor=imovel|categoria
 GET /relatorios/financeiro?inicio=&fim=  (visão financeira do período, decisão 25)
 GET /relatorios/imoveis/:id?inicio=&fim=  (resumo de um imóvel, decisão 27)
-GET /relatorios/produtividade?inicio=&fim=  (concluídos por dia, decisão 35)
+GET /relatorios/produtividade?inicio=&fim=  (concluídos por dia, decisão 37)
 GET/POST /recebiveis (inicio, fim, status, origem) | GET/PUT/DELETE /recebiveis/:id  (decisão 26)
 POST /recebiveis/:id/recebimentos | DELETE /recebiveis/:id/recebimentos/:recebimentoId
 POST /recebiveis/:id/comprovantes | GET/DELETE /recebiveis/:id/comprovantes/:comprovanteId
@@ -317,7 +317,7 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     `src/modules/recebiveis/`):
     - `recebivel` (descricao, origem `dividendos|aluguel|rendimentos|honorarios|outros`,
       valor_previsto_centavos, data_prevista, encerrado, recorrencia `nenhuma|mensal|anual`,
-      recorrencia_origem_id, observacoes) e o histórico em `recebimento` (valor_centavos > 0, data,
+      recorrencia_origem_id, observacoes, origem_descricao — decisão 35) e o histórico em `recebimento` (valor_centavos > 0, data,
       observacoes). Comprovantes em `recebivel_comprovante`, com as regras dos de conta
       (`src/lib/comprovantes.js`, a mesma fábrica dos comprovantes de conta).
     - **Situação derivada, nada em dobro**: `recebidoCentavos` = soma dos recebimentos; `status`
@@ -417,7 +417,19 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     No rádio, a emissora vai em `local`; na consulta e na fisioterapia sem título, o front monta um
     ("Consulta de Cardiologia"). Viagens e Programa de rádio saíram do menu; `/viagens` e `/radio`
     continuam. Na Equipe a aba de pessoas chama "Integrantes" e Recebíveis mostra também o atrasado.
-35. **O que foi feito** (`GET /relatorios/produtividade?inicio=&fim=`, ambos obrigatórios, até 366
+35. **Recebíveis: "Especifique a origem" em "Outros"** (migration 31): `recebivel.origem_descricao`
+    (text, nulo). `POST`/`PUT /recebiveis` aceitam `origemDescricao` (até 100 caracteres), obrigatório
+    quando `origem = 'outros'` (`400 VALIDACAO` "Especifique a origem."); nas outras origens é
+    ignorado e gravado `null` (trocar de origem apaga a antiga). A origem continua `outros` (filtro e
+    "Previsto por origem" não mudam); a resposta traz `origemDescricao` e a próxima ocorrência da série
+    a copia. O banco só garante `origem = 'outros' OR origem_descricao IS NULL`: os "outros" já
+    cadastrados ficam com `null` e continuam valendo (recebem normalmente); ao editar, o formulário
+    pede a descrição. O front exibe "Outros · <descrição>" na lista, nos próximos e no detalhe.
+36. **Relatório dentro da Visão geral** (só front, nenhuma rota da API mudou): o item "Relatório"
+    saiu do menu de Finanças. `/financas` tem as abas Visão geral (os indicadores do mês, como antes),
+    Balanço, Recebíveis e pessoais e Por imóvel ou categoria; o período e o "Gerar PDF" aparecem só
+    nas três do relatório. O endereço antigo `/relatorio` redireciona para a aba Balanço.
+37. **O que foi feito** (`GET /relatorios/produtividade?inicio=&fim=`, ambos obrigatórios, até 366
     dias; sem tabela nem migration nova): conta só o que foi **concluído de fato**, pelo dia da
     conclusão no fuso America/Sao_Paulo — `tarefa.concluida_em` (tarefas de uma vez) e cada
     `rotina_conclusao.concluida_em` (compromissos que repetem; marcar ontem hoje conta hoje). Tarefa

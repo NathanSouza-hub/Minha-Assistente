@@ -623,13 +623,14 @@ function semearRecebiveis() {
   const agora = agoraISO()
   const hoje = deDataISO(hojeISO())
   const doMes = (dia: number) => hoje.set({ day: Math.min(dia, hoje.daysInMonth!) }).toISODate()!
-  const recebivel = (dados: Omit<RecebivelMock, 'id' | 'usuarioId' | 'encerrado' | 'recorrenciaOrigemId' | 'criadoEm' | 'atualizadoEm' | 'observacoes'>) => {
+  const recebivel = (dados: Omit<RecebivelMock, 'id' | 'usuarioId' | 'encerrado' | 'recorrenciaOrigemId' | 'criadoEm' | 'atualizadoEm' | 'observacoes' | 'origemDescricao'>) => {
     const r: RecebivelMock = {
       id: crypto.randomUUID(),
       usuarioId: MARIA_ID,
       encerrado: false,
       recorrenciaOrigemId: null,
       observacoes: null,
+      origemDescricao: null,
       criadoEm: agora,
       atualizadoEm: agora,
       ...dados,

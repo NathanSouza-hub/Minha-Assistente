@@ -87,6 +87,45 @@ describe('Recebíveis', () => {
     expect(await within(situacao).findByText('Recebido em parte')).toBeInTheDocument()
   })
 
+  test('origem "Outros" pede "Especifique a origem", salva e mostra a descrição', async () => {
+    const usuario = userEvent.setup()
+    renderizarApp('/recebiveis/novo')
+    await usuario.type(await screen.findByLabelText('Descrição'), 'Empréstimo ao João')
+    await usuario.type(screen.getByLabelText('Valor previsto'), '800,00')
+    expect(screen.queryByLabelText('Especifique a origem')).not.toBeInTheDocument()
+
+    // Trocar de origem esconde o campo e apaga o que foi digitado.
+    await usuario.selectOptions(screen.getByLabelText('Origem'), 'outros')
+    await usuario.type(screen.getByLabelText('Especifique a origem'), 'Rascunho')
+    await usuario.selectOptions(screen.getByLabelText('Origem'), 'aluguel')
+    expect(screen.queryByLabelText('Especifique a origem')).not.toBeInTheDocument()
+    await usuario.selectOptions(screen.getByLabelText('Origem'), 'outros')
+    const campo = screen.getByLabelText('Especifique a origem')
+    expect(campo).toHaveValue('')
+    expect(campo).toHaveAttribute('placeholder', 'Ex.: Juros de empréstimo, reembolso, venda de veículo')
+
+    // Vazio (ou só espaços) não cadastra.
+    await usuario.type(campo, '   ')
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar recebível' }))
+    expect(await screen.findByText('Especifique a origem.')).toBeInTheDocument()
+
+    await usuario.clear(campo)
+    await usuario.type(campo, 'Juros de empréstimo')
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar recebível' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Empréstimo ao João' })).toBeInTheDocument()
+    const situacao = screen.getByRole('region', { name: 'Situação' })
+    expect(within(situacao).getByText(/Outros · Juros de empréstimo/)).toBeInTheDocument()
+    // Na edição, a descrição continua no campo.
+    expect(screen.getByLabelText('Origem')).toHaveValue('outros')
+    expect(screen.getByLabelText('Especifique a origem')).toHaveValue('Juros de empréstimo')
+
+    // O "← Recebíveis" do cabeçalho (o do menu não leva o mês).
+    const voltar = screen.getAllByRole('link', { name: 'Recebíveis' }).find((l) => l.getAttribute('href')?.includes('?mes='))!
+    await usuario.click(voltar)
+    const linha = (await linhas()).find((l) => l.textContent?.includes('Empréstimo ao João'))!
+    expect(within(linha).getByText(/Outros · Juros de empréstimo/)).toBeInTheDocument()
+  })
+
   test('valor menor que o previsto: dá por recebido com o valor final', async () => {
     const usuario = userEvent.setup()
     renderizarApp('/recebiveis')

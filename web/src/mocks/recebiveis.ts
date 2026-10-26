@@ -75,6 +75,7 @@ function garantirProxima(r: RecebivelMock) {
 function validar(corpo: Partial<RecebivelCorpo>) {
   if (!corpo.descricao?.trim()) return 'descricao: Informe a descrição.'
   if (!corpo.origem || !ORIGENS.includes(corpo.origem)) return 'origem: Opção inválida.'
+  if (corpo.origem === 'outros' && !corpo.origemDescricao?.trim()) return 'origemDescricao: Especifique a origem.'
   if (!Number.isInteger(corpo.valorPrevistoCentavos) || corpo.valorPrevistoCentavos! <= 0)
     return 'valorPrevistoCentavos: O valor precisa ser maior que zero.'
   if (!/^\d{4}-\d{2}-\d{2}$/.test(corpo.dataPrevista ?? '')) return 'dataPrevista: Data inválida: use o formato AAAA-MM-DD.'
@@ -84,6 +85,8 @@ function validar(corpo: Partial<RecebivelCorpo>) {
 const limpar = (corpo: RecebivelCorpo): RecebivelCorpo => ({
   descricao: corpo.descricao.trim(),
   origem: corpo.origem,
+  // A descrição só existe em "outros" (trocar de origem apaga a antiga).
+  origemDescricao: corpo.origem === 'outros' ? corpo.origemDescricao!.trim() : null,
   valorPrevistoCentavos: corpo.valorPrevistoCentavos,
   dataPrevista: corpo.dataPrevista,
   recorrencia: corpo.recorrencia ?? 'nenhuma',

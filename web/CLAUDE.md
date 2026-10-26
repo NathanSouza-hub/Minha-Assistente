@@ -74,9 +74,8 @@ npm run lint                                  # oxlint
 - **Áreas por tipo**: Programa de rádio (`/radio`, fora do menu desde a decisão 34), Atividade física e Fisioterapia são a agenda só
   daquele tipo (`AgendaDoTipo`, `AREAS_DO_TIPO` em `paginas/agenda/textos.ts`). O formulário aceita
   `?tipo=` e `?voltar=<rota da área>`. A modalidade oferecida depende do tipo (`MODALIDADES_DO_TIPO`).
-- **Finanças → Visão geral** (`/financas`, `paginas/inicio/PainelFinanceiro.tsx`): abas Resumo do mês
-  (padrão, com `?mes=`) e Relatório (`?vista=relatorio`; `/relatorio` redireciona para cá). O Resumo é o
-  painel do mês: "Pede atenção" (vencidas, recebíveis atrasados, contas a definir), `BlocoFinancas`
+- **Finanças → Visão geral** (`/financas`, primeira aba de `paginas/Relatorio.tsx`; o conteúdo é `VisaoGeral`
+  em `paginas/inicio/PainelFinanceiro.tsx`, com `?mes=`; decisão 36): o painel do mês: "Pede atenção" (vencidas, recebíveis atrasados, contas a definir), `BlocoFinancas`
   (saldo num bloco grafite, Despesas e Recebíveis com o critério de cada número; os que têm lista com o
   mesmo critério levam a ela no mesmo mês), os gráficos e Por residência. Os totais vêm de
   `GET /relatorios/financeiro` (decisão 25; um por mês nos gráficos, com a mesma chave de
@@ -92,7 +91,7 @@ npm run lint                                  # oxlint
   `ResumoPessoais`, explicados abaixo).
 - **Abas internas** (decisão 33): `components/Abas.tsx` (Tabs do Radix, aba em `?vista=`, a primeira
   é a padrão e não vai para a URL; `contador` opcional). Usadas em Despesas pessoais, detalhe do
-  imóvel, Equipe, Recebíveis, Visão geral (`?vista=`) e Relatório (`?parte=`, para não brigar com o da Visão geral). O conteúdo de aba fechada não é montado: nos testes,
+  imóvel, Equipe, Recebíveis, Finanças (Visão geral e as partes do relatório, `?vista=`). O conteúdo de aba fechada não é montado: nos testes,
   clique na aba (`getByRole('tab')`) ou abra com `?vista=`.
 - **Ocultos do menu** (decisão 33): `CARTOES_VISIVEIS` e `CATEGORIAS_VISIVEIS` em `app/navegacao.ts`
   tiram Cartões e Categorias do menu e do "Grupo de contas"; rotas, telas e dados continuam (para
@@ -109,17 +108,20 @@ npm run lint                                  # oxlint
   mostra um cartão por imóvel (valor do mês, situação, Renomear/Excluir) e o "Novo imóvel" no cabeçalho. Os números vêm de `GET /relatorios/imoveis/:id`. Cada
   imóvel da lista de Imóveis (com o valor do mês) leva para cá. Situação, barra de
   pago e pago/pendente ficam em `components/ResumoValores.tsx` (lista de Imóveis, detalhe e Pessoais usam os mesmos).
-- **Relatório** (`RelatorioDoPeriodo` em `paginas/Relatorio.tsx`, aba da Visão geral): o período em cima,
-  "Gerar PDF" e as abas Balanço (comparação com o período anterior — `trechosComparaveis` de
+- **Relatório** (decisão 36: não é mais tela nem item do menu; `/relatorio` redireciona para
+  `/financas?vista=balanco`): são as abas Balanço (comparação com o período anterior — `trechosComparaveis` de
   `lib/datas.ts`: período que ainda não terminou compara do início até hoje com o mesmo trecho do
-  anterior, nunca o mês pela metade com o mês inteiro; só o realizado —, entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e
-  Por imóvel ou categoria (`/relatorios/gastos`, com o "Separar por"). "Gerar PDF" usa
-  `lib/relatorioPdf.ts` (jsPDF + autotable, importados só ao gerar) com os dados já carregados do
-  período — nunca recalcule; o botão espera os dados do período escolhido (`isPlaceholderData`).
+  anterior, nunca o mês pela metade com o mês inteiro; só o realizado, buscado só nessa aba —, entradas, saídas e saldo), Recebíveis e pessoais (de `GET /relatorios/financeiro`) e Por imóvel ou categoria
+  (`/relatorios/gastos`, com o "Separar por") de Finanças, depois da Visão geral. O período aparece
+  em cada uma dessas três (estado único da página) e o relatório só é buscado nelas. "Gerar PDF" (só nessas abas) usa `lib/relatorioPdf.ts` (jsPDF +
+  autotable, importados só ao gerar) com os dados já carregados do período — nunca recalcule; o
+  botão espera os dados do período escolhido (`isPlaceholderData`).
 - **Recebíveis** (`/recebiveis`, `/recebiveis/novo`, `/recebiveis/:id`; `paginas/recebiveis/`, decisão 26):
   valores a receber do mês (pela data prevista): previsto/recebido/a receber em cima e as abas Do mês,
   A receber (status ≠ recebido, inclui parcial), Recebidos e Resumo (por origem e próximos 30 dias);
-  "Novo recebível" no cabeçalho. Status, saldo e atrasado vêm da API, derivados do
+  "Novo recebível" no cabeçalho. Origem "Outros" mostra "Especifique a origem" logo abaixo (obrigatório
+  só nela; trocar de origem apaga o texto) e `nomeDaOrigem()` (`formulario.ts`) exibe "Outros · <descrição>"
+  (decisão 35). Status, saldo e atrasado vêm da API, derivados do
   histórico de recebimentos — não recalcule. No detalhe: situação, "Registrar recebimento" (o valor
   já vem com o que falta; abaixo do saldo aparece "Foi o valor final", que manda `encerrar`),
   histórico com "Desfazer" e comprovantes (`ListaArquivos`). Toda mutação invalida `recebiveis` e os
@@ -160,7 +162,7 @@ npm run lint                                  # oxlint
   embaixo no celular, tudo numa linha no computador), "A comprar" com cada categoria no seu bloco e
   "Já comprados" mais apagado embaixo.
 - **O que foi feito** (`/produtividade`, item do menu de Lembretes; `paginas/produtividade/`): totais e
-  colunas de `GET /relatorios/produtividade` (decisão 35), 7 dias / 30 dias / 12 semanas (`?periodo=`;
+  colunas de `GET /relatorios/produtividade` (decisão 37), 7 dias / 30 dias / 12 semanas (`?periodo=`;
   12 semanas começam numa segunda e usam `semanas` da API). Só o que foi concluído: nunca mostre
   pendente nem taxa. Só o que muda a contagem invalida `chavesProdutividade` (`invalidarProdutividade`:
   concluir/reabrir/excluir tarefa, concluir e excluir compromisso; a marcação pelo Início recarrega

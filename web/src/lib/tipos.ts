@@ -199,6 +199,8 @@ export type StatusRecebivel = 'pendente' | 'parcial' | 'recebido'
 export type RecebivelCorpo = {
   descricao: string
   origem: OrigemRecebivel
+  /** "Especifique a origem": só na origem "outros" (null nos cadastros antigos). */
+  origemDescricao: string | null
   valorPrevistoCentavos: number
   dataPrevista: string
   recorrencia: 'nenhuma' | 'mensal' | 'anual'
