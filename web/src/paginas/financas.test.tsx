@@ -108,13 +108,13 @@ describe('Finanças → Visão geral', () => {
     const menu = await screen.findByRole('navigation', { name: 'Telas de Finanças' })
     const links = within(menu).getAllByRole('link').map((l) => l.textContent)
     expect(links).toEqual([
-      'Visão geral',
       'Contas a pagar',
       'Lista de despesas',
       'Pessoais',
       'Residências',
       'Equipe',
       'Recebíveis',
+      'Visão geral',
     ])
     // Cartões e Categorias estão ocultos do menu por enquanto (decisão 33); o Relatório virou abas daqui.
     expect(within(menu).getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
