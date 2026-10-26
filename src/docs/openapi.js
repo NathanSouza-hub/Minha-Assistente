@@ -18,6 +18,7 @@ const modulos = [
   require('../modules/viagens/docs'),
   require('../modules/compras/docs'),
   require('../modules/notificacoes/docs'),
+  require('../modules/whatsapp/docs'),
 ];
 
 function montarOpenApi() {

@@ -223,6 +223,36 @@ docker compose -f docker-compose.prod.yml up -d web
 O Caddy tira o certificado do domínio novo. O endereço muda, então nos aparelhos é preciso
 abrir o novo endereço, instalar de novo e reativar as notificações.
 
+## 7.1 WhatsApp (Cloud API da Meta)
+
+Sem as cinco variáveis `WHATSAPP_*` no `.env`, o app funciona normalmente e a tela WhatsApp mostra
+"Ainda não disponível".
+
+1. Em <https://developers.facebook.com/apps>, **Criar app** → caso de uso **"Conectar-se com
+   clientes pelo WhatsApp"** → ligue a uma conta empresarial (Business Portfolio; crie se não tiver).
+2. No app, **WhatsApp → Configuração da API** (API Setup): a Meta dá um **número de teste**
+   gratuito. Anote o **Phone number ID** (→ `WHATSAPP_NUMERO_ID`) e o número em si, só dígitos com
+   o país (→ `WHATSAPP_NUMERO`). Em "Para", cadastre os celulares que vão testar (o número de
+   teste só conversa com até 5 números cadastrados).
+3. **Token permanente** (o da tela de API Setup vence em 24 h): em business.facebook.com →
+   Configurações do negócio → **Usuários do sistema** → Adicionar (função Administrador) →
+   **Atribuir ativos** (o app, controle total) → **Gerar token** com as permissões
+   `whatsapp_business_messaging` e `whatsapp_business_management`, validade "Nunca" →
+   `WHATSAPP_TOKEN`. Guarde no gerenciador de senhas: a Meta não mostra de novo.
+4. **App Secret**: no app, Configurações do app → Básico → Chave secreta do app → `WHATSAPP_APP_SECRET`.
+5. `WHATSAPP_VERIFY_TOKEN`: invente (`openssl rand -hex 24`).
+6. No servidor, ponha as cinco no `.env` e aplique: `docker compose -f docker-compose.prod.yml up -d api`.
+7. No app da Meta, **WhatsApp → Configuração** (Configuration) → Webhook → Editar: URL
+   `https://SEU_DOMINIO/api/webhooks/whatsapp` e o mesmo Verify token do passo 5 → Verificar e
+   salvar. Depois, em "Campos do webhook", assine **messages**.
+8. Teste: no app, Configurações → WhatsApp → Gerar código → mande o código para o número; a
+   resposta "Pronto, …!" chega e a tela muda sozinha. Problemas aparecem em
+   `docker compose -f docker-compose.prod.yml logs -f api | grep WhatsApp`.
+
+Número definitivo (o chip): em API Setup → Adicionar número de telefone. O número não pode ter
+conta no WhatsApp comum (apague a conta no celular antes). Troque `WHATSAPP_NUMERO_ID` e
+`WHATSAPP_NUMERO` e reinicie a API; quem já estava ligado precisa gerar outro código.
+
 ## 8. Comandos úteis
 
 ```bash

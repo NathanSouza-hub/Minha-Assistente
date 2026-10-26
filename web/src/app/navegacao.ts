@@ -124,6 +124,7 @@ export const SECOES: Secao[] = [
     itens: [
       { rota: '/configuracoes', rotulo: 'Geral' },
       { rota: '/notificacoes', rotulo: 'Notificações' },
+      { rota: '/whatsapp', rotulo: 'WhatsApp' },
     ],
   },
 ]
@@ -191,6 +192,7 @@ const AREAS_DAS_ROTAS: { rota: string; area: Area }[] = [
   { rota: '/compras', area: 'compras' },
   { rota: '/produtividade', area: 'tarefas' },
   { rota: '/notificacoes', area: 'geral' },
+  { rota: '/whatsapp', area: 'geral' },
   { rota: '/configuracoes', area: 'geral' },
 ]
 

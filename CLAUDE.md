@@ -84,7 +84,7 @@ Prontos: `/auth`, `/imoveis`, `/categorias-pagamento` (de cada usuário), `/paga
 `/cartoes` (faturas viram contas em `pagamento`; regras em `src/lib/fatura.js`, decisão 19 de
 `docs/arquitetura.md`), `/equipe` (os dias de pagamento viram contas em `pagamento`, criadas por
 `garantirContas` ao salvar a pessoa e pela manutenção do servidor em `src/jobs/manutencao.js` — consultar nunca grava; conta da equipe pode ter valor nulo = a definir; decisão 23), `/viagens` (anexos via `middlewares/upload.js` + `lib/armazenamento.js`; os testes gravam numa pasta
-temporária definida em `test/setup.js`), `/compras`, `/notificacoes` e os lembretes
+temporária definida em `test/setup.js`), `/compras`, `/notificacoes`, `/whatsapp` (fase 1: ligar o número por código, webhook em `/webhooks/whatsapp`; decisão 38 — os testes simulam `whatsapp.enviarTexto`, que lança erro se for chamado de verdade em teste) e os lembretes
 (`src/lembretes/`). Rotas fixas (`/hoje`, `/registros`) vêm antes de `/:id` no router. Séries recorrentes são expandidas por `src/lib/recorrencia.js`. Campos compartilhados (id, data, centavos, texto opcional) ficam
 em `src/lib/esquemas.js`; `test/helpers/sessao.js` cria um usuário com token para os testes.
 

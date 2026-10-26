@@ -539,3 +539,15 @@ export type PreferenciaResumo = { ativo: boolean; hora: string }
 /** Categorias de aviso que a pessoa liga e desliga (GET/PUT /notificacoes/avisos, decisão 29). */
 export type CategoriaAviso = 'agenda' | 'remedios' | 'compromissos' | 'tarefas' | 'contas'
 export type PreferenciaAvisos = Record<CategoriaAviso, boolean>
+
+/** GET /whatsapp (decisão 38). `numero` e `telefone` vêm só com dígitos / mascarado. */
+export type SituacaoWhatsapp = {
+  disponivel: boolean
+  numero: string | null
+  vinculado: boolean
+  telefone: string | null
+  vinculadoEm: string | null
+}
+
+/** POST /whatsapp/codigo: vale 10 minutos; `link` abre o WhatsApp com o código escrito. */
+export type CodigoWhatsapp = { codigo: string; expiraEm: string; numero: string; link: string }

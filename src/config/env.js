@@ -21,7 +21,23 @@ const esquema = z.object({
     .refine((v) => v === '' || /^(mailto:|https:\/\/)/.test(v), 'use mailto:seu@email ou uma URL https://'),
   // Cadastro de contas novas pelo app. Sem a variável: fechado em produção, aberto no resto.
   CADASTRO_ABERTO: z.enum(['true', 'false']).optional(),
-}).refine((v) => Boolean(v.VAPID_PUBLIC_KEY) === Boolean(v.VAPID_PRIVATE_KEY) && (!v.VAPID_PUBLIC_KEY || v.VAPID_SUBJECT), {
+  // WhatsApp Cloud API da Meta (decisão 38). Sem as cinco primeiras, o WhatsApp fica desligado.
+  WHATSAPP_TOKEN: z.string().default(''),
+  WHATSAPP_NUMERO_ID: z.string().regex(/^\d*$/, 'só dígitos (o "Phone number ID" da Meta)').default(''),
+  WHATSAPP_NUMERO: z.string().regex(/^\d*$/, 'só dígitos, com o país (ex.: 5511999990000)').default(''),
+  WHATSAPP_APP_SECRET: z.string().default(''),
+  WHATSAPP_VERIFY_TOKEN: z.string().default(''),
+  WHATSAPP_API_VERSAO: z.string().regex(/^v\d+\.\d+$/, 'use o formato v26.0').default('v26.0'),
+}).refine(
+  (v) => {
+    const partes = [v.WHATSAPP_TOKEN, v.WHATSAPP_NUMERO_ID, v.WHATSAPP_NUMERO, v.WHATSAPP_APP_SECRET, v.WHATSAPP_VERIFY_TOKEN];
+    return partes.every(Boolean) || !partes.some(Boolean);
+  },
+  {
+    message: 'defina WHATSAPP_TOKEN, WHATSAPP_NUMERO_ID, WHATSAPP_NUMERO, WHATSAPP_APP_SECRET e WHATSAPP_VERIFY_TOKEN juntas (ou nenhuma)',
+    path: ['WHATSAPP_TOKEN'],
+  },
+).refine((v) => Boolean(v.VAPID_PUBLIC_KEY) === Boolean(v.VAPID_PRIVATE_KEY) && (!v.VAPID_PUBLIC_KEY || v.VAPID_SUBJECT), {
   message: 'defina VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY e VAPID_SUBJECT juntas (ou nenhuma)',
   path: ['VAPID_PUBLIC_KEY'],
 }).transform((v) => ({

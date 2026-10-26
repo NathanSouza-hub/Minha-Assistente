@@ -57,6 +57,8 @@ POST /notificacoes/inscricoes | DELETE /notificacoes/inscricoes  (acrescentada, 
 GET /notificacoes/chave-publica | POST /notificacoes/teste       (acrescentadas)
 GET/PUT /notificacoes/resumo  (resumo da manhã, decisão 21)
 GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
+GET/DELETE /whatsapp | POST /whatsapp/codigo  (número da conta, decisão 38)
+GET/POST /webhooks/whatsapp  (público: chamado pela Meta, com assinatura)
 ```
 
 ## Decisões acordadas
@@ -443,6 +445,25 @@ GET/PUT /notificacoes/avisos  (o que avisar, por categoria, decisão 29)
     (`UNION ALL` agrupado por dia, intervalo pelo instante — sargável). Medido em 2026-10-22 com
     256 mil tarefas no banco (16 mil do usuário) e 11 mil conclusões: um ano em ~19 ms, sem índice
     novo (a tarefa usa `(usuario_id, data)`; `rotina_conclusao` é varrida — rever se crescer muito).
+38. **WhatsApp — fase 1: ligar o número** (migration 32; Cloud API oficial da Meta). Sem as cinco
+    variáveis `WHATSAPP_*` o WhatsApp fica desligado (`GET /whatsapp` traz `disponivel: false`,
+    `POST /whatsapp/codigo` → `503 WHATSAPP_DESLIGADO`, o webhook responde 404). Vínculo:
+    `POST /whatsapp/codigo` dá um código de 6 dígitos (10 min; o anterior deixa de valer; 10 por hora
+    por IP) e o link `wa.me` com ele escrito; a pessoa manda o código para o número do app e o
+    webhook grava o `from` da Meta (só dígitos, com o país — por isso o código, e não o número
+    digitado: a Meta às vezes manda o celular brasileiro sem o 9) em `whatsapp_vinculo.telefone`
+    (único: se o número estava em outra conta, sai de lá). O código é guardado como sha256 e vale
+    uma vez; 5 códigos errados de um número em 1 h fazem o app ignorar os códigos dele por 1 h.
+    `DELETE /whatsapp` tira o número. Webhook: `GET` = verificação (`hub.verify_token`); `POST`
+    exige `X-Hub-Signature-256` (HMAC do corpo bruto com o App Secret; montado antes do
+    `express.json`), responde 200 na hora e trata depois; cada `wamid` vai para `whatsapp_mensagem`
+    (a Meta reenvia; repetida é ignorada; a manutenção apaga as de mais de 7 dias). Mensagens de
+    outro `phone_number_id` e status de entrega são ignorados. Nesta fase o número ligado recebe
+    "logo vou anotar contas e agendamentos por aqui"; número sem conta recebe as instruções (no
+    máximo uma vez por hora). Respostas só dentro da janela de 24 h aberta pela mensagem da pessoa
+    (avisos fora dela exigirão templates, fase 4). Próximas fases: 2) lançar por texto com o Claude
+    Haiku (tool use sobre os services) e "desfazer"; 3) comprovante por foto; 4) avisos pelo WhatsApp
+    (canal novo em `src/lembretes/canais/`); 5) perguntas.
 
 ## Convenções de banco
 

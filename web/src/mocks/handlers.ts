@@ -14,6 +14,7 @@ import { handlersRecebiveis } from './recebiveis'
 import { handlersRotinas } from './rotinas'
 import { handlersTarefas } from './tarefas'
 import { handlersViagens } from './viagens'
+import { handlersWhatsapp } from './whatsapp'
 
 import { banco, resetarBancoMock as recriarBanco } from './banco'
 import { garantirContasEquipe } from './equipe'
@@ -48,4 +49,5 @@ export const handlers = [
   ...handlersViagens,
   ...handlersCompras,
   ...handlersNotificacoes,
+  ...handlersWhatsapp,
 ]

@@ -24,6 +24,8 @@ const { rotasHoje } = require('./modules/hoje/routes');
 const { rotasViagens } = require('./modules/viagens/routes');
 const { rotasCompras } = require('./modules/compras/routes');
 const { rotasNotificacoes } = require('./modules/notificacoes/routes');
+const { rotasWhatsapp } = require('./modules/whatsapp/routes');
+const { rotasWebhookWhatsapp } = require('./modules/whatsapp/webhook');
 
 /** `cadastroAberto`: os testes trocam sem mexer no ambiente (padrão: CADASTRO_ABERTO). */
 function criarApp({ cadastroAberto = env.CADASTRO_ABERTO } = {}) {
@@ -38,6 +40,8 @@ function criarApp({ cadastroAberto = env.CADASTRO_ABERTO } = {}) {
 
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGINS.length ? env.CORS_ORIGINS : false }));
+  // Antes do express.json: a assinatura da Meta é conferida sobre o corpo bruto.
+  app.use('/webhooks/whatsapp', rotasWebhookWhatsapp());
   app.use(express.json({ limit: '1mb' }));
 
   app.get('/saude', async (req, res) => {
@@ -67,6 +71,7 @@ function criarApp({ cadastroAberto = env.CADASTRO_ABERTO } = {}) {
   app.use('/viagens', autenticar, rotasViagens());
   app.use('/compras', autenticar, rotasCompras());
   app.use('/notificacoes', autenticar, rotasNotificacoes());
+  app.use('/whatsapp', autenticar, rotasWhatsapp());
 
   app.use(rotaNaoEncontrada);
   app.use(tratarErro);

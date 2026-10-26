@@ -50,6 +50,7 @@ const compras = () => import('@/paginas/compras/Compras').then((m) => ({ Compone
 const paginaItemCompra = () =>
   import('@/paginas/compras/PaginaItemCompra').then((m) => ({ Component: m.PaginaItemCompra }))
 const notificacoes = () => import('@/paginas/Notificacoes').then((m) => ({ Component: m.Notificacoes }))
+const whatsapp = () => import('@/paginas/Whatsapp').then((m) => ({ Component: m.Whatsapp }))
 const imoveis = () => import('@/paginas/Imoveis').then((m) => ({ Component: m.Imoveis }))
 const detalheImovel = () =>
   import('@/paginas/imoveis/DetalheImovel').then((m) => ({ Component: m.DetalheImovel }))
@@ -122,6 +123,7 @@ export const definicaoRotas: RouteObject[] = [
           { path: 'compras', lazy: compras },
           { path: 'compras/:id', lazy: paginaItemCompra },
           { path: 'notificacoes', lazy: notificacoes },
+          { path: 'whatsapp', lazy: whatsapp },
           { path: 'imoveis', lazy: imoveis },
           { path: 'imoveis/:id', lazy: detalheImovel },
           { path: 'categorias', lazy: categorias },

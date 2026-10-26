@@ -185,6 +185,8 @@ export const banco = {
   resumos: new Map<string, { ativo: boolean; hora: string }>(),
   // Categorias de aviso desligadas por usuário (usuario.avisos_desligados); sem entrada = tudo ligado.
   avisosDesligados: new Map<string, string[]>(),
+  // WhatsApp por usuário (tabela whatsapp_vinculo). Os testes ligam o número direto aqui, como o webhook.
+  whatsapp: new Map<string, { telefone: string | null; vinculadoEm: string | null; codigo: string | null; expiraEm: number | null }>(),
 }
 
 export function novoPagamento(
@@ -585,6 +587,7 @@ export function resetarBancoMock() {
   banco.inscricoesPush.length = 0
   banco.resumos.clear()
   banco.avisosDesligados.clear()
+  banco.whatsapp.clear()
   semear()
   semearAgenda()
   semearRemedios()

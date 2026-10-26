@@ -170,6 +170,11 @@ npm run lint                                  # oxlint
   rótulos dele). Peças comuns dos gráficos: `components/grafico/pecas.tsx` (Legenda, TabelaDoGrafico,
   Dica, Coluna) e `lib/grafico.ts` (`escala`, `escalaInteira`, `useLargura`). Tocar numa coluna só
   destaca (não alterna: o toque dispara `mouseenter` e `click` juntos).
+- **WhatsApp** (`/whatsapp`, item de Configurações, `paginas/Whatsapp.tsx`, decisão 38): passo a passo,
+  "Gerar código" (mostra o código, "Abrir o WhatsApp" = link `wa.me` e relê `GET /whatsapp` a cada 3 s
+  até o número aparecer ligado), ligado (número mascarado, "Trocar de número", "Desligar" com
+  confirmação) e "Ainda não disponível" sem as chaves no servidor. No mock não há webhook: os testes
+  ligam o número com `vincularNoMock` (`mocks/whatsapp.ts`).
 - **Relógio** (`lib/relogio.ts`, `useMinutoAtual`): "HH:mm" que avança na virada do minuto (um timer
   só, nada com a aba escondida, limpo ao desmontar). A linha "Agora" da Agenda usa.
 - **Lembretes** (`/tarefas` e `/rotina`): anotar rápido no mesmo molde da Compras (rótulo oculto
