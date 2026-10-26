@@ -6,7 +6,8 @@ import { EstadoVazio } from '@/components/EstadoVazio'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTarefasHoje } from '@/consultas/hoje'
-import { agora, dataPorExtenso, hojeISO, rotuloDoDia, saudacao, somarDias } from '@/lib/datas'
+import { SeletorDia } from '@/components/SeletorPeriodo'
+import { agora, dataCurta, dataPorExtenso, hojeISO, rotuloDoDia, saudacao, somarDias } from '@/lib/datas'
 import type { TarefaHoje, TarefasHoje } from '@/lib/tipos'
 import { LinhaTarefa } from '@/paginas/hoje/LinhaTarefa'
 import { CATEGORIAS, destaqueDoDia, useMarcar } from '@/paginas/hoje/tarefas'
@@ -36,18 +37,18 @@ function CabecalhoHoje({
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 text-apoio font-medium text-muted-foreground">{dataPorExtenso(hoje.toISODate()!)}</p>
         <div className="flex shrink-0 items-center gap-2">
-          {/* No celular o campo inteiro não cabe aqui: vira um botão de calendário (o campo, invisível,
-              por cima dele abre o seletor do aparelho); a partir de sm aparece o campo. */}
-          <label className="relative grid size-12 shrink-0 place-items-center rounded-full border-[1.5px] border-contorno bg-folha hover:bg-suave sm:size-auto sm:border-0 sm:bg-transparent">
-            <span className="sr-only">Ir para o dia</span>
-            <CalendarBlankIcon className="pointer-events-none size-6 sm:hidden" aria-hidden />
-            <input
-              type="date"
-              value={data}
-              onChange={(e) => e.target.value && aoMudarDia(e.target.value)}
-              className="absolute inset-0 size-full cursor-pointer opacity-0 sm:static sm:size-auto sm:min-h-11 sm:rounded-lg sm:border sm:border-input sm:bg-folha sm:px-3 sm:text-base sm:text-foreground sm:opacity-100"
-            />
-          </label>
+          {/* "Ir para o dia": no celular só o calendário (a data escrita não cabe ao lado do "+ Nova"). */}
+          <SeletorDia
+            data={data}
+            aoMudar={aoMudarDia}
+            rotulo="Ir para o dia"
+            gatilho={
+              <Button variant="outline" aria-label={`Ir para o dia (${dataCurta(data)})`} className="size-12 rounded-full px-0 sm:w-auto sm:px-4">
+                <CalendarBlankIcon className="size-6 sm:size-5" aria-hidden />
+                <span className="hidden sm:inline">{dataCurta(data)}</span>
+              </Button>
+            }
+          />
           <NovaAtividade />
           {/* No celular, Configurações não cabe na barra de baixo: fica aqui. */}
           <Button asChild variant="outline" size="icon" aria-label="Configurações" className="rounded-full md:hidden">

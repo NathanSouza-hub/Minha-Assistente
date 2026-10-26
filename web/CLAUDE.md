@@ -274,6 +274,14 @@ npm run lint                                  # oxlint
   `vi.useFakeTimers({ toFake: ['Date'] })` + `resetarBancoMock()` no `beforeEach` (só `Date`: o
   userEvent precisa de timers reais). `src/test/setup.ts` tem os substitutos de APIs do navegador
   que o Radix usa no jsdom.
+- **Filtros de data** (todos por `components/SeletorPeriodo.tsx`; não crie outro): o título do período é
+  um botão que abre a janela de escolha — `SeletorMes` (ano com setas + grade de 12 meses, "Este mês") e
+  `SeletorDia` (calendário seg→dom; o nome do mês abre a grade de meses; "Hoje"), com `min`/`max` e
+  `gatilho` para outro botão (ex.: o calendário do cabeçalho do Início). `NavegadorMes` (Visão geral,
+  Contas a pagar, Lista de despesas, Pessoais, Equipe, Recebíveis, Residências) e `NavegadorDia`
+  (Remédios, Compromissos) já usam; Agenda (Mês e Semana) e a fatura do cartão também. As setas do lado
+  continuam para o período vizinho. No relatório: "Um mês" (`CampoMes`), "Este ano" ou "Escolher datas"
+  (`CampoData` De/Até, um limitando o outro). Campos de data de cadastro (formulários) continuam nativos.
 - Componentes de formulário: `Campo` (com `prefixo`, ex. "R$"), `Selecao` (`<select>` nativo, de
   propósito), `Opcoes` (escolha única em cartões ou segmentos), `Confirmar` (antes de excluir;
   botão `variant="perigo"`).

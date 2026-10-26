@@ -1,15 +1,16 @@
 import { Navegador } from '@/components/NavegadorDia'
 import { SeloEstado } from '@/components/Estado'
-import { nomeDoMes, somarMeses } from '@/lib/datas'
+import { SeletorMes } from '@/components/SeletorPeriodo'
+import { somarMeses } from '@/lib/datas'
 import { formatarCentavos } from '@/lib/dinheiro'
 import type { Pagamento } from '@/lib/tipos'
 
-/** "Outubro de 2026" e as setas — mês no formato "AAAA-MM". */
+/** "Outubro de 2026" (toque abre a grade de meses) e as setas — mês no formato "AAAA-MM". */
 export function NavegadorMes({ mes, aoMudar }: { mes: string; aoMudar: (mes: string) => void }) {
   return (
     <Navegador
       rotulo="Mês"
-      titulo={nomeDoMes(mes)}
+      titulo={<SeletorMes mes={mes} aoMudar={aoMudar} />}
       anterior={{ rotulo: 'Mês anterior', ir: () => aoMudar(somarMeses(mes, -1)) }}
       proximo={{ rotulo: 'Próximo mês', ir: () => aoMudar(somarMeses(mes, 1)) }}
     />
