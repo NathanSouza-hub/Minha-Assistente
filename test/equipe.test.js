@@ -5,6 +5,7 @@ const request = require('supertest');
 const { DateTime } = require('luxon');
 const db = require('../src/config/db');
 const { criarApp } = require('../src/app');
+const { CATEGORIAS_PADRAO } = require('../src/modules/categorias/padrao');
 const { hoje } = require('../src/lib/tempo');
 const { garantirContas } = require('../src/modules/equipe/contas');
 const { prepararBanco } = require('./helpers/banco');
@@ -49,11 +50,11 @@ after(async () => {
   await db.destroy();
 });
 
-test('cadastro novo começa com as 5 categorias padrão (sem Salários e Honorários)', async () => {
+test('cadastro novo começa com as categorias padrão (sem Salários e Honorários)', async () => {
   const { body } = await request(app).get('/categorias-pagamento').set(ana.auth).expect(200);
   assert.deepEqual(
     body.map((c) => c.nome),
-    ['Contas residenciais', 'Outros'],
+    CATEGORIAS_PADRAO,
   );
 });
 

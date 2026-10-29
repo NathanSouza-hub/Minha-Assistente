@@ -272,6 +272,8 @@ Erros dos lembretes ficam em `lembrete_envio.erro` (status `falhou` depois de 3 
 **limite de gasto mensal**. Ponha no `.env` como `ANTHROPIC_API_KEY=` e aplique
 (`docker compose -f docker-compose.prod.yml up -d api`). Usa o Claude Haiku 5.5, o mais barato; cada
 mensagem custa frações de centavo. Sem a chave, o WhatsApp só liga o número e manda os lembretes.
+Lançamentos acima de `WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS` (padrão 100000 = R$ 1.000,00) esperam a
+pessoa responder "SIM".
 
 **Número definitivo** (o chip): em API Setup → "Adicionar número de telefone". O número não pode ter
 conta no WhatsApp comum (apague a conta no celular antes) e recebe SMS ou ligação para confirmar.

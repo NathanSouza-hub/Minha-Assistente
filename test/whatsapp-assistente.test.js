@@ -100,7 +100,7 @@ test('"almoço 45,90" vira conta paga em Outros, e o Claude confirma', async () 
   const [primeira, segunda] = chamadas;
   assert.equal(primeira.model, 'claude-haiku-5-5');
   assert.match(primeira.system, /secretária pessoal de Ana/);
-  assert.match(primeira.system, /Contas residenciais, Outros/);
+  assert.match(primeira.system, /Categorias: Contas residenciais, Alimentação, Transporte, Saúde, Casa, Contas fixas, Lazer, Outros\./);
   assert.deepEqual(primeira.messages, [{ role: 'user', content: 'almoço 45,90' }]);
   assert.ok(primeira.tools.every((f) => f.strict));
 

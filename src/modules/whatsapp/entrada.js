@@ -81,6 +81,14 @@ function codigoNoTexto(texto) {
   return /^\d{3}[\s.-]?\d{3}$/.test(limpo) ? limpo.replace(/\D/g, '') : null;
 }
 
+/** "sim"/"não" sozinhos (com variações comuns); null para qualquer outro texto. */
+function respostaCurta(texto) {
+  const limpo = texto.trim().toLowerCase().replace(/[\s.!]+$/, '');
+  if (/^(sim|s|confirmo|confirma|pode lançar|pode lancar)$/.test(limpo)) return 'sim';
+  if (/^(não|nao|n|cancela|cancelar)$/.test(limpo)) return 'nao';
+  return null;
+}
+
 /** As mensagens recebidas no corpo do webhook (status de entrega e outros números ficam de fora). */
 function mensagensDoCorpo(corpo) {
   if (corpo?.object !== 'whatsapp_business_account') return [];
@@ -120,7 +128,16 @@ async function responder(mensagem, controle, agora) {
   if (!controle.podeConversar(de, agora)) return controle.jaAvisado(`limite:${de}`, agora) ? null : TEXTOS.limite;
   if (mensagem.type !== 'text') return TEXTOS.soTexto;
   if (texto.length > MAX_CARACTERES) return TEXTOS.longa;
-  if (/^\s*desfa(z|zer)[\s.!]*$/i.test(texto)) return assistente.desfazerUltimo(usuario.id, agora);
+  // "SIM"/"NÃO" a um lançamento acima do limite não passa pelo Claude; sem nada esperando, segue.
+  const resposta = respostaCurta(texto);
+  if (resposta) {
+    const final = await assistente.responderConfirmacao(usuario, texto.trim(), resposta === 'sim', agora);
+    if (final) return final;
+  }
+  if (/^\s*desfa(z|zer)[\s.!]*$/i.test(texto)) {
+    await assistente.descartarPendentes(usuario.id);
+    return assistente.desfazerUltimo(usuario.id, agora);
+  }
   try {
     return await assistente.responder(usuario, texto.trim(), agora);
   } catch (erro) {

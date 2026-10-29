@@ -34,6 +34,8 @@ const esquema = z.object({
   // Claude (Anthropic) entende as mensagens do WhatsApp e lança no app. Sem a chave, o número
   // ligado só recebe os lembretes.
   ANTHROPIC_API_KEY: z.string().default(''),
+  // Lançamento pelo WhatsApp acima deste valor (em centavos) espera a pessoa responder "SIM".
+  WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS: z.coerce.number().int().min(0).default(100000),
 }).refine(
   (v) => {
     const partes = [v.WHATSAPP_TOKEN, v.WHATSAPP_NUMERO_ID, v.WHATSAPP_NUMERO, v.WHATSAPP_APP_SECRET, v.WHATSAPP_VERIFY_TOKEN];

@@ -50,6 +50,7 @@ services:
       WHATSAPP_MODELO_IDIOMA: ${WHATSAPP_MODELO_IDIOMA:-pt_BR}
       # Assistente do WhatsApp (Claude). Vazia = desligado.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS: ${WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS:-100000}
       # Contas novas só pelo comando do administrador (docs/deploy.md). "true" reabre o cadastro.
       CADASTRO_ABERTO: ${CADASTRO_ABERTO:-false}
     volumes:

@@ -173,7 +173,7 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
 
 18. **Categorias de cada usuário** (migration 12; spec
     `docs/superpowers/specs/2026-10-14-contas-abas-cartoes-design.md`):
-    - O cadastro cria as 2 padrão — Contas residenciais e Outros ("Outros" veio na migration 16; "Consultas", "Exames" e "Parcelamentos" saíram na migration 22, que moveu as contas e compras de cartão delas para "Outros") (`src/modules/categorias/padrao.js`); não há mais seed. A
+    - O cadastro cria as 8 padrão — Contas residenciais, Alimentação, Transporte, Saúde, Casa, Contas fixas, Lazer e Outros ("Outros" veio na migration 16; "Consultas", "Exames" e "Parcelamentos" saíram na migration 22, que moveu as contas e compras de cartão delas para "Outros"; as 6 do meio vieram na migration 35, que as acrescentou no fim da lista de quem já tinha conta, pulando as que a pessoa já tinha com o mesmo nome) (`src/modules/categorias/padrao.js`); não há mais seed. A
       migration copiou as categorias globais para cada usuário e repontou as contas dele.
     - `GET /categorias-pagamento` → `[{ id, nome, ordem }]` por ordem. `POST { nome, ordem? }`
       (sem ordem vai para o fim) → `201`. `PUT /:id { nome?, ordem? }` (pelo menos um).
@@ -485,6 +485,13 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
       ligado recebe "logo vou anotar contas e agendamentos por aqui". `GET /whatsapp` traz
       `assistente` (WhatsApp e Claude configurados). A manutenção apaga falas de mais de 1 dia e
       lançamentos de mais de 30.
+    - **Assistente, ajustes** (migration 35): o Claude recebe as categorias, os cartões e a equipe da
+      pessoa. Ferramentas novas: `pagar_equipe` (pagamento a alguém da equipe), `trocar_categoria_ultimo`
+      e `criar_categoria`; `lancar_conta` com `cartao` vira compra no cartão. O "desfazer" alcança
+      compra no cartão e pagamento da equipe (`whatsapp_lancamento.dados` guarda o necessário).
+      Lançamento acima de `WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS` (padrão 100000 = R$ 1.000,00) não é
+      feito: vai para `whatsapp_pendente` e a pessoa responde "SIM" ou "NÃO" (tratado sem chamar o
+      Claude; "desfazer" descarta o que estava esperando).
     - **Lembretes** (migration 32, canal `whatsapp` ao lado do `app`, `src/lembretes/canais/whatsapp.js`):
       os mesmos lembretes do app, respeitando "O que avisar" e o resumo da manhã; quem tem aparelho
       inscrito e número ligado recebe pelos dois. Mensagem iniciada pela empresa exige **modelo

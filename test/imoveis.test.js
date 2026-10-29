@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const db = require('../src/config/db');
 const { criarApp } = require('../src/app');
+const { CATEGORIAS_PADRAO } = require('../src/modules/categorias/padrao');
 const { prepararBanco } = require('./helpers/banco');
 const { criarSessao } = require('./helpers/sessao');
 
@@ -27,11 +28,11 @@ test('rotas de imóveis e categorias exigem token', async () => {
   await request(app).get('/categorias-pagamento').expect(401);
 });
 
-test('GET /categorias-pagamento lista as 7 categorias em ordem', async () => {
+test('GET /categorias-pagamento lista as categorias padrão em ordem', async () => {
   const res = await request(app).get('/categorias-pagamento').set(ana.auth).expect(200);
   assert.deepEqual(
     res.body.map((c) => c.nome),
-    ['Contas residenciais', 'Outros'],
+    CATEGORIAS_PADRAO,
   );
 });
 
