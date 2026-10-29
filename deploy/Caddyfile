@@ -19,10 +19,11 @@
 		}
 	}
 
-	# Front: arquivos do build; rotas do app (/agenda, /remedios...) caem no index.html.
+	# Front: arquivos do build; páginas estáticas sem extensão (/privacidade → privacidade.html);
+	# rotas do app (/agenda, /remedios...) caem no index.html.
 	handle {
 		root * /srv
-		try_files {path} /index.html
+		try_files {path} {path}.html /index.html
 		file_server
 	}
 

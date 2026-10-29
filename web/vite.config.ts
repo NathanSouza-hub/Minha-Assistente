@@ -34,6 +34,8 @@ export default defineConfig({
         // Recebe os lembretes (Web Push) e abre a tela certa ao tocar na notificação.
         importScripts: ['sw-push.js'],
         navigateFallback: '/index.html',
+        // Páginas públicas estáticas (public/*.html) vêm do servidor, não do app.
+        navigateFallbackDenylist: [/^\/privacidade/],
       },
     }),
   ],
