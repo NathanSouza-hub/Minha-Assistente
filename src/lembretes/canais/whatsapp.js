@@ -1,9 +1,10 @@
 // Canal "whatsapp" (decisão 38): mensagem pela API oficial da Meta para o número que a pessoa ligou à
 // conta pelo código (whatsapp_vinculo). Mensagem que a empresa começa precisa de um modelo (template)
-// aprovado na Meta: o do app tem duas variáveis no corpo, {{1}} = título e {{2}} = detalhe
-// (passo a passo em docs/deploy.md, "WhatsApp").
+// aprovado na Meta: o do app tem duas variáveis no corpo, {{1}} = o compromisso e {{2}} = quando e
+// detalhes (passo a passo em docs/deploy.md, "WhatsApp").
 const env = require('../../config/env');
 const cliente = require('../../lib/whatsapp');
+const { variaveis } = require('../textos-whatsapp');
 
 const nome = 'whatsapp';
 
@@ -54,10 +55,26 @@ async function enviarParaNumero(numero, { titulo, corpo }) {
   throw new Error(`WhatsApp respondeu ${resposta.status}: ${erro?.message ?? 'erro desconhecido'}`);
 }
 
+/**
+ * {{1}} e {{2}} da mensagem: o compromisso primeiro (textos-whatsapp.js). `mensagem.lote` traz os
+ * lembretes do mesmo tipo no mesmo horário, juntados pelo agendador. Origem sem formato próprio
+ * (resumo da manhã) usa o título e o corpo da notificação.
+ */
+function variaveisDa(mensagem) {
+  const lote = mensagem.lote ?? [mensagem];
+  const itens = lote.map((m) => m.whatsapp);
+  const formatadas = itens.every(Boolean) ? variaveis(itens) : null;
+  if (formatadas) return { titulo: formatadas[0], corpo: formatadas[1] };
+  return { titulo: mensagem.titulo, corpo: mensagem.corpo };
+}
+
 async function enviar(conexao, usuarioId, mensagem) {
   const vinculo = await conexao('whatsappVinculo').where({ usuarioId }).first('telefone');
   if (!vinculo?.telefone) return { entregue: false, motivo: 'Sem WhatsApp ligado à conta.' };
-  return enviarParaNumero(vinculo.telefone, mensagem);
+  return enviarParaNumero(vinculo.telefone, variaveisDa(mensagem));
 }
 
-module.exports = { nome, ativo, usuarios, enviar, enviarParaNumero };
+// O agendador junta numa mensagem só os lembretes do mesmo tipo no mesmo horário.
+const agrupa = true;
+
+module.exports = { nome, ativo, usuarios, enviar, enviarParaNumero, agrupa };

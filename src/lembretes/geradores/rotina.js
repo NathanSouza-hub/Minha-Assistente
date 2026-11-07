@@ -1,5 +1,5 @@
 // Rotina: tarefas ativas com `lembrete`, na hora marcada, nos dias da semana delas.
-const { instante, naData, diasEntre } = require('../textos');
+const { instante, naData, diasEntre, quando } = require('../textos');
 
 const tipo = 'rotina';
 
@@ -29,7 +29,12 @@ async function mensagem(conexao, lembrete) {
     .where('t.id', lembrete.origemId)
     .first('t.titulo', 't.hora', 't.ativo', 't.lembrete', 'c.concluidaEm');
   if (!tarefa || !tarefa.ativo || !tarefa.lembrete || tarefa.concluidaEm) return null;
-  return { titulo: tarefa.titulo, corpo: `Compromisso do dia, às ${tarefa.hora}.`, url: '/rotina' };
+  return {
+    titulo: tarefa.titulo,
+    corpo: `Compromisso do dia, às ${tarefa.hora}.`,
+    url: '/rotina',
+    whatsapp: { tipo, titulo: tarefa.titulo, quando: quando(instante(lembrete.ocorrencia), instante(lembrete.agendadoPara)) },
+  };
 }
 
 module.exports = { tipo, gerar, mensagem };

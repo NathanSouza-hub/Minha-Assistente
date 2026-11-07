@@ -1,5 +1,5 @@
 // Tarefas avulsas com `lembrete`: um aviso no dia e na hora da tarefa.
-const { instante, naData, diasEntre } = require('../textos');
+const { instante, naData, diasEntre, quando } = require('../textos');
 
 const tipo = 'tarefa';
 
@@ -26,7 +26,12 @@ async function mensagem(conexao, lembrete) {
     .first('titulo', 'data', 'hora', 'lembrete', 'concluidaEm');
   if (!t || !t.lembrete || t.concluidaEm || !t.hora) return null;
   if (naData(t.data, t.hora).toMillis() !== instante(lembrete.ocorrencia).toMillis()) return null;
-  return { titulo: t.titulo, corpo: `Tarefa de hoje, às ${t.hora}.`, url: '/hoje' };
+  return {
+    titulo: t.titulo,
+    corpo: `Tarefa de hoje, às ${t.hora}.`,
+    url: '/hoje',
+    whatsapp: { tipo, titulo: t.titulo, quando: quando(instante(lembrete.ocorrencia), instante(lembrete.agendadoPara)) },
+  };
 }
 
 module.exports = { tipo, gerar, mensagem };

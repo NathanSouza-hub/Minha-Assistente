@@ -43,10 +43,12 @@ async function gerar(conexao, { de, ate, usuarios }) {
 async function mensagem(conexao, lembrete) {
   const evento = await conexao('evento').select('titulo', 'local').where({ id: lembrete.origemId }).first();
   if (!evento) return null;
+  const horario = quando(instante(lembrete.ocorrencia), instante(lembrete.agendadoPara));
   return {
     titulo: evento.titulo,
-    corpo: juntar(quando(instante(lembrete.ocorrencia), instante(lembrete.agendadoPara)), evento.local),
+    corpo: juntar(horario, evento.local),
     url: '/agenda',
+    whatsapp: { tipo, titulo: evento.titulo, quando: horario, local: evento.local },
   };
 }
 

@@ -44,6 +44,7 @@ async function mensagem(conexao, lembrete) {
     titulo: `Hora do remédio: ${dose.nome}`,
     corpo: juntar(dose.dose, dose.observacoes) || 'Toque para marcar que tomou.',
     url: '/remedios',
+    whatsapp: { tipo, nome: dose.nome, dose: dose.dose, hora: instante(lembrete.ocorrencia).toFormat('HH:mm') },
   };
 }
 

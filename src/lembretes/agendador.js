@@ -57,60 +57,102 @@ async function gerar(agora = agoraSP(), { canais = canaisAtivos() } = {}) {
   return total;
 }
 
-/** Envia um lembrete vencido, travando a linha (dois processos não enviam o mesmo). */
-async function enviarUm(id, agora, canais) {
+/**
+ * A mensagem de um lembrete travado, ou o motivo para cancelá-lo.
+ * @returns {Promise<{ mensagem?: object, motivo?: string }>}
+ */
+async function avaliar(trx, lembrete, agora, canal) {
+  if (agora.diff(DateTime.fromISO(lembrete.agendadoPara), 'minutes').minutes > TOLERANCIA_MINUTOS) {
+    return { motivo: 'Passou da hora: não foi enviado.' };
+  }
+  if (!canal) return { motivo: 'Canal desligado.' };
+  // A pessoa pode ter desligado a categoria depois de o lembrete ser gerado.
+  const categoria = CATEGORIA_DA_ORIGEM[lembrete.origemTipo];
+  if (categoria) {
+    const { avisosDesligados } = await trx('usuario').where({ id: lembrete.usuarioId }).first('avisosDesligados');
+    if (avisosDesligados.includes(categoria)) return { motivo: 'Aviso desta categoria desligado.' };
+  }
+  const mensagem = await porTipo[lembrete.origemTipo].mensagem(trx, lembrete);
+  if (!mensagem) return { motivo: 'Não vale mais (a origem mudou ou já foi resolvida).' };
+  return { mensagem };
+}
+
+/**
+ * Envia lembretes vencidos travando as linhas (dois processos não enviam o mesmo). Vários ids =
+ * mesmo usuário, canal, origem e horário: vão juntos numa mensagem só (canal com `agrupa`).
+ * Devolve o status final de cada lembrete processado.
+ */
+async function enviarGrupo(ids, agora, canais) {
   return db.transaction(async (trx) => {
-    const lembrete = await trx('lembreteEnvio').where({ id, status: 'pendente' }).forUpdate().skipLocked().first();
-    if (!lembrete) return null;
+    const lembretes = await trx('lembreteEnvio')
+      .whereIn('id', ids)
+      .where({ status: 'pendente' })
+      .orderBy(['ocorrencia', 'id'])
+      .forUpdate()
+      .skipLocked();
+    if (!lembretes.length) return [];
 
-    const atualizar = (campos) => trx('lembreteEnvio').where({ id }).update(campos);
-    const cancelar = async (motivo) => {
-      await atualizar({ status: 'cancelado', erro: motivo });
-      return 'cancelado';
-    };
-
-    if (agora.diff(DateTime.fromISO(lembrete.agendadoPara), 'minutes').minutes > TOLERANCIA_MINUTOS) {
-      return cancelar('Passou da hora: não foi enviado.');
+    const atualizar = (lembrete, campos) => trx('lembreteEnvio').where({ id: lembrete.id }).update(campos);
+    const statuses = [];
+    const validos = [];
+    const canal = canais.find((c) => c.nome === lembretes[0].canal);
+    for (const lembrete of lembretes) {
+      const { mensagem, motivo } = await avaliar(trx, lembrete, agora, canal);
+      if (mensagem) {
+        validos.push({ lembrete, mensagem });
+      } else {
+        await atualizar(lembrete, { status: 'cancelado', erro: motivo });
+        statuses.push('cancelado');
+      }
     }
-    const canal = canais.find((c) => c.nome === lembrete.canal);
-    if (!canal) return cancelar('Canal desligado.');
-    // A pessoa pode ter desligado a categoria depois de o lembrete ser gerado.
-    const categoria = CATEGORIA_DA_ORIGEM[lembrete.origemTipo];
-    if (categoria) {
-      const { avisosDesligados } = await trx('usuario').where({ id: lembrete.usuarioId }).first('avisosDesligados');
-      if (avisosDesligados.includes(categoria)) return cancelar('Aviso desta categoria desligado.');
-    }
-    const mensagem = await porTipo[lembrete.origemTipo].mensagem(trx, lembrete);
-    if (!mensagem) return cancelar('Não vale mais (a origem mudou ou já foi resolvida).');
+    if (!validos.length) return statuses;
 
     // A tag faz um aviso repetido substituir o anterior no aparelho, em vez de empilhar.
-    const tag = `${lembrete.origemTipo}:${lembrete.origemId}:${lembrete.ocorrencia}`;
+    const [{ lembrete: primeiro, mensagem: principal }] = validos;
+    const tag = `${primeiro.origemTipo}:${primeiro.origemId}:${primeiro.ocorrencia}`;
+    const envio = validos.length === 1 ? { ...principal, tag } : { ...principal, tag, lote: validos.map((v) => v.mensagem) };
+
+    const finalizar = async (campos) => {
+      for (const { lembrete } of validos) {
+        const valores = typeof campos === 'function' ? campos(lembrete) : campos;
+        await atualizar(lembrete, valores);
+        statuses.push(valores.status);
+      }
+      return statuses;
+    };
+    let resultado;
     try {
-      const resultado = await canal.enviar(trx, lembrete.usuarioId, { ...mensagem, tag });
-      if (!resultado.entregue) return cancelar(resultado.motivo);
+      resultado = await canal.enviar(trx, primeiro.usuarioId, envio);
     } catch (erro) {
-      const tentativas = lembrete.tentativas + 1;
-      const status = tentativas >= MAXIMO_TENTATIVAS ? 'falhou' : 'pendente';
-      await atualizar({ tentativas, status, erro: String(erro?.message ?? erro).slice(0, 500) });
-      return status;
+      const motivo = String(erro?.message ?? erro).slice(0, 500);
+      return finalizar((lembrete) => {
+        const tentativas = lembrete.tentativas + 1;
+        return { tentativas, status: tentativas >= MAXIMO_TENTATIVAS ? 'falhou' : 'pendente', erro: motivo };
+      });
     }
-    await atualizar({ status: 'enviado', enviadoEm: paraISO(agora), erro: null });
-    return 'enviado';
+    if (!resultado.entregue) return finalizar({ status: 'cancelado', erro: resultado.motivo });
+    return finalizar({ status: 'enviado', enviadoEm: paraISO(agora), erro: null });
   });
 }
 
 /** Envia os pendentes com agendadoPara até agora. Devolve quantos terminaram em cada status. */
 async function enviarPendentes(agora = agoraSP(), { canais = canaisAtivos() } = {}) {
-  const ids = await db('lembreteEnvio')
+  const linhas = await db('lembreteEnvio')
     .where('status', 'pendente')
     .where('agendadoPara', '<=', paraISO(agora))
     .orderBy('agendadoPara')
     .limit(LOTE)
-    .pluck('id');
+    .select('id', 'usuarioId', 'canal', 'origemTipo', 'agendadoPara');
+  // Canal que agrupa (WhatsApp): mesmo usuário, origem e horário vão numa mensagem só.
+  const grupos = new Map();
+  for (const l of linhas) {
+    const agrupa = canais.find((c) => c.nome === l.canal)?.agrupa;
+    const chave = agrupa ? [l.usuarioId, l.canal, l.origemTipo, l.agendadoPara].join('|') : l.id;
+    grupos.set(chave, [...(grupos.get(chave) ?? []), l.id]);
+  }
   const contagem = {};
-  for (const id of ids) {
-    const status = await enviarUm(id, agora, canais);
-    if (status) contagem[status] = (contagem[status] ?? 0) + 1;
+  for (const ids of grupos.values()) {
+    for (const status of await enviarGrupo(ids, agora, canais)) contagem[status] = (contagem[status] ?? 0) + 1;
   }
   return contagem;
 }

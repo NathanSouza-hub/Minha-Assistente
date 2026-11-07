@@ -35,6 +35,7 @@ async function mensagem(conexao, lembrete) {
     titulo: hoje ? 'Conta vence hoje' : 'Conta vence amanhã',
     corpo: juntar(p.descricao, p.valorCentavos === null ? 'valor a definir' : formatarCentavos(p.valorCentavos)),
     url: '/pagamentos',
+    whatsapp: { tipo, nome: p.descricao, centavos: p.valorCentavos, vencimento, hoje },
   };
 }
 

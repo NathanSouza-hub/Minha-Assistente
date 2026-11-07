@@ -172,3 +172,86 @@ test('o número passa para outra conta: os lembretes pendentes da anterior são 
   const lembrete = await db('lembreteEnvio').where({ origemId: evento.id }).first('status', 'erro');
   assert.deepEqual(lembrete, { status: 'cancelado', erro: 'WhatsApp desligado da conta.' });
 });
+
+test('variáveis do modelo: o compromisso em {{1}}, quando e detalhes em {{2}}', () => {
+  const { variaveis } = require('../src/lembretes/textos-whatsapp');
+  const remedio = (nome, dose) => ({ tipo: 'medicamento_horario', nome, dose, hora: '08:00' });
+  assert.deepEqual(variaveis([remedio('Losartana', '1 comprimido de 50 mg')]), [
+    'Tomar Losartana, 1 comprimido de 50 mg.',
+    'Agora, às 08:00',
+  ]);
+  assert.deepEqual(variaveis([remedio('Vitamina D', '2')]), ['Tomar Vitamina D. Dose: 2.', 'Agora, às 08:00']);
+  assert.deepEqual(variaveis([remedio('Vitamina D', null)]), ['Tomar Vitamina D.', 'Agora, às 08:00']);
+  assert.deepEqual(variaveis([remedio('Losartana', '1 comprimido'), remedio('Vitamina D', '2')]), [
+    'Tomar Losartana (1 comprimido) e Vitamina D (Dose: 2).',
+    'Agora, às 08:00',
+  ]);
+
+  const conta = (nome, centavos, hoje = true) => ({
+    tipo: 'pagamento',
+    nome,
+    centavos,
+    vencimento: hoje ? '2026-11-07' : '2026-11-08',
+    hoje,
+  });
+  const [acao, detalhe] = variaveis([conta('Conta de luz', 12000)]);
+  assert.match(acao, /^Pagar Conta de luz: R\$\s120,00\.$/);
+  assert.equal(detalhe, 'Vence hoje (07/11)');
+  assert.deepEqual(variaveis([conta('Diarista', null, false)]), ['Pagar Diarista: valor a definir.', 'Vence amanhã (08/11)']);
+  const juntas = variaveis([conta('Conta de luz', 12000), conta('Água', 8000), conta('Internet', 9990)]);
+  assert.equal(juntas[0], 'Pagar Conta de luz, Água e Internet.');
+  assert.match(juntas[1], /^Conta de luz R\$\s120,00 · Água R\$\s80,00 · Internet R\$\s99,90 · Vencem hoje \(07\/11\)$/);
+  const misturadas = variaveis([conta('Luz', 100), conta('Água', 200, false)]);
+  assert.match(misturadas[1], /^Luz R\$\s1,00 \(vence hoje \(07\/11\)\) · Água R\$\s2,00 \(vence amanhã \(08\/11\)\)$/);
+
+  assert.deepEqual(
+    variaveis([{ tipo: 'evento', titulo: 'Consulta com o cardiologista', quando: 'Hoje às 14:30', local: 'Clínica\nSão Lucas' }]),
+    ['Consulta com o cardiologista.', 'Hoje às 14:30 · Clínica São Lucas'],
+  );
+  assert.deepEqual(variaveis([{ tipo: 'tarefa', titulo: 'Ligar para o contador.', quando: 'Hoje às 10:00' }]), [
+    'Ligar para o contador.',
+    'Hoje às 10:00',
+  ]);
+  assert.deepEqual(
+    variaveis([
+      { tipo: 'evento', titulo: 'Reunião do condomínio', quando: 'Hoje às 18:00', local: 'Salão de festas' },
+      { tipo: 'evento', titulo: 'Buscar as crianças', quando: 'Hoje às 18:00', local: null },
+    ]),
+    ['Reunião do condomínio e Buscar as crianças.', 'Hoje às 18:00 · Salão de festas'],
+  );
+
+  // Muitos itens: lista os nomes que cabem e diz quantos faltam, dentro dos limites da Meta.
+  const muitas = Array.from({ length: 40 }, (_, i) => conta(`Conta número ${i + 1}`, 1000 + i));
+  const [acaoLonga, detalheLongo] = variaveis(muitas);
+  assert.ok(acaoLonga.length <= 200 && detalheLongo.length <= 600);
+  assert.match(acaoLonga, /^Pagar Conta número 1, .* e mais \d+\.$/);
+  assert.match(detalheLongo, /· e mais \d+ · Vencem hoje \(07\/11\)$/);
+
+  assert.equal(variaveis([{ tipo: 'resumo' }]), null);
+});
+
+test('mesmo tipo no mesmo horário: uma mensagem só, com todos pelo nome', async (t) => {
+  await ligar(ana, '5511912345678');
+  const lista = (await request(app).get('/categorias-pagamento').set(ana.auth)).body;
+  const conta = (descricao, valorCentavos) =>
+    request(app)
+      .post('/pagamentos')
+      .set(ana.auth)
+      .send({ descricao, categoriaId: lista[0].id, valorCentavos, vencimento: '2027-01-12' })
+      .expect(201)
+      .then((r) => r.body);
+  const luz = await conta('Conta de luz', 12000);
+  const agua = await conta('Água', 8000);
+  await gerar(em('2027-01-12T08:00'), { canais: [whatsapp] });
+
+  const chamadas = simularMeta(t);
+  const contagem = await enviarPendentes(em('2027-01-12T09:00'), { canais: [whatsapp] });
+  const minhas = chamadas.filter((c) => c.corpo.template.components[0].parameters[0].text.startsWith('Pagar'));
+  assert.equal(minhas.length, 1);
+  const [acao, detalhe] = minhas[0].corpo.template.components[0].parameters.map((p) => p.text);
+  assert.equal(acao, 'Pagar Conta de luz e Água.');
+  assert.match(detalhe, /^Conta de luz R\$ 120,00 · Água R\$ 80,00 · Vencem hoje \(12\/01\)$/);
+  assert.ok(contagem.enviado >= 2);
+  const status = await db('lembreteEnvio').whereIn('origemId', [luz.id, agua.id]).pluck('status');
+  assert.deepEqual(status, ['enviado', 'enviado']);
+});
