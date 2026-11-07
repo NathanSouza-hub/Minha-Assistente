@@ -112,7 +112,19 @@ const FORMATOS = {
 function variaveis(itens) {
   const formato = itens.length && FORMATOS[itens[0].tipo];
   if (!formato || itens.some((i) => i.tipo !== itens[0].tipo)) return null;
-  return formato(itens);
+  return formato(emOrdem(itens));
+}
+
+// Os itens chegam por horário, mas o empate vem do id (uuid, aleatório): mantém a ordem dos
+// horários e, dentro do mesmo horário, ordena pelo nome, para a mensagem não mudar a cada envio.
+function emOrdem(itens) {
+  const horario = (i) => `${i.vencimento ?? ''}|${i.hora ?? ''}|${i.quando ?? ''}`;
+  const nome = (i) => umaLinha(i.nome ?? i.titulo);
+  const primeiro = new Map();
+  itens.forEach((i, n) => primeiro.has(horario(i)) || primeiro.set(horario(i), n));
+  return [...itens].sort(
+    (a, b) => primeiro.get(horario(a)) - primeiro.get(horario(b)) || nome(a).localeCompare(nome(b), 'pt-BR'),
+  );
 }
 
 module.exports = { variaveis, MAXIMO_ACAO, MAXIMO_DETALHE };

@@ -199,8 +199,8 @@ test('variáveis do modelo: o compromisso em {{1}}, quando e detalhes em {{2}}',
   assert.equal(detalhe, 'Vence hoje (07/11)');
   assert.deepEqual(variaveis([conta('Diarista', null, false)]), ['Pagar Diarista: valor a definir.', 'Vence amanhã (08/11)']);
   const juntas = variaveis([conta('Conta de luz', 12000), conta('Água', 8000), conta('Internet', 9990)]);
-  assert.equal(juntas[0], 'Pagar Conta de luz, Água e Internet.');
-  assert.match(juntas[1], /^Conta de luz R\$\s120,00 · Água R\$\s80,00 · Internet R\$\s99,90 · Vencem hoje \(07\/11\)$/);
+  assert.equal(juntas[0], 'Pagar Água, Conta de luz e Internet.');
+  assert.match(juntas[1], /^Água R\$\s80,00 · Conta de luz R\$\s120,00 · Internet R\$\s99,90 · Vencem hoje \(07\/11\)$/);
   const misturadas = variaveis([conta('Luz', 100), conta('Água', 200, false)]);
   assert.match(misturadas[1], /^Luz R\$\s1,00 \(vence hoje \(07\/11\)\) · Água R\$\s2,00 \(vence amanhã \(08\/11\)\)$/);
 
@@ -217,7 +217,7 @@ test('variáveis do modelo: o compromisso em {{1}}, quando e detalhes em {{2}}',
       { tipo: 'evento', titulo: 'Reunião do condomínio', quando: 'Hoje às 18:00', local: 'Salão de festas' },
       { tipo: 'evento', titulo: 'Buscar as crianças', quando: 'Hoje às 18:00', local: null },
     ]),
-    ['Reunião do condomínio e Buscar as crianças.', 'Hoje às 18:00 · Salão de festas'],
+    ['Buscar as crianças e Reunião do condomínio.', 'Hoje às 18:00 · Salão de festas'],
   );
 
   // Muitos itens: lista os nomes que cabem e diz quantos faltam, dentro dos limites da Meta.
@@ -249,8 +249,8 @@ test('mesmo tipo no mesmo horário: uma mensagem só, com todos pelo nome', asyn
   const minhas = chamadas.filter((c) => c.corpo.template.components[0].parameters[0].text.startsWith('Pagar'));
   assert.equal(minhas.length, 1);
   const [acao, detalhe] = minhas[0].corpo.template.components[0].parameters.map((p) => p.text);
-  assert.equal(acao, 'Pagar Conta de luz e Água.');
-  assert.match(detalhe, /^Conta de luz R\$ 120,00 · Água R\$ 80,00 · Vencem hoje \(12\/01\)$/);
+  assert.equal(acao, 'Pagar Água e Conta de luz.');
+  assert.match(detalhe, /^Água R\$ 80,00 · Conta de luz R\$ 120,00 · Vencem hoje \(12\/01\)$/);
   assert.ok(contagem.enviado >= 2);
   const status = await db('lembreteEnvio').whereIn('origemId', [luz.id, agua.id]).pluck('status');
   assert.deepEqual(status, ['enviado', 'enviado']);
