@@ -134,6 +134,10 @@ async function responder(mensagem, controle, agora) {
     const final = await assistente.responderConfirmacao(usuario, texto.trim(), resposta === 'sim', agora);
     if (final) return final;
   }
+  // "ajuda" e "o que você faz?" têm resposta fixa, sem passar pelo Claude.
+  if (/^\s*(ajuda|menu|help|o que (voc[eê]|vc) (pode|sabe|consegue) fazer)[\s?!.]*$/i.test(texto)) {
+    return assistente.TEXTOS.ajuda;
+  }
   if (/^\s*desfa(z|zer)[\s.!]*$/i.test(texto)) {
     await assistente.descartarPendentes(usuario.id);
     return assistente.desfazerUltimo(usuario.id, agora);

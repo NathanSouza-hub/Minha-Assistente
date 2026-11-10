@@ -476,7 +476,7 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
       apagou), `criar_compromisso` (evento com aviso 1 h antes, salvo pedido), `criar_tarefa` (com
       hora = lembrete) e `desfazer_ultimo`. Cada ferramenta valida com o esquema Zod da rota e chama o
       service do módulo; erro de validação ou de regra volta ao Claude como `is_error` para ele
-      perguntar. No máximo 5 voltas por mensagem. O que foi lançado vai para `whatsapp_lancamento`;
+      perguntar. No máximo 5 voltas por mensagem (6 desde as consultas). O que foi lançado vai para `whatsapp_lancamento`;
       "desfazer" (a palavra sozinha, sem chamar o Claude, ou pedido em frase) apaga o último das
       últimas 24 h pelo `remover` do módulo. O Claude vê as últimas 10 falas de texto da última meia
       hora (`whatsapp_conversa`; ferramentas e thinking não ficam no histórico). Limites: 40
@@ -492,6 +492,26 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
       Lançamento acima de `WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS` (padrão 100000 = R$ 1.000,00) não é
       feito: vai para `whatsapp_pendente` e a pessoa responde "SIM" ou "NÃO" (tratado sem chamar o
       Claude; "desfazer" descarta o que estava esperando).
+    - **Assistente, consultas** (2026-11-10, sem migration): o Claude também responde perguntas
+      sobre os dados da conta por ferramentas **só de leitura** (`src/modules/whatsapp/consultas.js`):
+      `consultar_gastos` (pagos no período pela data do pagamento, como o Relatório; por categoria;
+      ou compras de um cartão), `consultar_contas` (vencidas, a pagar, pagas), `consultar_equipe`,
+      `consultar_agenda` (período ou busca pelo nome nos próximos 12 meses), `consultar_remedios`,
+      `consultar_tarefas` (com a rotina, num dia só), `consultar_viagens`, `consultar_compras` e
+      `resumo` (dia ou semana). Regras: o `usuarioId` vem do número ligado, nunca da IA (nenhuma
+      ferramenta tem campo de conta); a entrada passa por Zod estrito (campo a mais é recusado);
+      nomes de cartão/categoria/pessoa são procurados só na conta; não há SQL livre. O período é uma
+      opção fechada (hoje, ontem, esta semana — segunda a domingo —, este mês, um mês pelo nome,
+      últimos 30 dias, datas…) e as datas são calculadas pelo código (no máximo 1 ano). O texto da
+      ferramenta já vem pronto (R$ 1.234,56, DD/MM, até 10 itens com o total e sugestão de filtro).
+      Erro inesperado numa consulta → "Não consegui buscar isso agora…" e o detalhe só no log.
+      **Proteção** (`protecao.js`): antes de sair, a resposta é conferida; com cara de informação
+      técnica (chaves, tokens, JWT, variáveis de ambiente, snake_case/camelCase, SQL, código,
+      caminhos, endereços internos, nome do modelo de IA, 7 palavras seguidas das regras do prompt)
+      vira a recusa fixa — os textos da própria pessoa (descrições, nomes) são descontados antes. A
+      resposta é cortada abaixo de 4.096 caracteres. "ajuda", "menu" e "o que você pode fazer?"
+      respondem com a lista fixa de exemplos (`TEXTOS.ajuda`), sem chamar o Claude. No máximo 6
+      voltas por mensagem.
     - **Lembretes** (migration 32, canal `whatsapp` ao lado do `app`, `src/lembretes/canais/whatsapp.js`):
       os mesmos lembretes do app, respeitando "O que avisar" e o resumo da manhã; quem tem aparelho
       inscrito e número ligado recebe pelos dois. Mensagem iniciada pela empresa exige **modelo
