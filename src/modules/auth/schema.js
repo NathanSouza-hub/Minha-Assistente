@@ -14,7 +14,12 @@ const novaSenha = z
 
 const cadastro = z
   .object({
-    nome: z.string().trim().min(1, 'Informe o nome.').max(100, 'Nome longo demais.'),
+    nome: z
+      .string()
+      .trim()
+      .min(1, { message: 'Informe o nome.', abort: true })
+      .min(2, 'O nome precisa ter pelo menos 2 caracteres.')
+      .max(100, 'Nome longo demais.'),
     email,
     senha: novaSenha,
   })

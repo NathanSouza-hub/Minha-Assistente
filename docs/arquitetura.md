@@ -83,8 +83,9 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
    próxima (mês/ano seguinte) ligada por `recorrencia_origem_id`.
 8. **Lembretes de evento em lista**: `lembretesMinutosAntes: [1080, 120]` (ex.: véspera e 2h
    antes); `[]` = sem lembrete. Até 5 valores positivos, sem repetição.
-9. **Multiusuário**: cadastro pelo app (`POST /auth/cadastro` com `{ nome, email, senha }`, devolve
-   o token como o login) só com `CADASTRO_ABERTO=true`; sem a variável, fica fechado em produção
+9. **Multiusuário**: cadastro pelo app (`POST /auth/cadastro` com `{ nome, email, senha }` — nome
+   com 2 a 100 caracteres, senha com 8 a 72; a confirmação de senha é só da tela —, devolve o
+   token como o login e `409 EMAIL_EM_USO` para e-mail já usado) só com `CADASTRO_ABERTO=true`; sem a variável, fica fechado em produção
    e aberto no resto. Fechado, responde `403 CADASTRO_FECHADO` e as contas são criadas pelo
    administrador (`src/cli/criar-conta.js`, com senha temporária). `GET /auth/cadastro` devolve
    `{ aberto }` para o front esconder o "Criar conta". Imóveis e categorias são de cada usuário (CRUD em `/imoveis` e

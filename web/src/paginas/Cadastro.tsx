@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Campo } from '@/components/Campo'
 import { LayoutVisitante } from '@/components/layout/LayoutVisitante'
@@ -23,14 +24,18 @@ export function Cadastro() {
     formState: { errors },
   } = useForm<DadosCadastro>({
     resolver: zodResolver(esquemaCadastro),
-    defaultValues: { nome: '', email: '', senha: '' },
+    defaultValues: { nome: '', email: '', senha: '', confirmacao: '' },
   })
 
   const cadastro = useMutation({
-    mutationFn: (dados: DadosCadastro) => api<Sessao>('/auth/cadastro', { method: 'POST', corpo: dados }),
+    mutationFn: ({ nome, email, senha }: DadosCadastro) =>
+      api<Sessao>('/auth/cadastro', { method: 'POST', corpo: { nome, email, senha } }),
     meta: { semAviso: true },
-    // O redirecionamento para o app fica com RotaVisitante.
-    onSuccess: entrar,
+    // A conta nova já vem com a sessão: entra direto. O redirecionamento fica com RotaVisitante.
+    onSuccess: (sessao) => {
+      entrar(sessao)
+      toast.success('Conta criada! Você já está dentro.')
+    },
     onError: (erro) => aplicarErroApi(erro, setError, { porCodigo: { EMAIL_EM_USO: 'email' } }),
   })
 
@@ -54,7 +59,7 @@ export function Cadastro() {
         </p>
       ) : (
         <form noValidate onSubmit={handleSubmit((dados) => cadastro.mutate(dados))} className="flex flex-col gap-5">
-          <Campo rotulo="Seu nome" autoComplete="name" erro={errors.nome?.message} {...register('nome')} />
+          <Campo rotulo="Nome" autoComplete="name" erro={errors.nome?.message} {...register('nome')} />
           <Campo
             rotulo="E-mail"
             type="email"
@@ -64,12 +69,19 @@ export function Cadastro() {
             {...register('email')}
           />
           <Campo
-            rotulo="Crie uma senha"
+            rotulo="Senha"
             type="password"
             autoComplete="new-password"
-            dica="Pelo menos 8 caracteres."
+            dica="Mínimo de 8 caracteres."
             erro={errors.senha?.message}
             {...register('senha')}
+          />
+          <Campo
+            rotulo="Confirmar senha"
+            type="password"
+            autoComplete="new-password"
+            erro={errors.confirmacao?.message}
+            {...register('confirmacao')}
           />
           {errors.root && (
             <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 font-semibold text-destructive">

@@ -43,6 +43,30 @@ test('cadastro com e-mail já usado (outra caixa) devolve 409 EMAIL_EM_USO', asy
     .send({ nome: 'Outra', email: 'REPETIDO@exemplo.com', senha: 'outra-senha-123' })
     .expect(409);
   assert.equal(res.body.erro.codigo, 'EMAIL_EM_USO');
+  assert.equal(res.body.erro.mensagem, 'Já existe uma conta com esse e-mail.');
+});
+
+test('cadastro com nome de 1 letra devolve 400 VALIDACAO', async () => {
+  // App novo: os cadastros deste arquivo passam do limite por hora do app compartilhado.
+  const res = await request(criarApp())
+    .post('/auth/cadastro')
+    .send({ nome: ' A ', email: 'curto@exemplo.com', senha: 'senha-forte-123' })
+    .expect(400);
+  assert.match(res.body.erro.mensagem, /nome: O nome precisa ter pelo menos 2 caracteres/);
+});
+
+test('conta criada pelo cadastro entra pelo login', async () => {
+  const novo = criarApp();
+  await request(novo)
+    .post('/auth/cadastro')
+    .send({ nome: 'Conta Nova', email: 'nova@exemplo.com', senha: 'senha-da-conta-nova' })
+    .expect(201);
+  const res = await request(novo)
+    .post('/auth/login')
+    .send({ email: 'NOVA@exemplo.com', senha: 'senha-da-conta-nova' })
+    .expect(200);
+  assert.equal(res.body.usuario.nome, 'Conta Nova');
+  assert.equal(res.body.usuario.senhaHash, undefined);
 });
 
 test('cadastro com dados inválidos devolve 400 VALIDACAO com mensagem em português', async () => {

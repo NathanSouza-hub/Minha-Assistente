@@ -25,10 +25,13 @@ export const handlersAuth = [
     }
     const { nome, email, senha } = (await request.json()) as Record<string, string>
     const chave = email?.trim().toLowerCase()
-    if (!nome?.trim() || !chave || !senha || senha.length < 8) {
+    if ((nome?.trim().length ?? 0) < 2) {
+      return erro(400, 'VALIDACAO', 'nome: O nome precisa ter pelo menos 2 caracteres.')
+    }
+    if (!chave || !senha || senha.length < 8) {
       return erro(400, 'VALIDACAO', 'senha: A senha precisa ter pelo menos 8 caracteres.')
     }
-    if (banco.usuarios.has(chave)) return erro(409, 'EMAIL_EM_USO', 'Já existe uma conta com este e-mail.')
+    if (banco.usuarios.has(chave)) return erro(409, 'EMAIL_EM_USO', 'Já existe uma conta com esse e-mail.')
     const usuario: UsuarioMock = {
       id: crypto.randomUUID(),
       nome: nome.trim(),

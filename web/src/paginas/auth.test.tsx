@@ -89,11 +89,12 @@ describe('login', () => {
 })
 
 describe('cadastro', () => {
-  async function preencherCadastro(nome: string, email: string, senha: string) {
+  async function preencherCadastro(nome: string, email: string, senha: string, confirmacao = senha) {
     const usuario = userEvent.setup()
-    await usuario.type(await screen.findByLabelText('Seu nome'), nome)
+    await usuario.type(await screen.findByLabelText('Nome'), nome)
     await usuario.type(screen.getByLabelText('E-mail'), email)
-    await usuario.type(screen.getByLabelText('Crie uma senha'), senha)
+    await usuario.type(screen.getByLabelText('Senha'), senha)
+    await usuario.type(screen.getByLabelText('Confirmar senha'), confirmacao)
     await usuario.click(screen.getByRole('button', { name: 'Criar conta' }))
   }
 
@@ -108,7 +109,7 @@ describe('cadastro', () => {
     renderizarApp('/cadastro')
     await preencherCadastro('Outra Maria', 'MARIA@exemplo.com', 'outra-senha-forte')
     const campo = screen.getByLabelText('E-mail')
-    await waitFor(() => expect(campo).toHaveAccessibleDescription('Já existe uma conta com este e-mail.'))
+    await waitFor(() => expect(campo).toHaveAccessibleDescription('Já existe uma conta com esse e-mail.'))
     expect(campo).toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -116,6 +117,26 @@ describe('cadastro', () => {
     renderizarApp('/cadastro')
     await preencherCadastro('Ana', 'ana@exemplo.com', 'curta')
     expect(await screen.findByText('A senha precisa ter pelo menos 8 caracteres.')).toBeInTheDocument()
+  })
+
+  test('senhas diferentes são barradas no formulário', async () => {
+    renderizarApp('/cadastro')
+    await preencherCadastro('Ana', 'ana@exemplo.com', 'senha-forte-da-ana', 'outra-senha-da-ana')
+    expect(await screen.findByText('As senhas não são iguais.')).toBeInTheDocument()
+  })
+
+  test('nome de 1 letra é barrado no formulário', async () => {
+    renderizarApp('/cadastro')
+    await preencherCadastro('A', 'ana@exemplo.com', 'senha-forte-da-ana')
+    expect(await screen.findByText('O nome precisa ter pelo menos 2 caracteres.')).toBeInTheDocument()
+  })
+
+  test('avisa que a conta foi criada e já entra', async () => {
+    const { roteador } = renderizarApp('/cadastro')
+    await preencherCadastro('Bia Lima', 'Bia@Exemplo.com ', 'senha-da-bia-123')
+    expect(await screen.findByText('Bia Lima')).toBeInTheDocument()
+    expect(await screen.findByText('Conta criada! Você já está dentro.')).toBeInTheDocument()
+    expect(roteador.state.location.pathname).toBe('/')
   })
 
   test('erro VALIDACAO do back-end é distribuído pelos campos', async () => {

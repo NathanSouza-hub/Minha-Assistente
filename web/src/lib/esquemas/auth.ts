@@ -19,11 +19,23 @@ const novaSenha = z
   .min(8, 'A senha precisa ter pelo menos 8 caracteres.')
   .max(72, 'A senha pode ter no máximo 72 caracteres.')
 
-export const esquemaCadastro = z.object({
-  nome: z.string().trim().min(1, 'Informe seu nome.').max(100, 'Nome longo demais.'),
-  email,
-  senha: novaSenha,
-})
+/** Cadastro: a confirmação é só do formulário (não vai para a API). */
+export const esquemaCadastro = z
+  .object({
+    nome: z
+      .string()
+      .trim()
+      .min(1, { message: 'Informe seu nome.', abort: true })
+      .min(2, 'O nome precisa ter pelo menos 2 caracteres.')
+      .max(100, 'Nome longo demais.'),
+    email,
+    senha: novaSenha,
+    confirmacao: z.string(),
+  })
+  .refine((v) => v.confirmacao === v.senha, {
+    message: 'As senhas não são iguais.',
+    path: ['confirmacao'],
+  })
 
 /** Troca de senha: a confirmação é só do formulário (não vai para a API). */
 export const esquemaTrocaSenha = z

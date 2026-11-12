@@ -29,7 +29,7 @@ async function cadastrar({ nome, email, senha }) {
     return sessao(usuario);
   } catch (erro) {
     if (erro.code === '23505') {
-      throw new AppError(409, 'EMAIL_EM_USO', 'Já existe uma conta com este e-mail.');
+      throw new AppError(409, 'EMAIL_EM_USO', 'Já existe uma conta com esse e-mail.');
     }
     throw erro;
   }
