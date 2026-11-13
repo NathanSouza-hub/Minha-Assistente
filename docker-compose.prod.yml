@@ -51,8 +51,9 @@ services:
       # Assistente do WhatsApp (Claude). Vazia = desligado.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS: ${WHATSAPP_CONFIRMAR_ACIMA_CENTAVOS:-100000}
-      # Contas novas só pelo comando do administrador (docs/deploy.md). "true" reabre o cadastro.
-      CADASTRO_ABERTO: ${CADASTRO_ABERTO:-false}
+      # Cadastro aberto pelo app, fixo aqui (passa por cima do .env do servidor).
+      # Para fechar, troque por "false" e faça push (docs/deploy.md, "Criar a conta de alguém").
+      CADASTRO_ABERTO: "true"
     volumes:
       - anexos:/app/uploads
 

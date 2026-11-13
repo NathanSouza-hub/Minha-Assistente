@@ -155,16 +155,17 @@ próxima vez que abrirem (o service worker se atualiza sozinho).
 
 ### Criar a conta de alguém
 
-O cadastro pelo app fica fechado em produção (`CADASTRO_ABERTO=false`). Para criar uma conta,
-rode no servidor e passe a senha temporária à pessoa (ela troca depois em Mais → Trocar senha):
+O cadastro pelo app fica aberto em produção: `CADASTRO_ABERTO: "true"` fixo no
+`docker-compose.prod.yml`, que passa por cima do `.env`. Também dá para criar uma conta pelo
+servidor e passar a senha temporária à pessoa (ela troca depois em Mais → Trocar senha):
 
 ```bash
 cd /opt/minha-assistente
 docker compose exec api node src/cli/criar-conta.js email@da.pessoa "Nome da Pessoa"
 ```
 
-Para reabrir o cadastro pelo app, ponha `CADASTRO_ABERTO=true` no `.env` e rode
-`docker compose up -d api`.
+Para fechar o cadastro pelo app, troque o valor no `docker-compose.prod.yml` por `"false"` e
+faça push na `main` (o deploy aplica sozinho).
 
 ### Alguém esqueceu a senha
 

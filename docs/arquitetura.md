@@ -86,7 +86,7 @@ POST /notificacoes/whatsapp/teste  (lembrete de teste pelo WhatsApp, decisão 38
 9. **Multiusuário**: cadastro pelo app (`POST /auth/cadastro` com `{ nome, email, senha }` — nome
    com 2 a 100 caracteres, senha com 8 a 72; a confirmação de senha é só da tela —, devolve o
    token como o login e `409 EMAIL_EM_USO` para e-mail já usado) só com `CADASTRO_ABERTO=true`; sem a variável, fica fechado em produção
-   e aberto no resto. Fechado, responde `403 CADASTRO_FECHADO` e as contas são criadas pelo
+   e aberto no resto (em produção o `docker-compose.prod.yml` fixa `"true"`). Fechado, responde `403 CADASTRO_FECHADO` e as contas são criadas pelo
    administrador (`src/cli/criar-conta.js`, com senha temporária). `GET /auth/cadastro` devolve
    `{ aberto }` para o front esconder o "Criar conta". Imóveis e categorias são de cada usuário (CRUD em `/imoveis` e
    `/categorias-pagamento`, decisão 18). Apagar um imóvel usado por pagamentos responde
